@@ -164,7 +164,7 @@
         .ai-cv-msg.ai { background: #1e293b; border: 1px solid #334155; color: #e2e8f0; border-right: 3px solid #6366f1; }
         .ai-cv-msg.user { background: #1e3a5f; border: 1px solid #2563eb; color: #bfdbfe; border-left: 3px solid #3b82f6; }
         /* PDF Templates */
-        #cvPdfTpl, #cvCompPdfTpl { position:absolute; top:0; left:0; width:794px; background:#0f172a; font-family:'Cairo','Arial',sans-serif; direction:rtl; color:#e2e8f0; visibility:hidden; pointer-events:none; z-index:-1; }
+        #cvPdfTpl, #cvCompPdfTpl { position:fixed; top:0; left:-9999px; width:794px; background:#0f172a; font-family:'Cairo','Arial',sans-serif; direction:rtl; color:#e2e8f0; }
         .tpl-wrap { display:flex; flex-direction:column; }
         .tpl-hdr { padding:40px 44px 32px; display:flex; align-items:center; gap:30px; position:relative; overflow:hidden; }
         .tpl-hdr-person { background:linear-gradient(135deg,#059669,#10b981,#34d399); }
@@ -179,7 +179,7 @@
         .tpl-contacts { display:flex; flex-wrap:wrap; gap:14px; }
         .tpl-contact-chip { display:flex; align-items:center; gap:6px; background:rgba(0,0,0,0.18); padding:5px 14px; border-radius:20px; font-size:12px; color:rgba(255,255,255,0.88); }
         .tpl-hdr-stripe { height:4px; background:linear-gradient(90deg,#fbbf24,#10b981,#3b82f6,#8b5cf6); }
-        .tpl-body { padding:28px 44px; flex:1; }
+        .tpl-body { padding:28px 44px; flex:1; overflow:visible; }
         .tpl-section { margin-bottom:26px; }
         .tpl-sec-hdr { display:flex; align-items:center; gap:10px; padding-bottom:10px; margin-bottom:14px; border-bottom:2px solid rgba(255,255,255,0.08); }
         .tpl-sec-icon { width:32px; height:32px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0; }
@@ -1587,65 +1587,63 @@ async function generateAndSendCVPDF() {
     _buildPersonTpl(); await _html2pdf('cvPdfTpl',`CV_${document.getElementById('cvb_name').value}_${Date.now()}.pdf`);
 }
 async function _html2pdf(elId, fileName) {
+    showNotification('⏳', 'جاري إنشاء الـ PDF...', 'info');
+
+    // ننشئ wrapper خارج الشاشة لكن مرئي للـ browser (بدون visibility:hidden)
+    const wrap = document.createElement('div');
+    wrap.style.cssText = [
+        'position:fixed',
+        'top:0', 'left:-9000px',
+        'width:794px',
+        'background:#0f172a',
+        'z-index:-1',
+        'overflow:visible'          // ← مهم: لا قطع
+    ].join(';');
+
+    // ننسخ محتوى الـ template
     const srcEl = document.getElementById(elId);
-    const htmlContent = srcEl.innerHTML;
-    showNotification('⏳','جاري إنشاء الـ PDF...','info');
+    wrap.innerHTML = srcEl.innerHTML;
+    document.body.appendChild(wrap);
 
-    // إنشاء iframe معزول تماماً عن الصفحة
-    const iframe = document.createElement('iframe');
-    iframe.style.cssText = 'position:fixed;top:0;left:0;width:794px;height:1px;opacity:0;pointer-events:none;border:none;z-index:-999';
-    document.body.appendChild(iframe);
+    // ننتظر الـ render الكامل
+    await document.fonts.ready;
+    await new Promise(r => setTimeout(r, 500));
 
-    await new Promise(resolve => {
-        iframe.onload = resolve;
-        // نسخ كامل الـ CSS من الصفحة الأصلية للـ iframe
-        const styleLinks = [...document.querySelectorAll('link[rel="stylesheet"]')]
-            .map(l => `<link rel="stylesheet" href="${l.href}">`)
-            .join('');
-        const inlineStyles = [...document.querySelectorAll('style')]
-            .map(s => `<style>${s.innerHTML}</style>`)
-            .join('');
-        iframe.srcdoc = `<!DOCTYPE html><html dir="rtl" lang="ar"><head>
-            <meta charset="UTF-8">
-            ${styleLinks}
-            ${inlineStyles}
-            <style>
-                * { margin:0; padding:0; box-sizing:border-box; }
-                body { background:#0f172a; width:794px; overflow:hidden; }
-                .tpl-wrap { display:flex; flex-direction:column; }
-            </style>
-        </head><body><div id="pdfContent" style="width:794px;background:#0f172a;">${htmlContent}</div></body></html>`;
-    });
-
-    await new Promise(r => setTimeout(r, 600));
-    await iframe.contentDocument?.fonts?.ready;
-    await new Promise(r => setTimeout(r, 300));
+    // نقيس الارتفاع الفعلي بعد الـ render
+    const realH = wrap.scrollHeight;
+    wrap.style.height = realH + 'px';
+    await new Promise(r => setTimeout(r, 200));
 
     try {
-        const target = iframe.contentDocument.getElementById('pdfContent');
-        const canvas = await html2canvas(target, {
-            scale: 2,
-            useCORS: true,
-            allowTaint: true,
+        const canvas = await html2canvas(wrap, {
+            scale       : 2,
+            useCORS     : true,
+            allowTaint  : true,
             backgroundColor: '#0f172a',
-            logging: false,
-            width: 794,
-            windowWidth: 794,
-            scrollX: 0, scrollY: 0
+            logging     : false,
+            width       : 794,
+            height      : realH,
+            windowWidth : 794,
+            scrollX     : 0,
+            scrollY     : 0,
+            x           : 0,
+            y           : 0
         });
+
         const img = canvas.toDataURL('image/jpeg', 0.95);
         const { jsPDF } = window.jspdf;
-        const W = 210;
-        const ih = (canvas.height * W) / canvas.width;
+        const W  = 210;                                 // mm
+        const ih = (canvas.height * W) / canvas.width; // ارتفاع فعلي بالـ mm
         const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [W, ih] });
         pdf.addImage(img, 'JPEG', 0, 0, W, ih);
         pdf.save(fileName);
-        showNotification('✅ تم التنزيل', 'تم إنشاء الـ PDF بنجاح', 'success');
+        showNotification('✅ تم التنزيل', 'تم إنشاء الـ PDF', 'success');
     } catch(e) {
         console.error('PDF error:', e);
-        showNotification('❌ خطأ', 'تعذّر إنشاء PDF: ' + e.message, 'error');
+        showNotification('❌ خطأ', 'تعذّر إنشاء PDF', 'error');
     }
-    document.body.removeChild(iframe);
+
+    document.body.removeChild(wrap);
 }
 function _buildPersonTpl() {
     const v=id=>document.getElementById(id)?.value||''; const name=v('cvb_name'),role=v('cvb_role'),phone=v('cvb_phone'),email=v('cvb_email'),province=v('cvb_province'),exp=v('cvb_exp'),edu=v('cvb_edu'),skills=v('cvb_skills'),summary=v('cvb_summary'),salary=v('cvb_salary');
