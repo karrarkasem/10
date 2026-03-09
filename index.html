@@ -477,7 +477,7 @@
 <div class="header">
     <div class="logo"><h1>منصة <span>كربلاء</span> التجارية</h1></div>
     <div class="auth-buttons" id="authButtons">
-        <button class="auth-btn primary" onclick="openLoginModal()"><i class="fab fa-google"></i> دخول </button>
+        <button class="auth-btn primary" onclick="openLoginModal()"><i class="fas fa-user"></i> دخول </button>
     </div>
     <div class="user-menu" id="userMenu" style="display:none;">
         <div class="user-welcome">
@@ -619,7 +619,7 @@
 <!-- زر الإضافة -->
 <button class="add-btn" id="addBtn" onclick="openAddModal()" style="display:none;" title="إضافة"><i class="fas fa-plus"></i></button>
 <!-- مؤشر Firebase -->
-<div class="firebase-status"><div class="firebase-dot"></div>متصل</div>
+<div class="firebase-status"><div class="firebase-dot"></div> Firebase متصل</div>
 <div id="notificationContainer"></div>
 
 <!-- ═══ Modal تسجيل الدخول / حساب جديد ═══ -->
@@ -928,7 +928,15 @@ function displayJobs() {
             ${job.description ? `<div class="job-desc">${job.description}</div>` : ''}
             <div class="job-skills">${(job.skills||'').split(',').filter(Boolean).map(s=>`<span class="skill-tag">${s.trim()}</span>`).join('')}</div>
             <div class="job-footer">
-                <div style="font-size:11px;color:#94a3b8"><i class="fas fa-user"></i> ${job.addedBy||'النظام'}</div>
+                <div style="display:flex;align-items:center;gap:7px">
+                    <img src="${
+                        job.addedByAvatar
+                            ? (job.addedByAvatar.startsWith('http') ? job.addedByAvatar : DRIVE_BASE_URL + job.addedByAvatar)
+                            : `https://ui-avatars.com/api/?name=${encodeURIComponent(job.addedByName||job.addedBy||'U')}&background=334155&color=fff&size=64`
+                    }" style="width:26px;height:26px;border-radius:50%;object-fit:cover;border:2px solid #334155"
+                       onerror="this.src='https://ui-avatars.com/api/?name=U&background=334155&color=fff&size=64'">
+                    <span style="font-size:11px;color:#64748b">${job.addedByName || job.addedBy || 'النظام'}</span>
+                </div>
                 <button class="apply-btn" onclick='openApplyModal(${JSON.stringify(job).replace(/'/g,"&#39;")})'>
                     <i class="fas fa-paper-plane"></i> قدّم الآن
                 </button>
@@ -1273,7 +1281,7 @@ async function submitApplication() {
 // ║         إضافة وظيفة / سيرة ذاتية                   ║
 // ╚══════════════════════════════════════════════════════╝
 function openAddModal() {
-    if (!currentUser.isLoggedIn) { showNotification('❌','يجب تسجيل الدخول أولاً','error'); openLoginModal(); return; }
+    if (!currentUser.isLoggedIn) { showNotification('❌','يجب تسجيل الدخول بـ Google أولاً','error'); openLoginModal(); return; }
     document.getElementById('dynamicForm').innerHTML = buildJobForm();
     toggleJobForm();
     document.getElementById('addModal').classList.add('active');
@@ -1338,7 +1346,13 @@ async function submitAdd() {
     btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري...';
     try {
         const jobType = document.getElementById('jobType')?.value;
-        let data = { type: jobType, addedBy: currentUser.email, createdAt: firebase.firestore.FieldValue.serverTimestamp() };
+        let data = {
+            type          : jobType,
+            addedBy       : currentUser.email,
+            addedByName   : currentUser.name  || '',
+            addedByAvatar : currentUser.avatar || '',
+            createdAt     : firebase.firestore.FieldValue.serverTimestamp()
+        };
         if (jobType === 'job') {
             data.title   = document.getElementById('jobTitle')?.value || '';
             data.company = document.getElementById('companyName')?.value || '';
