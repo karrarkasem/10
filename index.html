@@ -1587,63 +1587,58 @@ async function generateAndSendCVPDF() {
     _buildPersonTpl(); await _html2pdf('cvPdfTpl',`CV_${document.getElementById('cvb_name').value}_${Date.now()}.pdf`);
 }
 async function _html2pdf(elId, fileName) {
-    showNotification('⏳', 'جاري إنشاء الـ PDF...', 'info');
-
-    // ننشئ wrapper خارج الشاشة لكن مرئي للـ browser (بدون visibility:hidden)
-    const wrap = document.createElement('div');
-    wrap.style.cssText = [
-        'position:fixed',
-        'top:0', 'left:-9000px',
-        'width:794px',
-        'background:#0f172a',
-        'z-index:-1',
-        'overflow:visible'          // ← مهم: لا قطع
-    ].join(';');
-
-    // ننسخ محتوى الـ template
     const srcEl = document.getElementById(elId);
-    wrap.innerHTML = srcEl.innerHTML;
-    document.body.appendChild(wrap);
+    const bodyHTML = srcEl.innerHTML;
 
-    // ننتظر الـ render الكامل
-    await document.fonts.ready;
-    await new Promise(r => setTimeout(r, 500));
+    // جمع كل الـ CSS من الصفحة الأصلية
+    const inlineCSS = [...document.querySelectorAll('style')]
+        .map(s => s.innerHTML).join('\n');
+    const linkCSS = [...document.querySelectorAll('link[rel="stylesheet"]')]
+        .map(l => `@import url("${l.href}");`).join('\n');
 
-    // نقيس الارتفاع الفعلي بعد الـ render
-    const realH = wrap.scrollHeight;
-    wrap.style.height = realH + 'px';
-    await new Promise(r => setTimeout(r, 200));
+    // فتح نافذة طباعة نظيفة
+    const win = window.open('', '_blank', 'width=900,height=700');
+    win.document.write(`<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<meta charset="UTF-8">
+<title>${fileName}</title>
+<style>
+${linkCSS}
+${inlineCSS}
 
-    try {
-        const canvas = await html2canvas(wrap, {
-            scale       : 2,
-            useCORS     : true,
-            allowTaint  : true,
-            backgroundColor: '#0f172a',
-            logging     : false,
-            width       : 794,
-            height      : realH,
-            windowWidth : 794,
-            scrollX     : 0,
-            scrollY     : 0,
-            x           : 0,
-            y           : 0
-        });
+/* إعدادات الطباعة */
+* { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+body { margin:0; padding:0; background:#0f172a; font-family:'Cairo',Arial,sans-serif; }
+.tpl-wrap { display:flex; flex-direction:column; }
+.tpl-body { overflow:visible !important; }
 
-        const img = canvas.toDataURL('image/jpeg', 0.95);
-        const { jsPDF } = window.jspdf;
-        const W  = 210;                                 // mm
-        const ih = (canvas.height * W) / canvas.width; // ارتفاع فعلي بالـ mm
-        const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [W, ih] });
-        pdf.addImage(img, 'JPEG', 0, 0, W, ih);
-        pdf.save(fileName);
-        showNotification('✅ تم التنزيل', 'تم إنشاء الـ PDF', 'success');
-    } catch(e) {
-        console.error('PDF error:', e);
-        showNotification('❌ خطأ', 'تعذّر إنشاء PDF', 'error');
-    }
+@media print {
+    body { margin:0; }
+    .no-print { display:none !important; }
+    @page { margin:0; size: auto; }
+}
+</style>
+</head>
+<body>
+<div class="no-print" style="padding:14px;background:#1e293b;display:flex;align-items:center;gap:12px;font-family:'Cairo',sans-serif">
+    <span style="color:#94a3b8;font-size:13px">اضغط الزر لتنزيل PDF 👇</span>
+    <button onclick="window.print()" style="background:#10b981;color:white;border:none;padding:9px 22px;border-radius:20px;font-family:'Cairo',sans-serif;font-weight:700;font-size:14px;cursor:pointer">
+        🖨️ طباعة / حفظ PDF
+    </button>
+    <button onclick="window.close()" style="background:#334155;color:#94a3b8;border:none;padding:9px 22px;border-radius:20px;font-family:'Cairo',sans-serif;font-size:13px;cursor:pointer">
+        إغلاق
+    </button>
+</div>
+${bodyHTML}
+</body>
+</html>`);
+    win.document.close();
 
-    document.body.removeChild(wrap);
+    // طباعة تلقائية بعد تحميل الخطوط
+    win.onload = () => {
+        setTimeout(() => win.print(), 800);
+    };
 }
 function _buildPersonTpl() {
     const v=id=>document.getElementById(id)?.value||''; const name=v('cvb_name'),role=v('cvb_role'),phone=v('cvb_phone'),email=v('cvb_email'),province=v('cvb_province'),exp=v('cvb_exp'),edu=v('cvb_edu'),skills=v('cvb_skills'),summary=v('cvb_summary'),salary=v('cvb_salary');
