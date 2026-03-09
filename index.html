@@ -10,6 +10,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <!-- ═══ Firebase SDK ═══ -->
+    <!-- EmailJS -->
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    <!-- SheetJS للتصدير -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
     <!-- Google Sign-In -->
@@ -198,6 +202,23 @@
         .tpl-footer-blue { background:linear-gradient(135deg,#1e3a8a,#1d4ed8); }
         .tpl-footer-txt { font-size:11px; color:rgba(255,255,255,0.88); }
         .tpl-footer-brand { font-size:13px; font-weight:900; color:white; }
+        /* ═══ Stats Cards ═══ */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px; }
+        .stat-card { background: #1e293b; border-radius: 16px; padding: 16px; text-align: center; border: 1px solid #334155; transition: all 0.3s; }
+        .stat-card:hover { transform: translateY(-3px); border-color: #6366f1; }
+        .stat-card .stat-num { font-size: 30px; font-weight: 900; margin: 6px 0; }
+        .stat-card .stat-lbl { font-size: 12px; color: #64748b; font-weight: 600; }
+        .stat-card .stat-icon { font-size: 22px; }
+        /* ═══ Search Bar ═══ */
+        .admin-search { width: 100%; padding: 10px 16px; background: #1e293b; border: 2px solid #334155; border-radius: 14px; font-family: 'Cairo', sans-serif; font-size: 14px; color: #f1f5f9; margin-bottom: 14px; transition: all 0.3s; }
+        .admin-search:focus { border-color: #6366f1; outline: none; }
+        .admin-search::placeholder { color: #475569; }
+        .filter-row { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
+        .filter-select { padding: 7px 12px; background: #1e293b; border: 2px solid #334155; border-radius: 10px; font-family: 'Cairo', sans-serif; font-size: 13px; color: #94a3b8; cursor: pointer; }
+        .export-btn { background: linear-gradient(135deg, #059669, #10b981); color: white; border: none; padding: 8px 18px; border-radius: 20px; font-family: 'Cairo', sans-serif; font-weight: 700; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 7px; margin-right: auto; transition: all 0.3s; }
+        .export-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(16,185,129,0.3); }
+        /* ═══ Email config ═══ */
+        .email-config-box { background: #0f172a; border: 2px solid #334155; border-radius: 14px; padding: 16px; margin-bottom: 16px; }
         /* Firebase status indicator */
         .firebase-status { position:fixed; bottom:90px; left:25px; background:white; border-radius:20px; padding:8px 14px; font-size:12px; font-weight:700; box-shadow:0 4px 15px rgba(0,0,0,0.1); display:flex; align-items:center; gap:6px; z-index:998; }
         .firebase-dot { width:8px; height:8px; border-radius:50%; background:#10b981; animation:pulse 2s infinite; }
@@ -261,12 +282,21 @@
     <div id="admin-section" class="section-content">
         <div class="section-title"><i class="fas fa-user-shield" style="color:#6366f1"></i> لوحة الأدمن</div>
         <div class="admin-panel">
+            <!-- إحصائيات سريعة -->
+            <div class="stats-grid" id="adminStats">
+                <div class="stat-card"><div class="stat-icon">💼</div><div class="stat-num" id="st_jobs" style="color:#10b981">—</div><div class="stat-lbl">وظيفة فعالة</div></div>
+                <div class="stat-card"><div class="stat-icon">📄</div><div class="stat-num" id="st_cvs" style="color:#f59e0b">—</div><div class="stat-lbl">سيرة ذاتية</div></div>
+                <div class="stat-card"><div class="stat-icon">📨</div><div class="stat-num" id="st_apps" style="color:#3b82f6">—</div><div class="stat-lbl">طلب تقديم</div></div>
+                <div class="stat-card"><div class="stat-icon">👥</div><div class="stat-num" id="st_users" style="color:#8b5cf6">—</div><div class="stat-lbl">مستخدم</div></div>
+                <div class="stat-card"><div class="stat-icon">🎉</div><div class="stat-num" id="st_hired" style="color:#ec4899">—</div><div class="stat-lbl">تم توظيفه</div></div>
+            </div>
             <div class="admin-tabs">
                 <button class="admin-tab active" onclick="showAdminTab('jobs',this)"><i class="fas fa-briefcase"></i> الوظائف</button>
                 <button class="admin-tab" onclick="showAdminTab('cvs',this)"><i class="fas fa-user-tie"></i> السير الذاتية</button>
                 <button class="admin-tab" onclick="showAdminTab('applications',this)"><i class="fas fa-paper-plane"></i> الطلبات</button>
                 <button class="admin-tab" onclick="showAdminTab('users',this)"><i class="fas fa-users"></i> المستخدمون</button>
                 <button class="admin-tab" id="notifTab" onclick="showAdminTab('notifications',this)"><i class="fas fa-bell"></i> الإشعارات <span id="notifCount" style="background:#ef4444;color:white;border-radius:50%;padding:1px 6px;font-size:11px;display:none">0</span></button>
+                <button class="admin-tab" onclick="showAdminTab('settings',this)"><i class="fas fa-cog"></i> الإعدادات</button>
             </div>
             <div id="adminContent"><div class="loading" style="color:#64748b">تحميل...</div></div>
         </div>
@@ -388,6 +418,61 @@ const firebaseConfig = {
     appId: "1:284387684367:web:ef4aa5b125ed695db4b37a"
 };
 firebase.initializeApp(firebaseConfig);
+
+// ╔══════════════════════════════════════════════════════╗
+// ║         إعدادات الإشعارات — Gmail + Telegram        ║
+// ╚══════════════════════════════════════════════════════╝
+const EMAILJS_CONFIG = {
+    publicKey  : 'YOUR_EMAILJS_PUBLIC_KEY',
+    serviceId  : 'YOUR_SERVICE_ID',
+    templateId : 'YOUR_TEMPLATE_ID',
+    adminEmail : 'YOUR_ADMIN_EMAIL@gmail.com'
+};
+
+const TELEGRAM_CONFIG = {
+    botToken : '8016012093:AAEz_3uvwmWODuQz6owSidXmXlSJBctNLPc',
+    chatId   : '121053876'
+};
+
+// تهيئة EmailJS
+try { emailjs.init(EMAILJS_CONFIG.publicKey); } catch(e) {}
+
+// ══ إرسال إيميل (Gmail عبر EmailJS) ══
+async function sendAdminEmail(subject, bodyHtml) {
+    if (!EMAILJS_CONFIG.publicKey || EMAILJS_CONFIG.publicKey === 'YOUR_EMAILJS_PUBLIC_KEY') return;
+    try {
+        await emailjs.send(EMAILJS_CONFIG.serviceId, EMAILJS_CONFIG.templateId, {
+            to_email : EMAILJS_CONFIG.adminEmail,
+            subject,
+            message  : bodyHtml,
+            reply_to : EMAILJS_CONFIG.adminEmail
+        });
+    } catch(e) { console.warn('EmailJS error:', e); }
+}
+
+// ══ إرسال تيلجرام ══
+async function sendTelegram(text) {
+    if (!TELEGRAM_CONFIG.botToken || !TELEGRAM_CONFIG.chatId) return;
+    try {
+        await fetch(`https://api.telegram.org/bot${TELEGRAM_CONFIG.botToken}/sendMessage`, {
+            method  : 'POST',
+            headers : { 'Content-Type': 'application/json' },
+            body    : JSON.stringify({
+                chat_id    : TELEGRAM_CONFIG.chatId,
+                text,
+                parse_mode : 'HTML'
+            })
+        });
+    } catch(e) { console.warn('Telegram error:', e); }
+}
+
+// ══ إرسال الإشعارَين معاً ══
+async function notifyAdmin(subject, emailHtml, telegramText) {
+    await Promise.allSettled([
+        sendAdminEmail(subject, emailHtml),
+        sendTelegram(telegramText)
+    ]);
+}
 const auth = firebase.auth();
 const db   = firebase.firestore();
 
@@ -586,7 +671,7 @@ function displayJobs() {
 async function saveUserToFirestore(uid, data, isNew) {
     await db.collection('users').doc(uid).set(data, { merge: true });
     if (isNew) {
-        // إشعار للأدمن في Firestore
+        // إشعار Firestore
         await db.collection('notifications').add({
             type      : 'new_user',
             title     : '👤 مستخدم جديد انضم',
@@ -598,6 +683,28 @@ async function saveUserToFirestore(uid, data, isNew) {
             read      : false,
             createdAt : firebase.firestore.FieldValue.serverTimestamp()
         });
+        // إيميل + تيلجرام
+        notifyAdmin(
+            `👤 مستخدم جديد: ${data.name || data.email}`,
+            `<div dir="rtl" style="font-family:Arial;padding:20px;background:#f8fafc;border-radius:12px">
+            <h2 style="color:#10b981">👤 مستخدم جديد انضم للمنصة</h2>
+            <table style="width:100%;border-collapse:collapse">
+                <tr><td style="padding:8px;font-weight:bold">الاسم:</td><td style="padding:8px">${data.name || '—'}</td></tr>
+                <tr style="background:#f1f5f9"><td style="padding:8px;font-weight:bold">البريد:</td><td style="padding:8px">${data.email || '—'}</td></tr>
+                <tr><td style="padding:8px;font-weight:bold">الهاتف:</td><td style="padding:8px">${data.phone || '—'}</td></tr>
+                <tr style="background:#f1f5f9"><td style="padding:8px;font-weight:bold">المحافظة:</td><td style="padding:8px">${data.province || '—'}</td></tr>
+                <tr><td style="padding:8px;font-weight:bold">التسجيل:</td><td style="padding:8px">${data.method === 'google' ? '🔵 Google' : '📧 إيميل'}</td></tr>
+            </table>
+            <p style="color:#64748b;font-size:12px;margin-top:16px">منصة كربلاء التجارية</p>
+            </div>`,
+            `👤 <b>مستخدم جديد انضم!</b>\n\n` +
+            `الاسم: ${data.name || '—'}\n` +
+            `البريد: ${data.email || '—'}\n` +
+            `الهاتف: ${data.phone || '—'}\n` +
+            `المحافظة: ${data.province || '—'}\n` +
+            `التسجيل: ${data.method === 'google' ? '🔵 Google' : '📧 إيميل'}\n` +
+            `⏰ ${new Date().toLocaleString('ar-IQ')}`
+        );
     }
 }
 
@@ -796,17 +903,54 @@ async function submitApplication() {
         // حفظ الطلب في Firestore
         await db.collection('applications').add({
             appNumber,
-            jobId       : currentApplyJob?.id || '',
-            jobTitle    : currentApplyJob?.title || '',
-            company     : currentApplyJob?.company || '',
-            applicantUid: currentUser.uid,
+            jobId        : currentApplyJob?.id || '',
+            jobTitle     : currentApplyJob?.title || '',
+            company      : currentApplyJob?.company || '',
+            applicantUid : currentUser.uid,
             applicantName: currentUser.name,
             applicantEmail: currentUser.email,
             phone, exp, edu, skills, message,
-            province    : currentUser.province || '',
-            status      : 'pending',
-            createdAt   : firebase.firestore.FieldValue.serverTimestamp()
+            province     : currentUser.province || '',
+            status       : 'pending',
+            createdAt    : firebase.firestore.FieldValue.serverTimestamp()
         });
+        // إشعار Firestore
+        await db.collection('notifications').add({
+            type      : 'new_application',
+            title     : `📨 طلب توظيف جديد: ${currentApplyJob?.title || ''}`,
+            message   : `${currentUser.name} تقدّم على وظيفة ${currentApplyJob?.title || ''} في ${currentApplyJob?.company || ''}`,
+            addedBy   : currentUser.email,
+            read      : false,
+            createdAt : firebase.firestore.FieldValue.serverTimestamp()
+        });
+        // إيميل + تيلجرام
+        notifyAdmin(
+            `📨 طلب توظيف جديد — ${currentApplyJob?.title || ''}`,
+            `<div dir="rtl" style="font-family:Arial;padding:20px;background:#f8fafc;border-radius:12px">
+            <h2 style="color:#3b82f6">📨 طلب توظيف جديد</h2>
+            <table style="width:100%;border-collapse:collapse">
+                <tr><td style="padding:8px;font-weight:bold">رقم الطلب:</td><td style="padding:8px">${appNumber}</td></tr>
+                <tr style="background:#f1f5f9"><td style="padding:8px;font-weight:bold">المتقدم:</td><td style="padding:8px">${currentUser.name}</td></tr>
+                <tr><td style="padding:8px;font-weight:bold">البريد:</td><td style="padding:8px">${currentUser.email}</td></tr>
+                <tr style="background:#f1f5f9"><td style="padding:8px;font-weight:bold">الهاتف:</td><td style="padding:8px">${phone}</td></tr>
+                <tr><td style="padding:8px;font-weight:bold">الوظيفة:</td><td style="padding:8px">${currentApplyJob?.title || '—'}</td></tr>
+                <tr style="background:#f1f5f9"><td style="padding:8px;font-weight:bold">الشركة:</td><td style="padding:8px">${currentApplyJob?.company || '—'}</td></tr>
+                <tr><td style="padding:8px;font-weight:bold">الخبرة:</td><td style="padding:8px">${exp}</td></tr>
+                <tr style="background:#f1f5f9"><td style="padding:8px;font-weight:bold">المؤهل:</td><td style="padding:8px">${edu}</td></tr>
+                <tr><td style="padding:8px;font-weight:bold">رسالة التقديم:</td><td style="padding:8px">${message}</td></tr>
+            </table>
+            <p style="color:#64748b;font-size:12px;margin-top:16px">منصة كربلاء التجارية</p>
+            </div>`,
+            `📨 <b>طلب توظيف جديد!</b>\n\n` +
+            `رقم الطلب: <code>${appNumber}</code>\n` +
+            `المتقدم: ${currentUser.name}\n` +
+            `الهاتف: ${phone}\n` +
+            `الوظيفة: ${currentApplyJob?.title || '—'}\n` +
+            `الشركة: ${currentApplyJob?.company || '—'}\n` +
+            `الخبرة: ${exp}\n` +
+            `المؤهل: ${edu}\n` +
+            `⏰ ${new Date().toLocaleString('ar-IQ')}`
+        );
         showNotification('✅ تم إرسال طلبك', `رقم التقديم: ${appNumber}`, 'success');
         closeApplyModal();
     } catch(e) { showNotification('❌','خطأ في إرسال الطلب','error'); console.error(e); }
@@ -907,7 +1051,62 @@ async function submitAdd() {
         }
         data.description = document.getElementById('description')?.value || '';
         // ═══ الحفظ في Firestore ═══
-        await db.collection('jobs').add(data);
+        const docRef = await db.collection('jobs').add(data);
+        // إشعار Firestore للأدمن
+        await db.collection('notifications').add({
+            type      : data.type === 'job' ? 'new_job' : 'new_cv',
+            title     : data.type === 'job' ? `💼 وظيفة جديدة: ${data.title}` : `📄 سيرة ذاتية جديدة: ${data.name}`,
+            message   : data.type === 'job' ? `${data.company} — ${data.province || ''}` : `${data.jobTitle || 'باحث عن عمل'} — ${data.province || ''}`,
+            addedBy   : currentUser.email,
+            read      : false,
+            createdAt : firebase.firestore.FieldValue.serverTimestamp()
+        });
+        // إيميل + تيلجرام
+        if (data.type === 'job') {
+            notifyAdmin(
+                `💼 وظيفة جديدة: ${data.title}`,
+                `<div dir="rtl" style="font-family:Arial;padding:20px;background:#f8fafc;border-radius:12px">
+                <h2 style="color:#2563eb">💼 وظيفة جديدة أُضيفت</h2>
+                <table style="width:100%;border-collapse:collapse">
+                    <tr><td style="padding:8px;font-weight:bold">المسمى:</td><td style="padding:8px">${data.title}</td></tr>
+                    <tr style="background:#f1f5f9"><td style="padding:8px;font-weight:bold">الشركة:</td><td style="padding:8px">${data.company || '—'}</td></tr>
+                    <tr><td style="padding:8px;font-weight:bold">المحافظة:</td><td style="padding:8px">${data.province || '—'}</td></tr>
+                    <tr style="background:#f1f5f9"><td style="padding:8px;font-weight:bold">المهارات:</td><td style="padding:8px">${data.skills || '—'}</td></tr>
+                    <tr><td style="padding:8px;font-weight:bold">أُضيف بواسطة:</td><td style="padding:8px">${currentUser.email}</td></tr>
+                </table>
+                <p style="color:#64748b;font-size:12px;margin-top:16px">منصة كربلاء التجارية</p>
+                </div>`,
+                `💼 <b>وظيفة جديدة أُضيفت!</b>\n\n` +
+                `المسمى: ${data.title}\n` +
+                `الشركة: ${data.company || '—'}\n` +
+                `المحافظة: ${data.province || '—'}\n` +
+                `المهارات: ${data.skills || '—'}\n` +
+                `أُضيف بواسطة: ${currentUser.email}\n` +
+                `⏰ ${new Date().toLocaleString('ar-IQ')}`
+            );
+        } else {
+            notifyAdmin(
+                `📄 سيرة ذاتية جديدة: ${data.name}`,
+                `<div dir="rtl" style="font-family:Arial;padding:20px;background:#f8fafc;border-radius:12px">
+                <h2 style="color:#f59e0b">📄 سيرة ذاتية جديدة</h2>
+                <table style="width:100%;border-collapse:collapse">
+                    <tr><td style="padding:8px;font-weight:bold">الاسم:</td><td style="padding:8px">${data.name}</td></tr>
+                    <tr style="background:#f1f5f9"><td style="padding:8px;font-weight:bold">المسمى:</td><td style="padding:8px">${data.jobTitle || '—'}</td></tr>
+                    <tr><td style="padding:8px;font-weight:bold">المحافظة:</td><td style="padding:8px">${data.province || '—'}</td></tr>
+                    <tr style="background:#f1f5f9"><td style="padding:8px;font-weight:bold">الخبرة:</td><td style="padding:8px">${data.experience || '—'}</td></tr>
+                    <tr><td style="padding:8px;font-weight:bold">الهاتف:</td><td style="padding:8px">${data.phone || '—'}</td></tr>
+                </table>
+                <p style="color:#64748b;font-size:12px;margin-top:16px">منصة كربلاء التجارية</p>
+                </div>`,
+                `📄 <b>سيرة ذاتية جديدة!</b>\n\n` +
+                `الاسم: ${data.name}\n` +
+                `المسمى: ${data.jobTitle || '—'}\n` +
+                `المحافظة: ${data.province || '—'}\n` +
+                `الخبرة: ${data.experience || '—'}\n` +
+                `الهاتف: ${data.phone || '—'}\n` +
+                `⏰ ${new Date().toLocaleString('ar-IQ')}`
+            );
+        }
         showNotification('✅ تمت الإضافة','تم الحفظ في Firebase','success');
         closeAddModal();
         loadAllData();
@@ -1124,7 +1323,7 @@ function showSection(section, btn) {
     document.querySelectorAll('.main-btn').forEach(el => el.classList.remove('active'));
     document.getElementById(section + '-section').classList.add('active');
     if (btn) btn.classList.add('active');
-    if (section === 'admin') { loadAdminTab('jobs'); loadNotifCount(); }
+    if (section === 'admin') { loadAdminTab('jobs'); loadNotifCount(); loadAdminStats(); loadEmailJSConfig(); }
 }
 function showJobTab(tab, btn) {
     currentJobTab = tab;
@@ -1180,6 +1379,8 @@ async function loadAdminTab(tab) {
             renderAdminUsers(adminUsers);
         } else if (tab === 'notifications') {
             await renderAdminNotifications();
+        } else if (tab === 'settings') {
+            renderAdminSettings();
         }
     } catch(e) {
         // fallback بدون orderBy
@@ -1189,6 +1390,8 @@ async function loadAdminTab(tab) {
             renderAdminApplications(adminApplications);
         } else if (tab === 'notifications') {
             await renderAdminNotifications();
+        } else if (tab === 'settings') {
+            renderAdminSettings();
         } else {
             el.innerHTML = `<div style="color:#ef4444;padding:20px">خطأ: ${e.message}</div>`;
         }
@@ -1205,71 +1408,111 @@ function statusLabel(s) {
     return `<span class="status-badge">${s}</span>`;
 }
 
+let _adminJobsData = [];
 function renderAdminJobs(items) {
+    _adminJobsData = items;
+    _renderJobsList(items);
+}
+function _renderJobsList(items) {
     const el = document.getElementById('adminContent');
-    if (!items.length) { el.innerHTML = '<div style="color:#64748b;padding:20px;text-align:center">لا توجد وظائف</div>'; return; }
-    let html = `<div style="color:#94a3b8;font-size:13px;margin-bottom:12px">${items.length} وظيفة — إجمالي</div>`;
+    let html = `
+    <div class="filter-row">
+        <input class="admin-search" placeholder="🔍 بحث باسم الوظيفة أو الشركة..." oninput="filterAdminJobs(this.value)" style="flex:1;margin-bottom:0">
+        <select class="filter-select" onchange="filterAdminJobsByStatus(this.value)">
+            <option value="all">كل الحالات</option>
+            <option value="active">فعال</option>
+            <option value="inactive">معطل</option>
+            <option value="hired">أُشغلت</option>
+        </select>
+        <button class="export-btn" onclick="exportToExcel('jobs')"><i class="fas fa-file-excel"></i> تصدير Excel</button>
+    </div>
+    <div style="color:#94a3b8;font-size:13px;margin-bottom:12px">${items.length} وظيفة</div>
+    <div id="jobsAdminList">`;
     items.forEach(job => {
         const inactive = job.status === 'inactive' || job.status === 'hired';
         html += `
         <div class="admin-card ${inactive ? 'inactive-card' : ''}">
             <div class="admin-card-info">
                 <div class="admin-card-title">${job.title || '—'}</div>
-                <div class="admin-card-sub">${job.company || ''} ${job.province ? '· ' + job.province : ''}</div>
+                <div class="admin-card-sub">${job.company || ''} ${job.province ? '· ' + job.province : ''} ${job.salary ? '· ' + Number(job.salary).toLocaleString() + ' د.ع' : ''}</div>
+                <div class="admin-card-sub">${job.skills || ''}</div>
                 <div style="margin-top:6px">${statusLabel(job.status)}</div>
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap">
                 ${!inactive ? `
-                <button class="admin-action-btn btn-hired" onclick="setJobStatus('${job.id}','hired')">
-                    <i class="fas fa-check-double"></i> أُشغلت
-                </button>
-                <button class="admin-action-btn btn-deactivate" onclick="setJobStatus('${job.id}','inactive')">
-                    <i class="fas fa-ban"></i> تعطيل
-                </button>` : `
-                <button class="admin-action-btn btn-activate" onclick="setJobStatus('${job.id}','active')">
-                    <i class="fas fa-redo"></i> إعادة تفعيل
-                </button>`}
-                <button class="admin-action-btn" style="background:#ef4444;color:white" onclick="deleteItem('jobs','${job.id}')">
-                    <i class="fas fa-trash"></i>
-                </button>
+                <button class="admin-action-btn btn-hired" onclick="setJobStatus('${job.id}','hired')"><i class="fas fa-check-double"></i> أُشغلت</button>
+                <button class="admin-action-btn btn-deactivate" onclick="setJobStatus('${job.id}','inactive')"><i class="fas fa-ban"></i> تعطيل</button>` : `
+                <button class="admin-action-btn btn-activate" onclick="setJobStatus('${job.id}','active')"><i class="fas fa-redo"></i> تفعيل</button>`}
+                <button class="admin-action-btn" style="background:#ef4444;color:white" onclick="deleteItem('jobs','${job.id}')"><i class="fas fa-trash"></i></button>
             </div>
         </div>`;
     });
+    html += '</div>';
     el.innerHTML = html;
 }
-
-function renderAdminCvs(items) {
-    const el = document.getElementById('adminContent');
-    if (!items.length) { el.innerHTML = '<div style="color:#64748b;padding:20px;text-align:center">لا توجد سير ذاتية</div>'; return; }
-    let html = `<div style="color:#94a3b8;font-size:13px;margin-bottom:12px">${items.length} سيرة ذاتية</div>`;
-    items.forEach(cv => {
-        const inactive = cv.status === 'inactive' || cv.status === 'hired';
-        html += `
-        <div class="admin-card ${inactive ? 'inactive-card' : ''}">
+function filterAdminJobs(q) {
+    const filtered = _adminJobsData.filter(j =>
+        (j.title||'').includes(q) || (j.company||'').includes(q) || (j.province||'').includes(q)
+    );
+    document.getElementById('jobsAdminList').innerHTML = filtered.map(job => {
+        const inactive = job.status==='inactive'||job.status==='hired';
+        return `<div class="admin-card ${inactive?'inactive-card':''}">
             <div class="admin-card-info">
-                <div class="admin-card-title">${cv.name || '—'}</div>
-                <div class="admin-card-sub">${cv.jobTitle || 'باحث عن عمل'} ${cv.province ? '· ' + cv.province : ''}</div>
+                <div class="admin-card-title">${job.title||'—'}</div>
+                <div class="admin-card-sub">${job.company||''} ${job.province?'· '+job.province:''}</div>
+                <div style="margin-top:6px">${statusLabel(job.status)}</div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+                ${!inactive?`<button class="admin-action-btn btn-hired" onclick="setJobStatus('${job.id}','hired')"><i class="fas fa-check-double"></i> أُشغلت</button>
+                <button class="admin-action-btn btn-deactivate" onclick="setJobStatus('${job.id}','inactive')"><i class="fas fa-ban"></i> تعطيل</button>`:`
+                <button class="admin-action-btn btn-activate" onclick="setJobStatus('${job.id}','active')"><i class="fas fa-redo"></i> تفعيل</button>`}
+                <button class="admin-action-btn" style="background:#ef4444;color:white" onclick="deleteItem('jobs','${job.id}')"><i class="fas fa-trash"></i></button>
+            </div></div>`;
+    }).join('');
+}
+function filterAdminJobsByStatus(status) {
+    const filtered = status==='all' ? _adminJobsData : _adminJobsData.filter(j => (j.status||'active')===status || (!j.status && status==='active'));
+    _renderJobsList(filtered);
+}
+
+let _adminCvsData = [];
+function renderAdminCvs(items) {
+    _adminCvsData = items;
+    const el = document.getElementById('adminContent');
+    let html = `
+    <div class="filter-row">
+        <input class="admin-search" placeholder="🔍 بحث بالاسم أو المسمى..." oninput="filterAdminCvs(this.value)" style="flex:1;margin-bottom:0">
+        <select class="filter-select" onchange="filterAdminCvsByProvince(this.value)">
+            <option value="">كل المحافظات</option>
+            ${provinces.map(p=>`<option>${p}</option>`).join('')}
+        </select>
+        <button class="export-btn" onclick="exportToExcel('cvs')"><i class="fas fa-file-excel"></i> تصدير Excel</button>
+    </div>
+    <div style="color:#94a3b8;font-size:13px;margin-bottom:12px">${items.length} سيرة ذاتية</div>
+    <div id="cvsAdminList">`;
+    html += _buildCvCards(items) + '</div>';
+    el.innerHTML = html;
+}
+function _buildCvCards(items) {
+    return items.map(cv => {
+        const inactive = cv.status==='inactive'||cv.status==='hired';
+        return `<div class="admin-card ${inactive?'inactive-card':''}">
+            <div class="admin-card-info">
+                <div class="admin-card-title">${cv.name||'—'}</div>
+                <div class="admin-card-sub">${cv.jobTitle||'باحث عن عمل'} ${cv.province?'· '+cv.province:''} ${cv.phone?'· '+cv.phone:''}</div>
+                <div class="admin-card-sub">${cv.education||''} ${cv.experience?'· '+cv.experience:''}</div>
                 <div style="margin-top:6px">${statusLabel(cv.status)}</div>
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap">
-                ${!inactive ? `
-                <button class="admin-action-btn btn-hired" onclick="setCvStatus('${cv.id}','hired')">
-                    <i class="fas fa-user-check"></i> تم توظيفه
-                </button>
-                <button class="admin-action-btn btn-deactivate" onclick="setCvStatus('${cv.id}','inactive')">
-                    <i class="fas fa-ban"></i> إخفاء
-                </button>` : `
-                <button class="admin-action-btn btn-activate" onclick="setCvStatus('${cv.id}','active')">
-                    <i class="fas fa-redo"></i> إعادة عرض
-                </button>`}
-                <button class="admin-action-btn" style="background:#ef4444;color:white" onclick="deleteItem('jobs','${cv.id}')">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </div>
-        </div>`;
-    });
-    el.innerHTML = html;
+                ${!inactive?`<button class="admin-action-btn btn-hired" onclick="setCvStatus('${cv.id}','hired')"><i class="fas fa-user-check"></i> تم توظيفه</button>
+                <button class="admin-action-btn btn-deactivate" onclick="setCvStatus('${cv.id}','inactive')"><i class="fas fa-ban"></i> إخفاء</button>`:`
+                <button class="admin-action-btn btn-activate" onclick="setCvStatus('${cv.id}','active')"><i class="fas fa-redo"></i> إعادة عرض</button>`}
+                <button class="admin-action-btn" style="background:#ef4444;color:white" onclick="deleteItem('jobs','${cv.id}')"><i class="fas fa-trash"></i></button>
+            </div></div>`;
+    }).join('');
 }
+function filterAdminCvs(q) { document.getElementById('cvsAdminList').innerHTML = _buildCvCards(_adminCvsData.filter(c=>(c.name||'').includes(q)||(c.jobTitle||'').includes(q)||(c.province||'').includes(q))); }
+function filterAdminCvsByProvince(p) { document.getElementById('cvsAdminList').innerHTML = _buildCvCards(p ? _adminCvsData.filter(c=>c.province===p) : _adminCvsData); }
 
 function renderAdminApplications(items) {
     const el = document.getElementById('adminContent');
@@ -1319,28 +1562,42 @@ function filterApps(status) {
         </div>`).join('');
 }
 
+let _adminUsersData = [];
 function renderAdminUsers(items) {
+    _adminUsersData = items;
     const el = document.getElementById('adminContent');
-    if (!items.length) { el.innerHTML = '<div style="color:#64748b;padding:20px;text-align:center">لا يوجد مستخدمون</div>'; return; }
-    let html = `<div style="color:#94a3b8;font-size:13px;margin-bottom:12px">${items.length} مستخدم</div>`;
-    items.forEach(u => {
-        html += `
-        <div class="admin-card">
-            <img src="${u.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name||'U')}&background=6366f1&color=fff`}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;flex-shrink:0">
-            <div class="admin-card-info">
-                <div class="admin-card-title">${u.name||'—'}</div>
-                <div class="admin-card-sub">${u.email||''} · ${u.province||''} · ${u.phone||''}</div>
-                <div style="margin-top:5px">${statusLabel(u.role==='admin'?'active':u.status)}</div>
-            </div>
-            <div style="display:flex;gap:6px;flex-wrap:wrap">
-                ${u.role !== 'admin' ? `
-                <button class="admin-action-btn" style="background:#6366f1;color:white" onclick="setUserRole('${u.id}','admin')">ترقية أدمن</button>
-                <button class="admin-action-btn btn-deactivate" onclick="setUserRole('${u.id}','banned')">حظر</button>` : '<span style="color:#6366f1;font-size:12px;font-weight:700">أدمن</span>'}
-            </div>
-        </div>`;
-    });
+    let html = `
+    <div class="filter-row">
+        <input class="admin-search" placeholder="🔍 بحث بالاسم أو الإيميل أو الهاتف..." oninput="filterAdminUsers(this.value)" style="flex:1;margin-bottom:0">
+        <select class="filter-select" onchange="filterAdminUsersByProvince(this.value)">
+            <option value="">كل المحافظات</option>
+            ${provinces.map(p=>`<option>${p}</option>`).join('')}
+        </select>
+        <button class="export-btn" onclick="exportToExcel('users')"><i class="fas fa-file-excel"></i> تصدير Excel</button>
+    </div>
+    <div style="color:#94a3b8;font-size:13px;margin-bottom:12px">${items.length} مستخدم</div>
+    <div id="usersAdminList">`;
+    html += _buildUserCards(items) + '</div>';
     el.innerHTML = html;
 }
+function _buildUserCards(items) {
+    return items.map(u => `
+    <div class="admin-card">
+        <img src="${u.avatar||`https://ui-avatars.com/api/?name=${encodeURIComponent(u.name||'U')}&background=6366f1&color=fff`}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;flex-shrink:0">
+        <div class="admin-card-info">
+            <div class="admin-card-title">${u.name||'—'}</div>
+            <div class="admin-card-sub">${u.email||''} · ${u.province||''} · ${u.phone||''}</div>
+            <div class="admin-card-sub">${u.method==='google'?'🔵 Google':'📧 إيميل'}</div>
+            <div style="margin-top:5px">${statusLabel(u.role==='admin'?'active':u.status)}</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+            ${u.role!=='admin'?`<button class="admin-action-btn" style="background:#6366f1;color:white" onclick="setUserRole('${u.id}','admin')">أدمن</button>
+            <button class="admin-action-btn btn-deactivate" onclick="setUserRole('${u.id}','banned')">حظر</button>`:'<span style="color:#6366f1;font-size:12px;font-weight:700">أدمن ✅</span>'}
+        </div>
+    </div>`).join('');
+}
+function filterAdminUsers(q) { document.getElementById('usersAdminList').innerHTML = _buildUserCards(_adminUsersData.filter(u=>(u.name||'').includes(q)||(u.email||'').includes(q)||(u.phone||'').includes(q))); }
+function filterAdminUsersByProvince(p) { document.getElementById('usersAdminList').innerHTML = _buildUserCards(p ? _adminUsersData.filter(u=>u.province===p) : _adminUsersData); }
 
 // ═══ عمليات الأدمن على Firebase ═══
 async function setJobStatus(id, status) {
@@ -1449,6 +1706,188 @@ async function markAllNotifsRead() {
     loadAdminTab('notifications');
     loadNotifCount();
     showNotification('✅','تم تعليم الكل كمقروء','success');
+}
+
+
+// ╔══════════════════════════════════════════════════════╗
+// ║         تصدير Excel                                  ║
+// ╚══════════════════════════════════════════════════════╝
+function exportToExcel(type) {
+    let data = [], filename = '', headers = [];
+    if (type === 'jobs') {
+        headers = ['المسمى الوظيفي','الشركة','المحافظة','الراتب','المهارات','الحالة','أُضيف بواسطة'];
+        data = _adminJobsData.map(j => [j.title||'',j.company||'',j.province||'',j.salary||'',j.skills||'',j.status||'active',j.addedBy||'']);
+        filename = 'وظائف_منصة_كربلاء';
+    } else if (type === 'cvs') {
+        headers = ['الاسم','المسمى','المحافظة','الهاتف','العمر','الخبرة','المؤهل','الراتب المتوقع','المهارات','الحالة'];
+        data = _adminCvsData.map(c => [c.name||'',c.jobTitle||'',c.province||'',c.phone||'',c.age||'',c.experience||'',c.education||'',c.expectedSalary||'',c.skills||'',c.status||'active']);
+        filename = 'سير_ذاتية_منصة_كربلاء';
+    } else if (type === 'users') {
+        headers = ['الاسم','البريد الإلكتروني','الهاتف','المحافظة','طريقة التسجيل','الدور','الحالة'];
+        data = _adminUsersData.map(u => [u.name||'',u.email||'',u.phone||'',u.province||'',u.method||'email',u.role||'user',u.status||'approved']);
+        filename = 'مستخدمون_منصة_كربلاء';
+    } else if (type === 'applications') {
+        headers = ['رقم الطلب','المتقدم','الإيميل','الهاتف','الوظيفة','الشركة','الخبرة','المؤهل','الحالة'];
+        data = adminApplications.map(a => [a.appNumber||'',a.applicantName||'',a.applicantEmail||'',a.phone||'',a.jobTitle||'',a.company||'',a.exp||'',a.edu||'',a.status||'pending']);
+        filename = 'طلبات_توظيف_منصة_كربلاء';
+    }
+    if (!data.length) { showNotification('⚠️','لا توجد بيانات للتصدير','warning'); return; }
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
+    // ضبط عرض الأعمدة
+    ws['!cols'] = headers.map(() => ({wch: 22}));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'البيانات');
+    XLSX.writeFile(wb, `${filename}_${new Date().toISOString().split('T')[0]}.xlsx`);
+    showNotification('✅ تم التصدير', `تم تصدير ${data.length} سجل`, 'success');
+}
+
+// ╔══════════════════════════════════════════════════════╗
+// ║         الإحصائيات                                  ║
+// ╚══════════════════════════════════════════════════════╝
+async function loadAdminStats() {
+    try {
+        const [jobsSnap, usersSnap, appsSnap] = await Promise.all([
+            db.collection('jobs').get(),
+            db.collection('users').get(),
+            db.collection('applications').get()
+        ]);
+        let activeJobs=0, activeCvs=0, hiredCount=0;
+        jobsSnap.forEach(d => {
+            const data = d.data();
+            if (data.type==='job' && data.status!=='inactive' && data.status!=='hired') activeJobs++;
+            if (data.type==='cv'  && data.status!=='inactive' && data.status!=='hired') activeCvs++;
+            if (data.status==='hired') hiredCount++;
+        });
+        const setText = (id, val) => { const el=document.getElementById(id); if(el) el.textContent=val; };
+        setText('st_jobs',  activeJobs);
+        setText('st_cvs',   activeCvs);
+        setText('st_apps',  appsSnap.size);
+        setText('st_users', usersSnap.size);
+        setText('st_hired', hiredCount);
+    } catch(e) { console.warn('Stats error:', e); }
+}
+
+// ╔══════════════════════════════════════════════════════╗
+// ║         صفحة إعدادات الأدمن                         ║
+// ╚══════════════════════════════════════════════════════╝
+function renderAdminSettings() {
+    const el = document.getElementById('adminContent');
+    el.innerHTML = `
+    <div style="color:#94a3b8;font-size:13px;margin-bottom:16px">إعدادات الإشعارات — Gmail + Telegram</div>
+
+    <!-- EmailJS -->
+    <div class="email-config-box">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+            <i class="fas fa-envelope" style="color:#6366f1;font-size:20px"></i>
+            <span style="color:#f1f5f9;font-weight:700;font-size:15px">إعداد Gmail (EmailJS)</span>
+        </div>
+        <div class="form-group"><label style="color:#94a3b8;font-size:12px">Public Key</label><input id="ejs_pk" type="text" placeholder="YOUR_EMAILJS_PUBLIC_KEY" value="${EMAILJS_CONFIG.publicKey!=='YOUR_EMAILJS_PUBLIC_KEY'?EMAILJS_CONFIG.publicKey:''}" style="background:#334155;color:#f1f5f9;border-color:#475569"></div>
+        <div class="form-group"><label style="color:#94a3b8;font-size:12px">Service ID</label><input id="ejs_sid" type="text" placeholder="service_xxxxxxx" value="${EMAILJS_CONFIG.serviceId!=='YOUR_SERVICE_ID'?EMAILJS_CONFIG.serviceId:''}" style="background:#334155;color:#f1f5f9;border-color:#475569"></div>
+        <div class="form-group"><label style="color:#94a3b8;font-size:12px">Template ID</label><input id="ejs_tid" type="text" placeholder="template_xxxxxxx" value="${EMAILJS_CONFIG.templateId!=='YOUR_TEMPLATE_ID'?EMAILJS_CONFIG.templateId:''}" style="background:#334155;color:#f1f5f9;border-color:#475569"></div>
+        <div class="form-group"><label style="color:#94a3b8;font-size:12px">إيميل الأدمن (المستلم)</label><input id="ejs_email" type="email" placeholder="admin@gmail.com" value="${EMAILJS_CONFIG.adminEmail!=='YOUR_ADMIN_EMAIL@gmail.com'?EMAILJS_CONFIG.adminEmail:''}" style="background:#334155;color:#f1f5f9;border-color:#475569"></div>
+        <button class="submit-btn" onclick="saveEmailJSConfig()"><i class="fas fa-save"></i> حفظ إعدادات Gmail</button>
+        <div style="margin-top:12px;background:#0f172a;border-radius:10px;padding:12px;font-size:12px;color:#64748b;line-height:1.8">
+            <strong style="color:#6366f1">كيف تعدّ EmailJS؟</strong><br>
+            ١. روح <a href="https://www.emailjs.com" target="_blank" style="color:#6366f1">emailjs.com</a> وسجل حساب مجاني<br>
+            ٢. Email Services → اربط Gmail الخاص فيك<br>
+            ٣. Email Templates → أنشئ template وضع: <code style="color:#10b981">{{subject}}</code> و <code style="color:#10b981">{{{message}}}</code><br>
+            ٤. Account → API Keys → انسخ Public Key
+        </div>
+    </div>
+
+    <!-- Telegram -->
+    <div class="email-config-box" style="margin-top:12px;border-color:#2563eb">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+            <i class="fab fa-telegram" style="color:#2563eb;font-size:22px"></i>
+            <span style="color:#f1f5f9;font-weight:700;font-size:15px">إعداد Telegram Bot</span>
+        </div>
+        <div class="form-group"><label style="color:#94a3b8;font-size:12px">Bot Token</label><input id="tg_token" type="text" placeholder="123456789:AAF..." value="${TELEGRAM_CONFIG.botToken}" style="background:#334155;color:#f1f5f9;border-color:#475569"></div>
+        <div class="form-group"><label style="color:#94a3b8;font-size:12px">Chat ID</label><input id="tg_chat" type="text" placeholder="121053876" value="${TELEGRAM_CONFIG.chatId}" style="background:#334155;color:#f1f5f9;border-color:#475569"></div>
+        <button class="submit-btn" style="background:#2563eb" onclick="saveTelegramConfig()"><i class="fas fa-save"></i> حفظ إعدادات Telegram</button>
+        <div style="margin-top:12px;background:#0f172a;border-radius:10px;padding:12px;font-size:12px;color:#64748b;line-height:1.8">
+            <strong style="color:#2563eb">البوت حاضر!</strong> الـ token والـ chat ID محفوظان بالكود مسبقاً.<br>
+            إذا أردت تغييرهم فقط حدّثهم هنا واحفظ.
+        </div>
+    </div>
+
+    <!-- اختبار الإرسال -->
+    <div class="email-config-box" style="margin-top:12px;border-color:#f59e0b">
+        <div style="color:#f1f5f9;font-weight:700;margin-bottom:14px"><i class="fas fa-vial" style="color:#f59e0b"></i> اختبار الإرسال</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="submit-btn" style="background:#6366f1;flex:1" onclick="testEmail()"><i class="fas fa-envelope"></i> اختبار Gmail</button>
+            <button class="submit-btn" style="background:#2563eb;flex:1" onclick="testTelegram()"><i class="fab fa-telegram"></i> اختبار Telegram</button>
+        </div>
+    </div>`;
+}
+
+function saveEmailJSConfig() {
+    const pk    = document.getElementById('ejs_pk')?.value?.trim();
+    const sid   = document.getElementById('ejs_sid')?.value?.trim();
+    const tid   = document.getElementById('ejs_tid')?.value?.trim();
+    const email = document.getElementById('ejs_email')?.value?.trim();
+    if (!pk||!sid||!tid||!email) { showNotification('❌','أكمل جميع الحقول','error'); return; }
+    EMAILJS_CONFIG.publicKey   = pk;
+    EMAILJS_CONFIG.serviceId   = sid;
+    EMAILJS_CONFIG.templateId  = tid;
+    EMAILJS_CONFIG.adminEmail  = email;
+    try { emailjs.init(pk); } catch(e) {}
+    // حفظ في Firestore للمشرف
+    db.collection('config').doc('emailjs').set({ pk, sid, tid, email }).catch(()=>{});
+    showNotification('✅','تم حفظ إعدادات EmailJS','success');
+}
+
+async function testEmail() {
+    showNotification('⏳','جاري الإرسال...','info');
+    await sendAdminEmail(
+        '🧪 اختبار الإيميل — منصة كربلاء',
+        `<div dir="rtl" style="font-family:Arial;padding:20px;background:#f8fafc;border-radius:12px">
+        <h2 style="color:#10b981">✅ الإيميل يعمل!</h2>
+        <p>هذا إيميل تجريبي من منصة كربلاء التجارية.</p>
+        <p style="color:#64748b;font-size:12px">الوقت: ${new Date().toLocaleString('ar-IQ')}</p>
+        </div>`
+    );
+    showNotification('✅','تم إرسال الإيميل التجريبي','success');
+}
+
+// تحميل إعدادات EmailJS من Firestore عند تفعيل الأدمن
+function saveTelegramConfig() {
+    const token = document.getElementById('tg_token')?.value?.trim();
+    const chat  = document.getElementById('tg_chat')?.value?.trim();
+    if (!token || !chat) { showNotification('❌','أدخل الـ Token والـ Chat ID','error'); return; }
+    TELEGRAM_CONFIG.botToken = token;
+    TELEGRAM_CONFIG.chatId   = chat;
+    db.collection('config').doc('telegram').set({ token, chat }).catch(()=>{});
+    showNotification('✅','تم حفظ إعدادات Telegram','success');
+}
+
+async function testTelegram() {
+    showNotification('⏳','جاري الإرسال لـ Telegram...','info');
+    await sendTelegram(
+        `🧪 <b>اختبار ناجح!</b>\n\nمنصة كربلاء التجارية تعمل بشكل صحيح.\n⏰ ${new Date().toLocaleString('ar-IQ')}`
+    );
+    showNotification('✅','تم إرسال رسالة Telegram التجريبية','success');
+}
+
+async function loadEmailJSConfig() {
+    try {
+        const [ejsDoc, tgDoc] = await Promise.all([
+            db.collection('config').doc('emailjs').get(),
+            db.collection('config').doc('telegram').get()
+        ]);
+        if (ejsDoc.exists) {
+            const d = ejsDoc.data();
+            EMAILJS_CONFIG.publicKey  = d.pk    || EMAILJS_CONFIG.publicKey;
+            EMAILJS_CONFIG.serviceId  = d.sid   || EMAILJS_CONFIG.serviceId;
+            EMAILJS_CONFIG.templateId = d.tid   || EMAILJS_CONFIG.templateId;
+            EMAILJS_CONFIG.adminEmail = d.email || EMAILJS_CONFIG.adminEmail;
+            try { emailjs.init(EMAILJS_CONFIG.publicKey); } catch(e) {}
+        }
+        if (tgDoc.exists) {
+            const d = tgDoc.data();
+            TELEGRAM_CONFIG.botToken = d.token || TELEGRAM_CONFIG.botToken;
+            TELEGRAM_CONFIG.chatId   = d.chat  || TELEGRAM_CONFIG.chatId;
+        }
+    } catch(e) {}
 }
 
 </script>
