@@ -164,7 +164,7 @@
         .ai-cv-msg.ai { background: #1e293b; border: 1px solid #334155; color: #e2e8f0; border-right: 3px solid #6366f1; }
         .ai-cv-msg.user { background: #1e3a5f; border: 1px solid #2563eb; color: #bfdbfe; border-left: 3px solid #3b82f6; }
         /* PDF Templates */
-        #cvPdfTpl, #cvCompPdfTpl { position:fixed; top:-9999px; left:-9999px; width:794px; background:#0f172a; font-family:'Cairo','Arial',sans-serif; direction:rtl; color:#e2e8f0; display:none; }
+        #cvPdfTpl, #cvCompPdfTpl { position:absolute; top:0; left:0; width:794px; background:#0f172a; font-family:'Cairo','Arial',sans-serif; direction:rtl; color:#e2e8f0; visibility:hidden; pointer-events:none; z-index:-1; }
         .tpl-wrap { display:flex; flex-direction:column; }
         .tpl-hdr { padding:40px 44px 32px; display:flex; align-items:center; gap:30px; position:relative; overflow:hidden; }
         .tpl-hdr-person { background:linear-gradient(135deg,#059669,#10b981,#34d399); }
@@ -1587,30 +1587,65 @@ async function generateAndSendCVPDF() {
     _buildPersonTpl(); await _html2pdf('cvPdfTpl',`CV_${document.getElementById('cvb_name').value}_${Date.now()}.pdf`);
 }
 async function _html2pdf(elId, fileName) {
-    const el = document.getElementById(elId);
-    el.style.display = 'block';
-    await document.fonts.ready;
-    await new Promise(r => setTimeout(r, 500));
+    const srcEl = document.getElementById(elId);
+    const htmlContent = srcEl.innerHTML;
+    showNotification('⏳','جاري إنشاء الـ PDF...','info');
+
+    // إنشاء iframe معزول تماماً عن الصفحة
+    const iframe = document.createElement('iframe');
+    iframe.style.cssText = 'position:fixed;top:0;left:0;width:794px;height:1px;opacity:0;pointer-events:none;border:none;z-index:-999';
+    document.body.appendChild(iframe);
+
+    await new Promise(resolve => {
+        iframe.onload = resolve;
+        // نسخ كامل الـ CSS من الصفحة الأصلية للـ iframe
+        const styleLinks = [...document.querySelectorAll('link[rel="stylesheet"]')]
+            .map(l => `<link rel="stylesheet" href="${l.href}">`)
+            .join('');
+        const inlineStyles = [...document.querySelectorAll('style')]
+            .map(s => `<style>${s.innerHTML}</style>`)
+            .join('');
+        iframe.srcdoc = `<!DOCTYPE html><html dir="rtl" lang="ar"><head>
+            <meta charset="UTF-8">
+            ${styleLinks}
+            ${inlineStyles}
+            <style>
+                * { margin:0; padding:0; box-sizing:border-box; }
+                body { background:#0f172a; width:794px; overflow:hidden; }
+                .tpl-wrap { display:flex; flex-direction:column; }
+            </style>
+        </head><body><div id="pdfContent" style="width:794px;background:#0f172a;">${htmlContent}</div></body></html>`;
+    });
+
+    await new Promise(r => setTimeout(r, 600));
+    await iframe.contentDocument?.fonts?.ready;
+    await new Promise(r => setTimeout(r, 300));
+
     try {
-        const canvas = await html2canvas(el, {
-            scale: 2, useCORS: true, allowTaint: true,
-            backgroundColor: '#0f172a', logging: false,
-            width: 794, windowWidth: 794
+        const target = iframe.contentDocument.getElementById('pdfContent');
+        const canvas = await html2canvas(target, {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: '#0f172a',
+            logging: false,
+            width: 794,
+            windowWidth: 794,
+            scrollX: 0, scrollY: 0
         });
         const img = canvas.toDataURL('image/jpeg', 0.95);
         const { jsPDF } = window.jspdf;
-        const W = 210; // mm عرض A4
-        // ارتفاع PDF = ارتفاع الصورة الفعلي (بدون صفحات زيادة)
+        const W = 210;
         const ih = (canvas.height * W) / canvas.width;
         const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [W, ih] });
         pdf.addImage(img, 'JPEG', 0, 0, W, ih);
         pdf.save(fileName);
-        showNotification('✅ تم التنزيل', 'تم إنشاء الـ PDF', 'success');
+        showNotification('✅ تم التنزيل', 'تم إنشاء الـ PDF بنجاح', 'success');
     } catch(e) {
-        console.error(e);
-        showNotification('❌ خطأ', 'تعذّر إنشاء PDF', 'error');
+        console.error('PDF error:', e);
+        showNotification('❌ خطأ', 'تعذّر إنشاء PDF: ' + e.message, 'error');
     }
-    el.style.display = 'none';
+    document.body.removeChild(iframe);
 }
 function _buildPersonTpl() {
     const v=id=>document.getElementById(id)?.value||''; const name=v('cvb_name'),role=v('cvb_role'),phone=v('cvb_phone'),email=v('cvb_email'),province=v('cvb_province'),exp=v('cvb_exp'),edu=v('cvb_edu'),skills=v('cvb_skills'),summary=v('cvb_summary'),salary=v('cvb_salary');
