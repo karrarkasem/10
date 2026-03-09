@@ -1,0 +1,1456 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منصة كربلاء التجارية - التوظيف</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <!-- ═══ Firebase SDK ═══ -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <!-- Google Sign-In -->
+    <meta name="google-signin-client_id" content="">
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Cairo', sans-serif; background: linear-gradient(145deg, #f8fafc 0%, #f1f5f9 100%); min-height: 100vh; color: #0f172a; }
+
+        /* ═══ قريباً ═══ */
+        .coming-soon-btn { opacity: 0.55; position: relative; }
+        .coming-soon-btn::after { content: 'قريباً'; position: absolute; bottom: 4px; right: 50%; transform: translateX(50%); background: #f59e0b; color: white; font-size: 9px; font-weight: 900; padding: 2px 7px; border-radius: 10px; white-space: nowrap; }
+        .coming-soon-btn:hover { transform: none !important; border-color: #f59e0b !important; box-shadow: none !important; cursor: not-allowed; }
+
+        .img-preview-wrap { margin-top: 15px; position: relative; display: none; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .img-preview-wrap img { width: 100%; max-height: 300px; object-fit: contain; background: #f8fafc; }
+        .img-preview-wrap .remove-img { position: absolute; top: 10px; right: 10px; background: #ef4444; color: white; border: none; border-radius: 50%; width: 36px; height: 36px; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10; }
+        .skill-tag { background: #e2e8f0; color: #334155; padding: 3px 10px; border-radius: 15px; font-size: 10px; font-weight: 600; }
+        .ticker-wrapper { background: linear-gradient(90deg, #1e293b, #0f172a); padding: 12px 0; border-bottom: 4px solid #10b981; position: sticky; top: 0; z-index: 1000; overflow: hidden; }
+        .ticker-content { display: flex; animation: tickerMove 40s linear infinite; white-space: nowrap; }
+        .ticker-item { display: inline-flex; align-items: center; background: rgba(255,255,255,0.1); padding: 6px 20px; margin: 0 8px; border-radius: 40px; color: white; font-weight: 600; border-right: 3px solid #10b981; font-size: 13px; }
+        @keyframes tickerMove { from { transform: translateX(100%); } to { transform: translateX(-100%); } }
+        .header { background: white; padding: 15px 20px; border-radius: 0 0 30px 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
+        .logo h1 { font-size: 24px; font-weight: 900; color: #0f172a; }
+        .logo span { color: #10b981; }
+        .auth-buttons { display: flex; gap: 10px; }
+        .auth-btn { background: #f1f5f9; border: none; padding: 10px 25px; border-radius: 40px; font-family: 'Cairo', sans-serif; font-weight: 700; font-size: 15px; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; gap: 8px; color: #334155; }
+        .auth-btn.primary { background: #10b981; color: white; }
+        .auth-btn.primary:hover { background: #059669; }
+        .user-menu { display: flex; align-items: center; gap: 15px; }
+        .user-welcome { background: #f1f5f9; padding: 8px 20px; border-radius: 40px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+        .user-welcome img { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; }
+        .logout-icon { background: #ef4444; color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s; }
+        .logout-icon:hover { background: #dc2626; transform: scale(1.1); }
+        .main-container { max-width: 1300px; margin: 20px auto; padding: 0 15px; }
+        .buttons-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 25px; }
+        .main-btn { background: white; border: 2px solid transparent; border-radius: 40px; padding: 12px 8px; font-family: 'Cairo', sans-serif; font-size: 14px; font-weight: 700; color: #0f172a; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 8px 20px rgba(0,0,0,0.05); display: flex; flex-direction: column; align-items: center; gap: 4px; position: relative; }
+        .main-btn i { font-size: 22px; color: #10b981; }
+        .main-btn.active { background: linear-gradient(145deg, #059669, #10b981); color: white; }
+        .main-btn.active i { color: white; }
+        .main-btn.smart-contract-btn { background: linear-gradient(145deg, #1e293b, #0f172a); color: white; border: 2px solid #6366f1; }
+        .main-btn.smart-contract-btn i { color: #818cf8; }
+        .btn-badge { position: absolute; top: 5px; left: 5px; background: #ef4444; color: white; width: 20px; height: 20px; border-radius: 50%; font-size: 11px; display: flex; align-items: center; justify-content: center; font-weight: 900; }
+        .section-content { background: white; border-radius: 30px; padding: 20px; box-shadow: 0 15px 30px rgba(0,0,0,0.05); display: none; animation: fadeIn 0.4s ease; }
+        .section-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        .section-title { font-size: 20px; font-weight: 900; margin-bottom: 20px; color: #0f172a; border-right: 5px solid #10b981; padding-right: 15px; display: flex; align-items: center; gap: 8px; }
+        .add-btn { position: fixed; bottom: 25px; left: 25px; background: #10b981; color: white; width: 55px; height: 55px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 8px 20px rgba(16,185,129,0.4); cursor: pointer; transition: all 0.3s; border: none; z-index: 999; }
+        .add-btn:hover { transform: scale(1.1) rotate(90deg); background: #059669; }
+        .notification { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: white; padding: 15px 25px; border-radius: 50px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 15px; z-index: 3000; animation: slideDown 0.3s ease; border-right: 5px solid #10b981; max-width: 90%; }
+        .notification.error { border-right-color: #ef4444; }
+        .notification.warning { border-right-color: #f59e0b; }
+        .notification.info { border-right-color: #3b82f6; }
+        .notification i { font-size: 24px; }
+        .notification.success i { color: #10b981; }
+        .notification.error i { color: #ef4444; }
+        .notification.warning i { color: #f59e0b; }
+        .notification.info i { color: #3b82f6; }
+        .notification-content { flex: 1; }
+        .notification-title { font-weight: 900; margin-bottom: 5px; }
+        .notification-message { color: #64748b; font-size: 14px; }
+        .close-notification { background: none; border: none; font-size: 18px; cursor: pointer; color: #64748b; }
+        @keyframes slideDown { from { top: -100px; opacity: 0; } to { top: 20px; opacity: 1; } }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; justify-content: center; align-items: center; padding: 15px; }
+        .modal.active { display: flex; }
+        .modal-content { background: white; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; border-radius: 25px; padding: 20px; position: relative; animation: modalPop 0.3s ease; }
+        @keyframes modalPop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .close-modal { position: absolute; top: 12px; left: 12px; background: none; border: none; font-size: 20px; cursor: pointer; color: #64748b; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-weight: 700; margin-bottom: 5px; color: #334155; font-size: 14px; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 12px; border: 2px solid #e2e8f0; border-radius: 12px; font-family: 'Cairo', sans-serif; font-size: 14px; transition: all 0.3s; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #10b981; outline: none; }
+        .upload-area { border: 2px dashed #cbd5e1; border-radius: 16px; padding: 20px; text-align: center; cursor: pointer; transition: all 0.3s; background: #f8fafc; position: relative; }
+        .upload-area:hover { border-color: #10b981; background: #f0fdf4; }
+        .upload-area.has-file { border-color: #10b981; border-style: solid; background: #f0fdf4; }
+        .upload-area .upload-icon { font-size: 36px; color: #94a3b8; margin-bottom: 8px; }
+        .upload-area .upload-text { font-weight: 600; color: #475569; font-size: 14px; }
+        .upload-area .upload-hint { font-size: 11px; color: #94a3b8; margin-top: 4px; }
+        .upload-area input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+        .submit-btn { background: #10b981; color: white; border: none; padding: 12px; border-radius: 30px; font-family: 'Cairo', sans-serif; font-weight: 700; font-size: 15px; cursor: pointer; width: 100%; transition: all 0.3s; margin-top: 10px; }
+        .submit-btn:hover { background: #059669; }
+        .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .loading { text-align: center; padding: 40px; color: #64748b; }
+        .job-tabs-extended { display: flex; gap: 8px; margin-bottom: 20px; padding: 10px; background: #f1f5f9; border-radius: 40px; flex-wrap: wrap; }
+        .job-tab-ext { flex: 1; min-width: 120px; padding: 10px 8px; border: none; border-radius: 30px; font-family: 'Cairo', sans-serif; font-weight: 700; font-size: 13px; cursor: pointer; transition: all 0.3s; background: transparent; text-align: center; }
+        .job-tab-ext.active { background: #10b981; color: white; }
+        .job-card-pro { background: white; border-radius: 20px; padding: 20px; border: 1px solid #e2e8f0; margin-bottom: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); transition: all 0.3s; }
+        .job-card-pro:hover { transform: translateY(-3px); box-shadow: 0 12px 25px rgba(16,185,129,0.12); border-color: #10b981; }
+        .cv-card { background: linear-gradient(135deg, #fff9e6, #fffbf0); border-radius: 20px; padding: 20px; border: 2px solid #f59e0b; margin-bottom: 16px; }
+        .cv-builder-wrap { background: linear-gradient(135deg, #f0fdf4, #f8fafc); border: 2px solid #10b981; border-radius: 24px; padding: 24px; margin-top: 20px; }
+        .cv-builder-title { font-size: 18px; font-weight: 900; color: #065f46; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+        .cv-preview { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        .cv-preview-header { background: linear-gradient(135deg, #10b981, #059669); padding: 20px; border-radius: 12px; margin-bottom: 16px; color: white; text-align: center; }
+        .cv-preview-name { font-size: 22px; font-weight: 900; }
+        .cv-section-title { font-size: 14px; font-weight: 900; color: #10b981; border-bottom: 2px solid #d1fae5; padding-bottom: 5px; margin: 12px 0 8px; }
+        .cv-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .cv-info-row { background: #f8fafc; padding: 8px 12px; border-radius: 10px; font-size: 13px; }
+        .cv-info-row strong { color: #10b981; }
+        .action-btn-green { background: #10b981; color: white; border: none; padding: 10px 20px; border-radius: 25px; font-family: 'Cairo', sans-serif; font-weight: 700; font-size: 13px; cursor: pointer; transition: all 0.3s; display: inline-flex; align-items: center; gap: 7px; }
+        .action-btn-green:hover { background: #059669; transform: translateY(-2px); }
+        .action-btn-blue { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 25px; font-family: 'Cairo', sans-serif; font-weight: 700; font-size: 13px; cursor: pointer; transition: all 0.3s; display: inline-flex; align-items: center; gap: 7px; }
+        .action-btn-blue:hover { background: #2563eb; transform: translateY(-2px); }
+        .job-header { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; }
+        .job-avatar { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 3px solid #10b981; }
+        .job-info { flex: 1; }
+        .job-title-text { font-size: 18px; font-weight: 900; color: #0f172a; }
+        .job-company { color: #64748b; font-size: 14px; }
+        .job-desc { margin: 10px 0; font-size: 14px; color: #334155; }
+        .job-skills { display: flex; flex-wrap: wrap; gap: 5px; margin: 10px 0; }
+        .job-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding-top: 10px; border-top: 1px solid #e2e8f0; }
+        .apply-btn { background: #10b981; color: white; border: none; padding: 8px 20px; border-radius: 30px; font-family: 'Cairo', sans-serif; font-weight: 700; font-size: 13px; cursor: pointer; transition: all 0.3s; }
+        .apply-btn:hover { background: #059669; transform: scale(1.05); }
+        .view-cv-btn { background: #f59e0b; color: white; border: none; padding: 8px 20px; border-radius: 30px; font-family: 'Cairo', sans-serif; font-weight: 700; font-size: 13px; cursor: pointer; }
+        .cv-info { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 10px 0; }
+        .cv-info-item { background: #f1f5f9; padding: 8px; border-radius: 10px; font-size: 13px; }
+        .cv-info-item strong { display: block; color: #64748b; font-size: 11px; }
+        .payment-options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 15px 0; }
+        .payment-option { background: #f1f5f9; border: 2px solid #e2e8f0; border-radius: 15px; padding: 15px 10px; text-align: center; cursor: pointer; transition: all 0.3s; }
+        .payment-option.selected { border-color: #10b981; background: #dcfce7; }
+        .payment-option i { font-size: 24px; margin-bottom: 5px; color: #10b981; }
+        .payment-option span { display: block; font-weight: 700; font-size: 14px; }
+        .subscription-card { background: white; border: 2px solid #e2e8f0; border-radius: 20px; padding: 20px; margin-bottom: 15px; cursor: pointer; transition: all 0.3s; position: relative; }
+        .subscription-card:hover { border-color: #10b981; transform: translateY(-3px); }
+        .subscription-card.selected { border-color: #10b981; background: #f0fdf4; }
+        .subscription-card.trial { background: linear-gradient(145deg, #fff3cd, #fff9e6); border-color: #f59e0b; }
+        .subscription-badge { position: absolute; top: 10px; left: 10px; background: #f59e0b; color: white; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+        .subscription-name { font-size: 18px; font-weight: 900; margin-bottom: 5px; }
+        .subscription-price { font-size: 24px; font-weight: 900; color: #059669; }
+        .subscription-price small { font-size: 14px; color: #64748b; }
+        .subscription-desc { color: #64748b; font-size: 13px; margin-top: 5px; }
+        .entity-badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+        .badge-province { background: #dbeafe; color: #1e40af; }
+        /* AI CV */
+        .ai-cv-assistant { background: linear-gradient(135deg, #1e293b, #0f172a); border-radius: 20px; padding: 20px; margin-bottom: 20px; border: 2px solid #6366f1; }
+        .ai-cv-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+        .ai-cv-avatar { width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #8b5cf6); display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+        .ai-cv-title { color: white; font-size: 16px; font-weight: 900; }
+        .ai-cv-sub { color: #94a3b8; font-size: 12px; }
+        .ai-cv-input-row { display: flex; gap: 10px; }
+        .ai-cv-input { flex: 1; padding: 12px 16px; background: #1e293b; border: 2px solid #334155; border-radius: 16px; font-family: 'Cairo', sans-serif; font-size: 14px; color: white; }
+        .ai-cv-input::placeholder { color: #64748b; }
+        .ai-cv-input:focus { border-color: #6366f1; outline: none; }
+        .ai-cv-send-btn { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border: none; padding: 12px 20px; border-radius: 16px; font-family: 'Cairo', sans-serif; font-weight: 700; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+        .ai-cv-send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .ai-cv-messages { max-height: 250px; overflow-y: auto; margin-bottom: 12px; }
+        .ai-cv-msg { padding: 10px 14px; border-radius: 14px; margin-bottom: 8px; font-size: 13px; line-height: 1.6; }
+        .ai-cv-msg.ai { background: #1e293b; border: 1px solid #334155; color: #e2e8f0; border-right: 3px solid #6366f1; }
+        .ai-cv-msg.user { background: #1e3a5f; border: 1px solid #2563eb; color: #bfdbfe; border-left: 3px solid #3b82f6; }
+        /* PDF Templates */
+        #cvPdfTpl, #cvCompPdfTpl { position:fixed; top:-9999px; left:-9999px; width:794px; background:#0f172a; font-family:'Cairo','Arial',sans-serif; direction:rtl; color:#e2e8f0; display:none; }
+        .tpl-wrap { min-height:1123px; display:flex; flex-direction:column; }
+        .tpl-hdr { padding:40px 44px 32px; display:flex; align-items:center; gap:30px; position:relative; overflow:hidden; }
+        .tpl-hdr-person { background:linear-gradient(135deg,#059669,#10b981,#34d399); }
+        .tpl-hdr-company { background:linear-gradient(135deg,#1d4ed8,#2563eb,#3b82f6); }
+        .tpl-hdr::before { content:''; position:absolute; top:-60px; left:-60px; width:220px; height:220px; border-radius:50%; background:rgba(255,255,255,0.06); }
+        .tpl-avatar { width:108px; height:108px; border-radius:50%; border:4px solid rgba(255,255,255,0.7); object-fit:cover; flex-shrink:0; position:relative; z-index:2; }
+        .tpl-avatar-ph { width:108px; height:108px; border-radius:50%; border:4px solid rgba(255,255,255,0.4); background:rgba(0,0,0,0.2); display:flex; align-items:center; justify-content:center; font-size:52px; flex-shrink:0; position:relative; z-index:2; }
+        .tpl-hdr-info { flex:1; position:relative; z-index:2; }
+        .tpl-badge { display:inline-block; background:rgba(255,255,255,0.18); color:white; font-size:11px; padding:3px 14px; border-radius:20px; margin-bottom:8px; }
+        .tpl-name { font-size:30px; font-weight:900; color:#fff; line-height:1.2; margin-bottom:6px; }
+        .tpl-role { font-size:15px; color:rgba(255,255,255,0.82); margin-bottom:14px; }
+        .tpl-contacts { display:flex; flex-wrap:wrap; gap:14px; }
+        .tpl-contact-chip { display:flex; align-items:center; gap:6px; background:rgba(0,0,0,0.18); padding:5px 14px; border-radius:20px; font-size:12px; color:rgba(255,255,255,0.88); }
+        .tpl-hdr-stripe { height:4px; background:linear-gradient(90deg,#fbbf24,#10b981,#3b82f6,#8b5cf6); }
+        .tpl-body { padding:28px 44px; flex:1; }
+        .tpl-section { margin-bottom:26px; }
+        .tpl-sec-hdr { display:flex; align-items:center; gap:10px; padding-bottom:10px; margin-bottom:14px; border-bottom:2px solid rgba(255,255,255,0.08); }
+        .tpl-sec-icon { width:32px; height:32px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0; }
+        .tpl-sec-icon-green { background:linear-gradient(135deg,#059669,#10b981); }
+        .tpl-sec-icon-blue { background:linear-gradient(135deg,#1d4ed8,#3b82f6); }
+        .tpl-sec-title { font-size:15px; font-weight:900; }
+        .tpl-sec-title-green { color:#34d399; }
+        .tpl-sec-title-blue { color:#60a5fa; }
+        .tpl-sec-en { margin-right:auto; font-size:10px; color:#475569; }
+        .tpl-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+        .tpl-field { background:#1e293b; border-radius:10px; padding:11px 15px; border:1px solid rgba(255,255,255,0.05); }
+        .tpl-field-lbl { font-size:10px; color:#64748b; margin-bottom:3px; font-weight:600; }
+        .tpl-field-val { font-size:13px; color:#e2e8f0; font-weight:700; }
+        .tpl-skills { display:flex; flex-wrap:wrap; gap:8px; }
+        .tpl-skill-green { background:#0d2e20; border:1px solid #059669; color:#6ee7b7; padding:6px 16px; border-radius:20px; font-size:12px; font-weight:700; }
+        .tpl-summary-green { background:#0d2e20; border-right:4px solid #10b981; padding:14px 18px; border-radius:10px; font-size:13px; line-height:1.9; color:#cbd5e1; }
+        .tpl-summary-blue { background:#0d1f3c; border-right:4px solid #3b82f6; padding:14px 18px; border-radius:10px; font-size:13px; line-height:1.9; color:#cbd5e1; }
+        .tpl-footer { padding:16px 44px; display:flex; justify-content:space-between; align-items:center; }
+        .tpl-footer-green { background:linear-gradient(135deg,#047857,#059669); }
+        .tpl-footer-blue { background:linear-gradient(135deg,#1e3a8a,#1d4ed8); }
+        .tpl-footer-txt { font-size:11px; color:rgba(255,255,255,0.88); }
+        .tpl-footer-brand { font-size:13px; font-weight:900; color:white; }
+        /* Firebase status indicator */
+        .firebase-status { position:fixed; bottom:90px; left:25px; background:white; border-radius:20px; padding:8px 14px; font-size:12px; font-weight:700; box-shadow:0 4px 15px rgba(0,0,0,0.1); display:flex; align-items:center; gap:6px; z-index:998; }
+        .firebase-dot { width:8px; height:8px; border-radius:50%; background:#10b981; animation:pulse 2s infinite; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="logo"><h1>منصة <span>كربلاء</span> التجارية</h1></div>
+    <div class="auth-buttons" id="authButtons">
+        <button class="auth-btn primary" onclick="openLoginModal()"><i class="fab fa-google"></i> دخول بـ Google</button>
+    </div>
+    <div class="user-menu" id="userMenu" style="display:none;">
+        <div class="user-welcome">
+            <img id="userAvatar" src="" alt="صورة" onerror="this.src='https://ui-avatars.com/api/?name=User&background=10b981&color=fff'">
+            <span id="userName">مستخدم</span>
+            <span id="userStatus"></span>
+        </div>
+        <div class="logout-icon" onclick="logout()" title="تسجيل خروج"><i class="fas fa-sign-out-alt"></i></div>
+    </div>
+</div>
+
+<div class="ticker-wrapper">
+    <div class="ticker-content">
+        <div class="ticker-item">💼 أعلن عن وظيفتك — مجاناً</div>
+        <div class="ticker-item">📄 أنشئ سيرتك الذاتية بالذكاء الاصطناعي</div>
+        <div class="ticker-item">🏢 ابحث عن الكفاءات في منصة كربلاء</div>
+        <div class="ticker-item">⚡ مدعوم بـ Firebase — سريع وآمن</div>
+    </div>
+</div>
+
+<div class="main-container">
+    <div class="buttons-grid">
+        <button class="main-btn coming-soon-btn" onclick="showSection('home',this)"><i class="fas fa-home"></i> الرئيسية</button>
+        <button class="main-btn coming-soon-btn" onclick="showSection('offers',this)"><i class="fas fa-gem"></i> العروض</button>
+        <button class="main-btn coming-soon-btn" onclick="showSection('entities',this)"><i class="fas fa-store"></i> التقييم</button>
+        <button class="main-btn active" id="jobsMainBtn" onclick="showSection('jobs',this)">
+            <i class="fas fa-briefcase"></i> التوظيف
+            <span class="btn-badge" id="jobsBadge">0</span>
+        </button>
+        <button class="main-btn smart-contract-btn coming-soon-btn" onclick="showSection('contracts',this)"><i class="fas fa-file-contract"></i> عقود ذكية</button>
+        <button class="main-btn" id="adminMainBtn" onclick="showSection('admin',this)" style="display:none;background:linear-gradient(145deg,#4f46e5,#6366f1);color:white;border-color:#6366f1"><i class="fas fa-user-shield" style="color:white"></i> لوحة الأدمن</button>
+    </div>
+
+    <!-- ═══ قسم التوظيف ═══ -->
+    <div id="jobs-section" class="section-content active">
+        <div class="section-title"><i class="fas fa-briefcase" style="color:#10b981"></i> منصة التوظيف</div>
+        <div class="job-tabs-extended">
+            <button class="job-tab-ext active" onclick="showJobTab('all',this)"><i class="fas fa-th-list"></i> الكل</button>
+            <button class="job-tab-ext" onclick="showJobTab('jobs',this)"><i class="fas fa-building"></i> طلبات التوظيف</button>
+            <button class="job-tab-ext" onclick="showJobTab('cvs',this)"><i class="fas fa-user-tie"></i> السير الذاتية</button>
+            <button class="job-tab-ext" onclick="showJobTab('cv-builder',this)"><i class="fas fa-magic"></i> منشئ السيرة</button>
+        </div>
+        <div id="jobs-list"></div>
+        <div id="cv-builder-section" style="display:none;"></div>
+    </div>
+</div>
+
+    <!-- ═══ قسم الأدمن ═══ -->
+    <div id="admin-section" class="section-content">
+        <div class="section-title"><i class="fas fa-user-shield" style="color:#6366f1"></i> لوحة الأدمن</div>
+        <div class="admin-panel">
+            <div class="admin-tabs">
+                <button class="admin-tab active" onclick="showAdminTab('jobs',this)"><i class="fas fa-briefcase"></i> الوظائف</button>
+                <button class="admin-tab" onclick="showAdminTab('cvs',this)"><i class="fas fa-user-tie"></i> السير الذاتية</button>
+                <button class="admin-tab" onclick="showAdminTab('applications',this)"><i class="fas fa-paper-plane"></i> الطلبات</button>
+                <button class="admin-tab" onclick="showAdminTab('users',this)"><i class="fas fa-users"></i> المستخدمون</button>
+                <button class="admin-tab" id="notifTab" onclick="showAdminTab('notifications',this)"><i class="fas fa-bell"></i> الإشعارات <span id="notifCount" style="background:#ef4444;color:white;border-radius:50%;padding:1px 6px;font-size:11px;display:none">0</span></button>
+            </div>
+            <div id="adminContent"><div class="loading" style="color:#64748b">تحميل...</div></div>
+        </div>
+    </div>
+</div>
+
+<!-- زر الإضافة -->
+<button class="add-btn" id="addBtn" onclick="openAddModal()" style="display:none;" title="إضافة"><i class="fas fa-plus"></i></button>
+<!-- مؤشر Firebase -->
+<div class="firebase-status"><div class="firebase-dot"></div> Firebase متصل</div>
+<div id="notificationContainer"></div>
+
+<!-- ═══ Modal تسجيل الدخول / حساب جديد ═══ -->
+<div class="modal" id="loginModal">
+    <div class="modal-content" style="max-width:420px">
+        <button class="close-modal" onclick="closeLoginModal()"><i class="fas fa-times"></i></button>
+        <!-- تبويبات -->
+        <div style="display:flex;background:#f1f5f9;border-radius:16px;padding:4px;margin-bottom:20px">
+            <button id="tabSignin" onclick="switchAuthTab('signin')" style="flex:1;padding:10px;border:none;border-radius:12px;font-family:'Cairo',sans-serif;font-weight:700;font-size:14px;cursor:pointer;background:#10b981;color:white;transition:all 0.3s">تسجيل دخول</button>
+            <button id="tabSignup" onclick="switchAuthTab('signup')" style="flex:1;padding:10px;border:none;border-radius:12px;font-family:'Cairo',sans-serif;font-weight:700;font-size:14px;cursor:pointer;background:transparent;color:#64748b;transition:all 0.3s">حساب جديد</button>
+        </div>
+        <!-- نموذج الدخول -->
+        <div id="signinForm">
+            <div class="form-group"><label>البريد الإلكتروني</label><input type="email" id="loginEmail" placeholder="example@email.com"></div>
+            <div class="form-group"><label>كلمة المرور</label><input type="password" id="loginPassword" placeholder="••••••••"></div>
+            <button class="submit-btn" id="loginBtn" onclick="handleEmailLogin()"><i class="fas fa-sign-in-alt"></i> دخول</button>
+            <div style="display:flex;align-items:center;gap:10px;margin:16px 0"><div style="flex:1;height:1px;background:#e2e8f0"></div><span style="color:#94a3b8;font-size:12px">أو</span><div style="flex:1;height:1px;background:#e2e8f0"></div></div>
+            <button id="googleSignInBtn" onclick="signInWithGoogle()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:12px;background:white;border:2px solid #e2e8f0;border-radius:14px;padding:12px 20px;font-family:'Cairo',sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:all 0.3s;box-shadow:0 2px 8px rgba(0,0,0,0.05)">
+                <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.36-8.16 2.36-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+                الدخول بـ Google
+            </button>
+        </div>
+        <!-- نموذج التسجيل الجديد -->
+        <div id="signupForm" style="display:none">
+            <div class="form-group"><label>الاسم الكامل <span style="color:#ef4444">*</span></label><input type="text" id="regName" placeholder="محمد علي"></div>
+            <div class="form-group"><label>البريد الإلكتروني <span style="color:#ef4444">*</span></label><input type="email" id="regEmail" placeholder="example@email.com"></div>
+            <div class="form-group"><label>كلمة المرور <span style="color:#ef4444">*</span></label><input type="password" id="regPassword" placeholder="6 أحرف على الأقل"></div>
+            <div class="form-group"><label>رقم الهاتف</label><input type="tel" id="regPhone" placeholder="07xxxxxxxxx"></div>
+            <div class="form-group"><label>المحافظة</label>
+                <select id="regProvince">
+                    <option value="">-- اختر --</option>
+                    <option>بغداد</option><option>البصرة</option><option>نينوى</option><option>أربيل</option>
+                    <option>كركوك</option><option selected>كربلاء</option><option>النجف</option><option>بابل</option>
+                    <option>ذي قار</option><option>المثنى</option><option>القادسية</option><option>واسط</option>
+                    <option>ميسان</option><option>ديالى</option><option>الأنبار</option><option>صلاح الدين</option>
+                    <option>دهوك</option><option>السليمانية</option>
+                </select>
+            </div>
+            <button class="submit-btn" id="registerBtn" onclick="handleEmailRegister()"><i class="fas fa-user-plus"></i> إنشاء حساب</button>
+            <div style="display:flex;align-items:center;gap:10px;margin:16px 0"><div style="flex:1;height:1px;background:#e2e8f0"></div><span style="color:#94a3b8;font-size:12px">أو</span><div style="flex:1;height:1px;background:#e2e8f0"></div></div>
+            <button onclick="signInWithGoogle()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:12px;background:white;border:2px solid #e2e8f0;border-radius:14px;padding:12px 20px;font-family:'Cairo',sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:all 0.3s">
+                <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.36-8.16 2.36-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+                التسجيل بـ Google
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ Modal إكمال بيانات (Google أول دخول) ═══ -->
+<div class="modal" id="registerModal">
+    <div class="modal-content" style="max-width:400px">
+        <div style="text-align:center;margin-bottom:20px">
+            <div style="font-size:48px">👋</div>
+            <h2 style="font-weight:900;font-size:22px">أكمل ملفك الشخصي</h2>
+            <p style="color:#64748b;font-size:13px;margin-top:5px">بياناتك تساعدنا نعرض لك الأنسب</p>
+        </div>
+        <div class="form-group"><label>رقم الهاتف</label><input type="tel" id="googleRegPhone" placeholder="07xxxxxxxxx"></div>
+        <div class="form-group"><label>المحافظة</label>
+            <select id="googleRegProvince">
+                <option value="">-- اختر محافظتك --</option>
+                <option>بغداد</option><option>البصرة</option><option>نينوى</option><option>أربيل</option>
+                <option>كركوك</option><option selected>كربلاء</option><option>النجف</option><option>بابل</option>
+                <option>ذي قار</option><option>المثنى</option><option>القادسية</option><option>واسط</option>
+                <option>ميسان</option><option>ديالى</option><option>الأنبار</option><option>صلاح الدين</option>
+                <option>دهوك</option><option>السليمانية</option>
+            </select>
+        </div>
+        <button class="submit-btn" id="subscriptionBtn" onclick="saveNewUserData()"><i class="fas fa-check"></i> حفظ والبدء</button>
+        <button onclick="closeRegisterModal()" style="background:none;border:none;color:#94a3b8;font-family:'Cairo',sans-serif;cursor:pointer;width:100%;margin-top:10px;font-size:13px">تخطي</button>
+    </div>
+</div>
+
+</div>
+
+
+<!-- ═══ Modal الإضافة ═══ -->
+<div class="modal" id="addModal">
+    <div class="modal-content">
+        <button class="close-modal" onclick="closeAddModal()"><i class="fas fa-times"></i></button>
+        <h2 style="margin-bottom:15px;font-weight:900;font-size:20px">➕ إضافة جديد</h2>
+        <div id="dynamicForm"></div>
+        <button class="submit-btn" id="submitAddBtn" onclick="submitAdd()"><i class="fas fa-check" style="margin-left:8px"></i> إضافة</button>
+    </div>
+</div>
+
+<!-- ═══ Modal التقديم ═══ -->
+<div class="modal" id="applyModal">
+    <div class="modal-content">
+        <button class="close-modal" onclick="closeApplyModal()"><i class="fas fa-times"></i></button>
+        <h2 style="margin-bottom:15px;font-weight:900;font-size:20px">📝 التقديم على الوظيفة</h2>
+        <div id="applyForm"></div>
+        <button class="submit-btn" onclick="submitApplication()"><i class="fas fa-paper-plane"></i> إرسال الطلب</button>
+    </div>
+</div>
+
+<div id="cvPdfTpl"></div>
+<div id="cvCompPdfTpl"></div>
+
+<script>
+// ╔══════════════════════════════════════════════════════╗
+// ║              Firebase - الإعداد                     ║
+// ╚══════════════════════════════════════════════════════╝
+const firebaseConfig = {
+    apiKey: "AIzaSyBKlAEuk3QQJBqWqR1zmBdHGwasIW86Y-I",
+    authDomain: "karbala-b4884.firebaseapp.com",
+    projectId: "karbala-b4884",
+    storageBucket: "karbala-b4884.firebasestorage.app",
+    messagingSenderId: "284387684367",
+    appId: "1:284387684367:web:ef4aa5b125ed695db4b37a"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db   = firebase.firestore();
+
+// ╔══════════════════════════════════════════════════════╗
+// ║              الإعدادات العامة                        ║
+// ╚══════════════════════════════════════════════════════╝
+const DRIVE_UPLOAD_URL = 'https://script.google.com/macros/s/AKfycbymRYZFWn_LKYkzQzO9uihp5b0ZNs2c8cpM3klbqYm6rcx6fO1w6ug7N_ag6zIji8eF/exec';
+const DRIVE_BASE_URL   = 'https://drive.google.com/thumbnail?id=';
+const GUEST_LIMIT      = 3;
+const provinces = ['بغداد','البصرة','نينوى','أربيل','كركوك','كربلاء','النجف','بابل','ذي قار','المثنى','القادسية','واسط','ميسان','ديالى','الأنبار','صلاح الدين','دهوك','السليمانية'];
+
+// ╔══════════════════════════════════════════════════════╗
+// ║              حالة التطبيق                           ║
+// ╚══════════════════════════════════════════════════════╝
+let currentUser = { isLoggedIn:false, uid:null, role:'guest', email:null, name:'زائر', status:null, subscription:null, expiryDate:null, province:null, phone:null };
+let jobsData=[], cvsData=[];
+let currentJobTab='all', currentApplyJob=null, selectedSubscription=null, isSubmitting=false;
+let _cvPhotoB64=null, _cvLogoB64=null;
+
+// ╔══════════════════════════════════════════════════════╗
+// ║              أدوات مساعدة                           ║
+// ╚══════════════════════════════════════════════════════╝
+function showNotification(title, message, type='success') {
+    const c = document.getElementById('notificationContainer');
+    const el = document.createElement('div');
+    el.className = `notification ${type}`;
+    const icons = {success:'fa-check-circle',error:'fa-exclamation-circle',warning:'fa-exclamation-triangle',info:'fa-info-circle'};
+    el.innerHTML = `<i class="fas ${icons[type]||'fa-info-circle'}"></i><div class="notification-content"><div class="notification-title">${title}</div><div class="notification-message">${message}</div></div><button class="close-notification" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>`;
+    c.appendChild(el);
+    setTimeout(() => el.remove(), 5000);
+}
+function getDaysLeft(d) { if(!d) return null; return Math.ceil((new Date(d) - new Date()) / 86400000); }
+function isSubscriptionValid(u) {
+    if(u.role==='admin'||u.role==='supervisor') return true;
+    if(u.subscription==='gift') return true;
+    if(!u.expiryDate) return false;
+    return getDaysLeft(u.expiryDate) > 0;
+}
+function canViewAll() {
+    // الخدمة مفتوحة للجميع
+    return true;
+}
+
+// ╔══════════════════════════════════════════════════════╗
+// ║         Firebase Auth — مراقبة حالة الدخول          ║
+// ╚══════════════════════════════════════════════════════╝
+auth.onAuthStateChanged(async (firebaseUser) => {
+    if (firebaseUser) {
+        // جلب بيانات المستخدم من Firestore
+        try {
+            const doc = await db.collection('users').doc(firebaseUser.uid).get();
+            if (doc.exists) {
+                const data = doc.data();
+                currentUser = {
+                    isLoggedIn : true,
+                    uid        : firebaseUser.uid,
+                    role       : data.role || 'user',
+                    email      : firebaseUser.email,
+                    name       : data.name || firebaseUser.displayName || 'مستخدم',
+                    status     : data.status || 'approved',
+                    subscription: data.subscription || null,
+                    expiryDate : data.expiryDate || null,
+                    province   : data.province || null,
+                    phone      : data.phone || null,
+                    avatar     : data.avatar || null
+                };
+            }
+        } catch(e) { console.error('خطأ جلب بيانات المستخدم:', e); }
+        updateUIForUser();
+    } else {
+        currentUser = { isLoggedIn:false, uid:null, role:'guest', email:null, name:'زائر', status:null, subscription:null, expiryDate:null, province:null, phone:null };
+        updateUIForUser();
+    }
+});
+
+// ╔══════════════════════════════════════════════════════╗
+// ║         جلب البيانات من Firestore                   ║
+// ╚══════════════════════════════════════════════════════╝
+async function loadAllData() {
+    try {
+        const snap = await db.collection('jobs').orderBy('createdAt', 'desc').get();
+        jobsData = [];
+        cvsData  = [];
+        snap.forEach(doc => {
+            const d = { id: doc.id, ...doc.data() };
+            if (d.type === 'job') jobsData.push(d);
+            else if (d.type === 'cv') cvsData.push(d);
+        });
+        document.getElementById('jobsBadge').textContent = jobsData.length + cvsData.length;
+        displayJobs();
+    } catch(e) {
+        console.error('خطأ تحميل:', e);
+        // إذا فشل بسبب index، نجرب بدون ترتيب
+        try {
+            const snap2 = await db.collection('jobs').get();
+            jobsData = []; cvsData = [];
+            snap2.forEach(doc => {
+                const d = { id: doc.id, ...doc.data() };
+                if (d.type === 'job') jobsData.push(d);
+                else if (d.type === 'cv') cvsData.push(d);
+            });
+            document.getElementById('jobsBadge').textContent = jobsData.length + cvsData.length;
+            displayJobs();
+        } catch(e2) { console.error('خطأ ثانوي:', e2); }
+    }
+}
+
+// ╔══════════════════════════════════════════════════════╗
+// ║              عرض الوظائف                            ║
+// ╚══════════════════════════════════════════════════════╝
+function displayJobs() {
+    const listEl     = document.getElementById('jobs-list');
+    const builderEl  = document.getElementById('cv-builder-section');
+    if (currentJobTab === 'cv-builder') {
+        listEl.style.display = 'none'; builderEl.style.display = 'block'; renderCVBuilder(); return;
+    }
+    listEl.style.display = 'block'; builderEl.style.display = 'none';
+    const all = canViewAll();
+    // فقط العناصر الفعالة تظهر للعامة
+    const activeJobs = jobsData.filter(j => j.status !== 'inactive' && j.status !== 'hired');
+    const activeCvs  = cvsData.filter(c  => c.status !== 'inactive' && c.status !== 'hired');
+    const dj  = currentJobTab !== 'cvs'  ? activeJobs : [];
+    const dc  = currentJobTab !== 'jobs' ? activeCvs  : [];
+    let html  = '';
+
+    dj.forEach((job, idx) => {
+        const logoSrc = job.logo
+            ? `${DRIVE_BASE_URL}${job.logo}`
+            : `https://ui-avatars.com/api/?name=${encodeURIComponent(job.company||'C')}&background=2563eb&color=fff&bold=true`;
+        html += `
+        <div class="job-card-pro">
+            <div class="job-header">
+                <img src="${logoSrc}" class="job-avatar" onerror="this.src='https://ui-avatars.com/api/?name=C&background=2563eb&color=fff'" alt="">
+                <div class="job-info">
+                    <div class="job-title-text">${job.title||''}</div>
+                    <div class="job-company">${job.company||''}</div>
+                    ${job.province ? `<span class="entity-badge badge-province" style="margin-top:4px;display:inline-block"><i class="fas fa-map-marker-alt"></i> ${job.province}</span>` : ''}
+                </div>
+            </div>
+            ${job.description ? `<div class="job-desc">${job.description}</div>` : ''}
+            <div class="job-skills">${(job.skills||'').split(',').filter(Boolean).map(s=>`<span class="skill-tag">${s.trim()}</span>`).join('')}</div>
+            <div class="job-footer">
+                <div style="font-size:11px;color:#94a3b8"><i class="fas fa-user"></i> ${job.addedBy||'النظام'}</div>
+                <button class="apply-btn" onclick='openApplyModal(${JSON.stringify(job).replace(/'/g,"&#39;")})'>
+                    <i class="fas fa-paper-plane"></i> قدّم الآن
+                </button>
+            </div>
+        </div>`;
+    });
+
+    dc.forEach((cv, idx) => {
+        const avatarSrc = cv.avatar
+            ? `${DRIVE_BASE_URL}${cv.avatar}`
+            : `https://ui-avatars.com/api/?name=${encodeURIComponent(cv.name||'U')}&background=f59e0b&color=fff&bold=true`;
+        html += `
+        <div class="cv-card">
+            <div class="job-header">
+                <img src="${avatarSrc}" class="job-avatar" style="border-color:#f59e0b" onerror="this.src='https://ui-avatars.com/api/?name=U&background=f59e0b&color=fff'" alt="">
+                <div class="job-info">
+                    <div class="job-title-text">${cv.name||''}</div>
+                    <div class="job-company">${cv.jobTitle||'باحث عن عمل'}</div>
+                    ${cv.province ? `<span class="entity-badge badge-province" style="margin-top:4px;display:inline-block"><i class="fas fa-map-marker-alt"></i> ${cv.province}</span>` : ''}
+                </div>
+            </div>
+            <div class="cv-info">
+                <div class="cv-info-item"><strong>العمر</strong>${cv.age||'—'}</div>
+                <div class="cv-info-item"><strong>الخبرة</strong>${cv.experience||'—'}</div>
+                <div class="cv-info-item"><strong>المؤهل</strong>${cv.education||'—'}</div>
+                <div class="cv-info-item"><strong>الراتب المتوقع</strong>${cv.expectedSalary?Number(cv.expectedSalary).toLocaleString()+' د.ع':'—'}</div>
+            </div>
+            ${cv.description ? `<div class="job-desc">${cv.description}</div>` : ''}
+            <div class="job-skills">${(cv.skills||'').split(',').filter(Boolean).map(s=>`<span class="skill-tag">${s.trim()}</span>`).join('')}</div>
+            <div class="job-footer">
+                <span style="background:#fef3c7;color:#92400e;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700">يبحث عن عمل</span>
+                <div style="display:flex;gap:8px">
+                    <button class="view-cv-btn" onclick='viewCVDetail(${JSON.stringify(cv).replace(/'/g,"&#39;")})'>
+                        <i class="fas fa-id-card"></i> التفاصيل
+                    </button>
+                    <button class="action-btn-green" onclick='downloadCVPDFFromData(${JSON.stringify(cv).replace(/'/g,"&#39;")})'>
+                        <i class="fas fa-file-pdf"></i> PDF
+                    </button>
+                </div>
+            </div>
+        </div>`;
+    });
+
+
+    listEl.innerHTML = html || '<div class="loading"><i class="fas fa-briefcase" style="font-size:40px;color:#e2e8f0;margin-bottom:10px;display:block"></i>لا توجد وظائف حالياً</div>';
+}
+
+// ╔══════════════════════════════════════════════════════╗
+// ║         Firebase Auth — Email + Google               ║
+// ╚══════════════════════════════════════════════════════╝
+
+// دالة مشتركة لحفظ بيانات المستخدم وإرسال إشعار للأدمن
+async function saveUserToFirestore(uid, data, isNew) {
+    await db.collection('users').doc(uid).set(data, { merge: true });
+    if (isNew) {
+        // إشعار للأدمن في Firestore
+        await db.collection('notifications').add({
+            type      : 'new_user',
+            title     : '👤 مستخدم جديد انضم',
+            message   : `${data.name || data.email} سجّل في المنصة`,
+            userName  : data.name || '',
+            userEmail : data.email || '',
+            userPhone : data.phone || '',
+            method    : data.method || 'email',
+            read      : false,
+            createdAt : firebase.firestore.FieldValue.serverTimestamp()
+        });
+    }
+}
+
+function switchAuthTab(tab) {
+    const signin = document.getElementById('signinForm');
+    const signup = document.getElementById('signupForm');
+    const tabSI  = document.getElementById('tabSignin');
+    const tabSU  = document.getElementById('tabSignup');
+    if (tab === 'signin') {
+        signin.style.display = 'block'; signup.style.display = 'none';
+        tabSI.style.background = '#10b981'; tabSI.style.color = 'white';
+        tabSU.style.background = 'transparent'; tabSU.style.color = '#64748b';
+    } else {
+        signin.style.display = 'none'; signup.style.display = 'block';
+        tabSU.style.background = '#10b981'; tabSU.style.color = 'white';
+        tabSI.style.background = 'transparent'; tabSI.style.color = '#64748b';
+    }
+}
+
+async function handleEmailLogin() {
+    const email    = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value.trim();
+    if (!email || !password) { showNotification('❌','أدخل البريد وكلمة المرور','error'); return; }
+    const btn = document.getElementById('loginBtn');
+    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الدخول...';
+    try {
+        await auth.signInWithEmailAndPassword(email, password);
+        closeLoginModal();
+        showNotification('✅ مرحباً بعودتك','تم تسجيل الدخول بنجاح','success');
+    } catch(e) {
+        const msgs = {
+            'auth/user-not-found'   : 'البريد غير مسجل',
+            'auth/wrong-password'   : 'كلمة المرور غير صحيحة',
+            'auth/invalid-email'    : 'بريد إلكتروني غير صحيح',
+            'auth/too-many-requests': 'محاولات كثيرة — انتظر قليلاً',
+            'auth/invalid-credential': 'البريد أو كلمة المرور غير صحيحة'
+        };
+        showNotification('❌ خطأ', msgs[e.code] || e.message, 'error');
+    }
+    btn.disabled = false; btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> دخول';
+}
+
+async function handleEmailRegister() {
+    const name     = document.getElementById('regName').value.trim();
+    const email    = document.getElementById('regEmail').value.trim();
+    const password = document.getElementById('regPassword').value.trim();
+    const phone    = document.getElementById('regPhone').value.trim();
+    const province = document.getElementById('regProvince').value.trim();
+    if (!name || !email || !password) { showNotification('❌','اسم + بريد + كلمة المرور مطلوبة','error'); return; }
+    if (password.length < 6) { showNotification('❌','كلمة المرور 6 أحرف على الأقل','error'); return; }
+    const btn = document.getElementById('registerBtn');
+    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الإنشاء...';
+    try {
+        const cred = await auth.createUserWithEmailAndPassword(email, password);
+        await cred.user.updateProfile({ displayName: name });
+        await saveUserToFirestore(cred.user.uid, {
+            name, email, phone, province,
+            role     : 'user',
+            status   : 'approved',
+            method   : 'email',
+            joinedAt : firebase.firestore.FieldValue.serverTimestamp()
+        }, true);
+        closeLoginModal();
+        showNotification('✅ أهلاً بك!', `مرحباً ${name}، حسابك جاهز`, 'success');
+    } catch(e) {
+        const msgs = {
+            'auth/email-already-in-use': 'هذا البريد مسجل مسبقاً',
+            'auth/invalid-email'       : 'بريد إلكتروني غير صحيح',
+            'auth/weak-password'       : 'كلمة المرور ضعيفة جداً'
+        };
+        showNotification('❌ خطأ', msgs[e.code] || e.message, 'error');
+    }
+    btn.disabled = false; btn.innerHTML = '<i class="fas fa-user-plus"></i> إنشاء حساب';
+}
+
+async function signInWithGoogle() {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
+    try {
+        const result = await auth.signInWithPopup(provider);
+        const user   = result.user;
+        closeLoginModal();
+        const doc = await db.collection('users').doc(user.uid).get();
+        if (!doc.exists) {
+            // مستخدم Google جديد — اطلب بيانات إضافية
+            openRegisterModal();
+        } else {
+            showNotification('✅ مرحباً بعودتك', `أهلاً ${user.displayName||''}`, 'success');
+        }
+    } catch(e) {
+        const msgs = {
+            'auth/popup-closed-by-user'    : 'تم إغلاق نافذة Google',
+            'auth/popup-blocked'           : 'افتح النوافذ المنبثقة في المتصفح',
+            'auth/cancelled-popup-request' : 'حاول مرة أخرى'
+        };
+        showNotification('❌ خطأ', msgs[e.code] || e.message, 'error');
+    }
+}
+
+async function saveNewUserData() {
+    // هذه للمستخدمين الجدد عبر Google فقط
+    const phone    = document.getElementById('googleRegPhone')?.value?.trim() || '';
+    const province = document.getElementById('googleRegProvince')?.value?.trim() || '';
+    const btn = document.getElementById('subscriptionBtn');
+    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...';
+    try {
+        const user = auth.currentUser;
+        if (!user) { showNotification('❌','خطأ في الجلسة','error'); return; }
+        await saveUserToFirestore(user.uid, {
+            name     : user.displayName || '',
+            email    : user.email || '',
+            avatar   : user.photoURL || '',
+            phone, province,
+            role     : 'user',
+            status   : 'approved',
+            method   : 'google',
+            joinedAt : firebase.firestore.FieldValue.serverTimestamp()
+        }, true);
+        closeRegisterModal();
+        showNotification('✅ مرحباً بك!', 'حسابك جاهز', 'success');
+    } catch(e) {
+        showNotification('❌ خطأ', e.message, 'error');
+    }
+    btn.disabled = false; btn.innerHTML = '<i class="fas fa-check"></i> حفظ والبدء';
+}
+
+async function logout() {
+    await auth.signOut();
+    showNotification('👋 تم تسجيل الخروج','نتمنى لك يوماً سعيداً','success');
+}
+
+// ╔══════════════════════════════════════════════════════╗
+// ║         تحديث واجهة المستخدم                        ║
+// ╚══════════════════════════════════════════════════════╝
+function updateUIForUser() {
+    const loggedIn = currentUser.isLoggedIn;
+    document.getElementById('authButtons').style.display = loggedIn ? 'none' : 'flex';
+    document.getElementById('userMenu').style.display    = loggedIn ? 'flex' : 'none';
+    if (loggedIn) {
+        document.getElementById('userName').textContent = currentUser.name;
+        document.getElementById('userAvatar').src = currentUser.avatar
+            ? (currentUser.avatar.startsWith('http') ? currentUser.avatar : DRIVE_BASE_URL + currentUser.avatar)
+            : `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.name)}&background=10b981&color=fff`;
+        const statusEl = document.getElementById('userStatus');
+        if (currentUser.role === 'admin') {
+            statusEl.innerHTML = '<span style="background:#d1fae5;color:#065f46;padding:3px 8px;border-radius:10px;font-size:11px">مدير</span>';
+        } else if (currentUser.role === 'supervisor') {
+            statusEl.innerHTML = '<span style="background:#dbeafe;color:#1e40af;padding:3px 8px;border-radius:10px;font-size:11px">مشرف</span>';
+        } else {
+            const d = getDaysLeft(currentUser.expiryDate);
+            statusEl.innerHTML = (!d||d<=0)
+                ? '<span style="background:#fee2e2;color:#b91c1c;padding:3px 8px;border-radius:10px;font-size:11px">منتهي</span>'
+                : '<span style="background:#d1fae5;color:#065f46;padding:3px 8px;border-radius:10px;font-size:11px">مفعل</span>';
+        }
+        // مجاني — كل مستخدم مسجل يقدر يضيف
+        document.getElementById('addBtn').style.display = 'flex';
+    } else {
+        document.getElementById('addBtn').style.display = 'none';
+    }
+    // إظهار زر الأدمن فقط للأدمن
+    const adminBtn = document.getElementById('adminMainBtn');
+    if (adminBtn) adminBtn.style.display = (currentUser.role==='admin'||currentUser.role==='supervisor') ? 'flex' : 'none';
+    loadAllData();
+}
+
+// ╔══════════════════════════════════════════════════════╗
+// ║         التقديم على وظيفة                           ║
+// ╚══════════════════════════════════════════════════════╝
+function openApplyModal(job) {
+    if (!currentUser.isLoggedIn) { showNotification('❌','يجب تسجيل الدخول أولاً','error'); openLoginModal(); return; }
+    currentApplyJob = job;
+    document.getElementById('applyForm').innerHTML = `
+        <div style="background:#f0fdf4;border-radius:14px;padding:12px;margin-bottom:15px;border-right:4px solid #10b981">
+            <div style="font-size:13px;color:#065f46"><strong>${job.title||''}</strong> — ${job.company||''}</div>
+        </div>
+        <div class="form-group"><label>الاسم الكامل</label><input type="text" id="applyName" value="${currentUser.name}" readonly style="background:#f8fafc"></div>
+        <div class="form-group"><label>البريد الإلكتروني</label><input type="email" id="applyEmail" value="${currentUser.email}" readonly style="background:#f8fafc"></div>
+        <div class="form-group"><label>رقم الهاتف <span style="color:#ef4444">*</span></label><input type="tel" id="applyPhone" placeholder="07xxxxxxxxx" value="${currentUser.phone||''}"></div>
+        <div class="form-group"><label>سنوات الخبرة <span style="color:#ef4444">*</span></label><input type="text" id="applyExp" placeholder="مثال: 3 سنوات"></div>
+        <div class="form-group"><label>المؤهل العلمي <span style="color:#ef4444">*</span></label><input type="text" id="applyEdu" placeholder="مثال: بكالوريوس إدارة أعمال"></div>
+        <div class="form-group"><label>المهارات</label><input type="text" id="applySkills" placeholder="Excel, تسويق, قيادة"></div>
+        <div class="form-group"><label>رسالة التقديم <span style="color:#ef4444">*</span></label><textarea id="applyMessage" rows="4" placeholder="لماذا أنت الشخص المناسب؟"></textarea></div>`;
+    document.getElementById('applyModal').classList.add('active');
+}
+function closeApplyModal() { document.getElementById('applyModal').classList.remove('active'); currentApplyJob = null; }
+
+async function submitApplication() {
+    const phone   = document.getElementById('applyPhone')?.value?.trim();
+    const message = document.getElementById('applyMessage')?.value?.trim();
+    const exp     = document.getElementById('applyExp')?.value?.trim();
+    const edu     = document.getElementById('applyEdu')?.value?.trim();
+    const skills  = document.getElementById('applySkills')?.value?.trim();
+    if (!phone||!message||!exp||!edu) { showNotification('❌','أكمل جميع الحقول المطلوبة','error'); return; }
+    const appNumber = 'APP-' + Date.now().toString().slice(-6);
+    try {
+        // حفظ الطلب في Firestore
+        await db.collection('applications').add({
+            appNumber,
+            jobId       : currentApplyJob?.id || '',
+            jobTitle    : currentApplyJob?.title || '',
+            company     : currentApplyJob?.company || '',
+            applicantUid: currentUser.uid,
+            applicantName: currentUser.name,
+            applicantEmail: currentUser.email,
+            phone, exp, edu, skills, message,
+            province    : currentUser.province || '',
+            status      : 'pending',
+            createdAt   : firebase.firestore.FieldValue.serverTimestamp()
+        });
+        showNotification('✅ تم إرسال طلبك', `رقم التقديم: ${appNumber}`, 'success');
+        closeApplyModal();
+    } catch(e) { showNotification('❌','خطأ في إرسال الطلب','error'); console.error(e); }
+}
+
+// ╔══════════════════════════════════════════════════════╗
+// ║         إضافة وظيفة / سيرة ذاتية                   ║
+// ╚══════════════════════════════════════════════════════╝
+function openAddModal() {
+    if (!currentUser.isLoggedIn) { showNotification('❌','يجب تسجيل الدخول بـ Google أولاً','error'); openLoginModal(); return; }
+    document.getElementById('dynamicForm').innerHTML = buildJobForm();
+    toggleJobForm();
+    document.getElementById('addModal').classList.add('active');
+}
+function closeAddModal() { document.getElementById('addModal').classList.remove('active'); }
+
+function buildJobForm() {
+    return `
+    <div class="form-group"><label>نوع الإعلان</label>
+        <select id="jobType" onchange="toggleJobForm()">
+            <option value="job">طلب توظيف (شركة)</option>
+            <option value="cv">سيرة ذاتية (فرد)</option>
+        </select>
+    </div>
+    <div id="jobForm">
+        <div class="form-group"><label>المسمى الوظيفي <span style="color:#ef4444">*</span></label><input type="text" id="jobTitle"></div>
+        <div class="form-group"><label>اسم الشركة <span style="color:#ef4444">*</span></label><input type="text" id="companyName"></div>
+        <div class="form-group"><label>المحافظة</label><select id="jobProvince">${provinces.map(p=>`<option>${p}</option>`).join('')}</select></div>
+        <div class="form-group"><label>الراتب (د.ع)</label><input type="number" id="jobSalary"></div>
+        <div class="form-group"><label>المهارات المطلوبة</label><input type="text" id="jobSkills" placeholder="Excel, قيادة, تسويق"></div>
+        <div class="form-group"><label>شعار الشركة</label>
+            <div class="upload-area" id="logoImgArea">
+                <div class="upload-icon"><i class="fas fa-building"></i></div>
+                <div class="upload-text">اسحب أو اضغط لرفع الشعار</div>
+                <input type="file" id="companyLogo" accept="image/*" onchange="handleImageSelect(this,'logoImgArea','logoImgPreviewWrap','logoImgPreview')">
+            </div>
+            <div class="img-preview-wrap" id="logoImgPreviewWrap"><img id="logoImgPreview" src=""><button class="remove-img" onclick="removeFile('companyLogo','logoImgArea','logoImgPreviewWrap')"><i class="fas fa-times"></i></button></div>
+        </div>
+    </div>
+    <div id="cvForm" style="display:none">
+        <div class="form-group"><label>الاسم الكامل <span style="color:#ef4444">*</span></label><input type="text" id="cvName"></div>
+        <div class="form-group"><label>رقم الهاتف</label><input type="tel" id="cvPhone" placeholder="07xxxxxxxxx"></div>
+        <div class="form-group"><label>المسمى الوظيفي المطلوب</label><input type="text" id="cvJobTitle"></div>
+        <div class="form-group"><label>العمر</label><input type="number" id="cvAge"></div>
+        <div class="form-group"><label>الخبرة</label><input type="text" id="cvExperience"></div>
+        <div class="form-group"><label>المؤهل العلمي</label><input type="text" id="cvEducation"></div>
+        <div class="form-group"><label>الراتب المتوقع</label><input type="number" id="cvExpectedSalary"></div>
+        <div class="form-group"><label>المحافظة</label><select id="cvProvince">${provinces.map(p=>`<option>${p}</option>`).join('')}</select></div>
+        <div class="form-group"><label>المهارات</label><input type="text" id="cvSkills" placeholder="قيادة, كمبيوتر, إنجليزي"></div>
+        <div class="form-group"><label>صورة شخصية</label>
+            <div class="upload-area" id="cvPhotoArea">
+                <div class="upload-icon"><i class="fas fa-user-circle"></i></div>
+                <div class="upload-text">اسحب أو اضغط لرفع الصورة</div>
+                <input type="file" id="cvPhoto" accept="image/*" onchange="handleImageSelect(this,'cvPhotoArea','cvPhotoPreviewWrap','cvPhotoPreview')">
+            </div>
+            <div class="img-preview-wrap" id="cvPhotoPreviewWrap"><img id="cvPhotoPreview" src=""><button class="remove-img" onclick="removeFile('cvPhoto','cvPhotoArea','cvPhotoPreviewWrap')"><i class="fas fa-times"></i></button></div>
+        </div>
+    </div>
+    <div class="form-group"><label>الوصف</label><textarea id="description" rows="4"></textarea></div>`;
+}
+
+function toggleJobForm() {
+    const type = document.getElementById('jobType')?.value;
+    if(document.getElementById('jobForm')) document.getElementById('jobForm').style.display = type==='job' ? 'block' : 'none';
+    if(document.getElementById('cvForm'))  document.getElementById('cvForm').style.display  = type==='cv'  ? 'block' : 'none';
+}
+
+async function submitAdd() {
+    if (isSubmitting) return;
+    isSubmitting = true;
+    const btn = document.getElementById('submitAddBtn');
+    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري...';
+    try {
+        const jobType = document.getElementById('jobType')?.value;
+        let data = { type: jobType, addedBy: currentUser.email, createdAt: firebase.firestore.FieldValue.serverTimestamp() };
+        if (jobType === 'job') {
+            data.title   = document.getElementById('jobTitle')?.value || '';
+            data.company = document.getElementById('companyName')?.value || '';
+            if (!data.title || !data.company) { showNotification('❌','أدخل المسمى الوظيفي واسم الشركة','error'); return; }
+            data.province = document.getElementById('jobProvince')?.value || '';
+            data.salary   = parseFloat(document.getElementById('jobSalary')?.value) || 0;
+            data.skills   = document.getElementById('jobSkills')?.value || '';
+            const logoFile = document.getElementById('companyLogo')?.files[0];
+            if (logoFile) { const fn = await uploadToDrive(logoFile,'شعارات شركات'); if(fn) data.logo = fn; }
+        } else {
+            data.name     = document.getElementById('cvName')?.value || '';
+            if (!data.name) { showNotification('❌','أدخل الاسم الكامل','error'); return; }
+            data.phone         = document.getElementById('cvPhone')?.value || '';
+            data.jobTitle      = document.getElementById('cvJobTitle')?.value || '';
+            data.age           = document.getElementById('cvAge')?.value || '';
+            data.experience    = document.getElementById('cvExperience')?.value || '';
+            data.education     = document.getElementById('cvEducation')?.value || '';
+            data.expectedSalary= document.getElementById('cvExpectedSalary')?.value || '';
+            data.province      = document.getElementById('cvProvince')?.value || '';
+            data.skills        = document.getElementById('cvSkills')?.value || '';
+            const photoFile = document.getElementById('cvPhoto')?.files[0];
+            if (photoFile) { const fn = await uploadToDrive(photoFile,'صور شخصية'); if(fn) data.avatar = fn; }
+        }
+        data.description = document.getElementById('description')?.value || '';
+        // ═══ الحفظ في Firestore ═══
+        await db.collection('jobs').add(data);
+        showNotification('✅ تمت الإضافة','تم الحفظ في Firebase','success');
+        closeAddModal();
+        loadAllData();
+    } catch(e) {
+        console.error(e);
+        showNotification('❌','خطأ في الإضافة: ' + e.message,'error');
+    } finally {
+        isSubmitting = false;
+        btn.disabled = false; btn.innerHTML = '<i class="fas fa-check"></i> إضافة';
+    }
+}
+
+// ╔══════════════════════════════════════════════════════╗
+// ║         منشئ السيرة الذاتية                         ║
+// ╚══════════════════════════════════════════════════════╝
+function renderCVBuilder() {
+    const saved = {
+        name: document.getElementById('cvb_name')?.value || currentUser.name || '',
+        role: document.getElementById('cvb_role')?.value || '',
+        phone: document.getElementById('cvb_phone')?.value || currentUser.phone || '',
+        email: document.getElementById('cvb_email')?.value || currentUser.email || '',
+        province: document.getElementById('cvb_province')?.value || currentUser.province || '',
+        salary: document.getElementById('cvb_salary')?.value || '',
+        exp: document.getElementById('cvb_exp')?.value || '',
+        edu: document.getElementById('cvb_edu')?.value || '',
+        skills: document.getElementById('cvb_skills')?.value || '',
+        summary: document.getElementById('cvb_summary')?.value || '',
+    };
+    document.getElementById('cv-builder-section').innerHTML = `
+    <div class="cv-builder-wrap">
+        <div class="cv-builder-title"><i class="fas fa-magic" style="color:#10b981"></i> منشئ السيرة الذاتية الذكي</div>
+        <!-- مساعد AI -->
+        <div class="ai-cv-assistant">
+            <div class="ai-cv-header">
+                <div class="ai-cv-avatar">🤖</div>
+                <div><div class="ai-cv-title">مساعد AI</div><div class="ai-cv-sub">اكتب وظيفتك وسأملأ البيانات تلقائياً</div></div>
+            </div>
+            <div class="ai-cv-messages" id="aiCvMessages">
+                <div class="ai-cv-msg ai">مرحباً! أخبرني بمجالك — مثال: "محاسب خبرة 3 سنوات"</div>
+            </div>
+            <div class="ai-cv-input-row">
+                <input class="ai-cv-input" id="aiCvInput" type="text" placeholder="اكتب مجالك أو وظيفتك..." onkeypress="if(event.key==='Enter')sendAICvMessage()">
+                <button class="ai-cv-send-btn" id="aiCvSendBtn" onclick="sendAICvMessage()"><i class="fas fa-magic"></i> اسأل AI</button>
+            </div>
+        </div>
+        <!-- نموذج الفرد -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="form-group"><label>الاسم الكامل <span style="color:#ef4444">*</span></label><input id="cvb_name" type="text" value="${saved.name}"></div>
+            <div class="form-group"><label>المسمى الوظيفي</label><input id="cvb_role" type="text" placeholder="مثال: محاسب" value="${saved.role}"></div>
+            <div class="form-group"><label>الهاتف</label><input id="cvb_phone" type="tel" value="${saved.phone}"></div>
+            <div class="form-group"><label>البريد</label><input id="cvb_email" type="email" value="${saved.email}"></div>
+            <div class="form-group"><label>المحافظة</label><select id="cvb_province">${provinces.map(p=>`<option ${p===(saved.province||currentUser.province)?'selected':''}>${p}</option>`).join('')}</select></div>
+            <div class="form-group"><label>الراتب المتوقع (د.ع)</label><input id="cvb_salary" type="number" placeholder="500000" value="${saved.salary}"></div>
+            <div class="form-group"><label>سنوات الخبرة</label><input id="cvb_exp" type="text" placeholder="5 سنوات" value="${saved.exp}"></div>
+            <div class="form-group"><label>المؤهل العلمي</label><input id="cvb_edu" type="text" placeholder="بكالوريوس محاسبة" value="${saved.edu}"></div>
+        </div>
+        <div class="form-group"><label>المهارات (مفصولة بفواصل)</label><input id="cvb_skills" type="text" placeholder="Excel, إنجليزي, تسويق" value="${saved.skills}"></div>
+        <div class="form-group"><label>ملخص شخصي</label><textarea id="cvb_summary" rows="3" placeholder="اكتب ملخصاً موجزاً...">${saved.summary}</textarea></div>
+        <div class="form-group"><label>صورة شخصية</label>
+            <div class="upload-area" id="cvbPhotoArea">
+                <div class="upload-icon"><i class="fas fa-user-circle"></i></div>
+                <div class="upload-text">اسحب أو اضغط لرفع صورتك</div>
+                <input type="file" id="cvb_photo" accept="image/*" onchange="onCVPhoto(this)">
+            </div>
+            <div style="text-align:center;margin-top:8px"><img id="cvb_photo_preview" src="" style="width:76px;height:76px;border-radius:50%;border:3px solid #10b981;object-fit:cover;display:none"></div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
+            <button class="action-btn-green" onclick="previewCV()"><i class="fas fa-eye"></i> معاينة</button>
+            <button class="action-btn-blue" onclick="generateAndSendCVPDF()"><i class="fas fa-file-pdf"></i> تنزيل PDF</button>
+        </div>
+        <div id="cv_preview_section" style="display:none;margin-top:20px">
+            <div style="font-size:14px;font-weight:900;margin-bottom:12px;border-right:4px solid #10b981;padding-right:12px">📄 معاينة</div>
+            <div class="cv-preview" id="cv_preview_content"></div>
+        </div>
+    </div>`;
+    _cvPhotoB64 = null;
+}
+
+async function sendAICvMessage() {
+    const input = document.getElementById('aiCvInput');
+    const userText = input.value.trim();
+    if (!userText) return;
+    const messagesEl = document.getElementById('aiCvMessages');
+    const sendBtn    = document.getElementById('aiCvSendBtn');
+    messagesEl.innerHTML += `<div class="ai-cv-msg user">${userText}</div>`;
+    input.value = '';
+    sendBtn.disabled = true;
+    sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    const typingId = 'cvT_' + Date.now();
+    messagesEl.innerHTML += `<div class="ai-cv-msg ai" id="${typingId}"><i class="fas fa-circle-notch fa-spin"></i> يحلل...</div>`;
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+    try {
+        const res = await fetch("https://api.anthropic.com/v1/messages", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                model: "claude-sonnet-4-20250514",
+                max_tokens: 800,
+                messages: [{ role:"user", content:`أنت مساعد سير ذاتية. المستخدم: "${userText}". أرجع JSON فقط:\n{"role":"المسمى","exp":"الخبرة","edu":"المؤهل","skills":"مهارة1, مهارة2, مهارة3","summary":"ملخص 3 جمل","salary":"الراتب رقم","aiMessage":"رسالة قصيرة"}` }]
+            })
+        });
+        const data = await res.json();
+        const raw  = data.content?.map(i=>i.text||'').join('') || '';
+        const parsed = JSON.parse(raw.replace(/```json|```/g,'').trim());
+        if(parsed.role)    { const el=document.getElementById('cvb_role');    if(el) el.value=parsed.role; }
+        if(parsed.exp)     { const el=document.getElementById('cvb_exp');     if(el) el.value=parsed.exp; }
+        if(parsed.edu)     { const el=document.getElementById('cvb_edu');     if(el) el.value=parsed.edu; }
+        if(parsed.skills)  { const el=document.getElementById('cvb_skills');  if(el) el.value=parsed.skills; }
+        if(parsed.summary) { const el=document.getElementById('cvb_summary'); if(el) el.value=parsed.summary; }
+        if(parsed.salary)  { const el=document.getElementById('cvb_salary');  if(el) el.value=parsed.salary; }
+        document.getElementById(typingId).outerHTML = `<div class="ai-cv-msg ai">✅ ${parsed.aiMessage||'تم ملء البيانات!'}</div>`;
+    } catch(e) {
+        const fb = generateOfflineCV(userText);
+        if(fb.role)   { const el=document.getElementById('cvb_role');   if(el) el.value=fb.role; }
+        if(fb.skills) { const el=document.getElementById('cvb_skills'); if(el) el.value=fb.skills; }
+        if(fb.summary){ const el=document.getElementById('cvb_summary');if(el) el.value=fb.summary; }
+        document.getElementById(typingId).outerHTML = `<div class="ai-cv-msg ai">✅ تم ملء البيانات الأساسية.</div>`;
+    }
+    sendBtn.disabled = false;
+    sendBtn.innerHTML = '<i class="fas fa-magic"></i> اسأل AI';
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+function generateOfflineCV(t) {
+    const tx=t.toLowerCase();
+    if(tx.includes('محاسب')) return {role:'محاسب مالي',skills:'Excel, SAP, إدارة الميزانيات, التدقيق المالي',summary:'محاسب متخصص يسعى لتطبيق خبرته في بيئة عمل محترفة.'};
+    if(tx.includes('مهندس')||tx.includes('برمجة')) return {role:'مهندس برمجيات',skills:'JavaScript, Python, React, Git',summary:'مهندس برمجيات شغوف بالتقنية والحلول الإبداعية.'};
+    if(tx.includes('تسويق')||tx.includes('مبيعات')) return {role:'مسؤول تسويق',skills:'التسويق الرقمي, إدارة العملاء, SEO, Google Ads',summary:'متخصص تسويق يهدف إلى تحقيق نتائج ملموسة.'};
+    return {role:t,skills:'تواصل, عمل فريق, إدارة وقت',summary:`متخصص في مجال ${t} يسعى للتطوير المستمر.`};
+}
+function onCVPhoto(input) {
+    const file=input.files[0]; if(!file) return;
+    const reader=new FileReader(); reader.onload=e=>{ _cvPhotoB64=e.target.result.split(',')[1]; const img=document.getElementById('cvb_photo_preview'); if(img){img.src=e.target.result;img.style.display='block';} }; reader.readAsDataURL(file);
+}
+function previewCV() {
+    const name=document.getElementById('cvb_name')?.value; if(!name){showNotification('❌','أدخل الاسم الكامل','error');return;}
+    const role=document.getElementById('cvb_role')?.value||'', phone=document.getElementById('cvb_phone')?.value||'', email=document.getElementById('cvb_email')?.value||'', province=document.getElementById('cvb_province')?.value||'', exp=document.getElementById('cvb_exp')?.value||'', edu=document.getElementById('cvb_edu')?.value||'', skills=document.getElementById('cvb_skills')?.value||'', summary=document.getElementById('cvb_summary')?.value||'', salary=document.getElementById('cvb_salary')?.value||'';
+    const photoEl=document.getElementById('cvb_photo_preview'), hasPhoto=photoEl&&photoEl.src&&photoEl.style.display!=='none', photoSrc=hasPhoto?photoEl.src:'';
+    document.getElementById('cv_preview_content').innerHTML=`<div class="cv-preview-header">${hasPhoto?`<img src="${photoSrc}" style="width:80px;height:80px;border-radius:50%;border:3px solid white;margin:0 auto 10px;display:block;object-fit:cover">`:'<div style="width:70px;height:70px;border-radius:50%;background:rgba(255,255,255,0.2);margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:30px">👤</div>'}<div class="cv-preview-name">${name}</div>${role?`<div style="font-size:14px;opacity:0.9;margin-top:4px">${role}</div>`:''}<div style="font-size:12px;margin-top:8px;opacity:0.8">📍 ${province} | 📱 ${phone} | 📧 ${email}</div></div>${summary?`<div class="cv-section-title">الملخص</div><div style="font-size:13px;color:#334155;line-height:1.7">${summary}</div>`:''}<div class="cv-section-title">المعلومات</div><div class="cv-info-grid">${exp?`<div class="cv-info-row"><strong>الخبرة:</strong> ${exp}</div>`:''} ${edu?`<div class="cv-info-row"><strong>المؤهل:</strong> ${edu}</div>`:''} ${salary?`<div class="cv-info-row"><strong>الراتب المتوقع:</strong> ${Number(salary).toLocaleString()} د.ع</div>`:''}</div>${skills?`<div class="cv-section-title">المهارات</div><div style="display:flex;flex-wrap:wrap;gap:8px">${skills.split(',').map(s=>`<span class="skill-tag" style="background:#d1fae5;color:#065f46">${s.trim()}</span>`).join('')}</div>`:''}<div style="margin-top:20px;padding-top:10px;border-top:1px dashed #e2e8f0;text-align:center;font-size:11px;color:#94a3b8">منصة كربلاء التجارية</div>`;
+    document.getElementById('cv_preview_section').style.display='block';
+    document.getElementById('cv_preview_section').scrollIntoView({behavior:'smooth'});
+}
+async function generateAndSendCVPDF() {
+    if(!currentUser.isLoggedIn){showNotification('❌','يجب تسجيل الدخول','error');openLoginModal();return;}
+    if(!document.getElementById('cvb_name')?.value){showNotification('❌','أدخل الاسم الكامل','error');return;}
+    showNotification('⏳ جاري الإنشاء','يتم تصميم الـ PDF...','info');
+    await new Promise(r=>setTimeout(r,100));
+    _buildPersonTpl(); await _html2pdf('cvPdfTpl',`CV_${document.getElementById('cvb_name').value}_${Date.now()}.pdf`);
+}
+async function _html2pdf(elId, fileName) {
+    const el=document.getElementById(elId); el.style.display='block'; await document.fonts.ready; await new Promise(r=>setTimeout(r,400));
+    try { const canvas=await html2canvas(el,{scale:2,useCORS:true,allowTaint:true,backgroundColor:'#0f172a',logging:false,width:794,windowWidth:794}); const img=canvas.toDataURL('image/jpeg',0.95); const {jsPDF}=window.jspdf; const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'}); const W=210,H=297,ih=(canvas.height*W)/canvas.width; if(ih<=H){pdf.addImage(img,'JPEG',0,0,W,ih);}else{let y=0;while(y<ih){if(y>0)pdf.addPage();pdf.addImage(img,'JPEG',0,-y,W,ih);y+=H;}} pdf.save(fileName); showNotification('✅ تم التنزيل','تم إنشاء الـ PDF','success'); }
+    catch(e){showNotification('❌ خطأ','تعذّر إنشاء PDF','error');}
+    el.style.display='none';
+}
+function _buildPersonTpl() {
+    const v=id=>document.getElementById(id)?.value||''; const name=v('cvb_name'),role=v('cvb_role'),phone=v('cvb_phone'),email=v('cvb_email'),province=v('cvb_province'),exp=v('cvb_exp'),edu=v('cvb_edu'),skills=v('cvb_skills'),summary=v('cvb_summary'),salary=v('cvb_salary');
+    const photoEl=document.getElementById('cvb_photo_preview'), photo=photoEl&&photoEl.style.display!=='none'&&photoEl.src?photoEl.src:null;
+    const today=new Date().toLocaleDateString('ar-IQ');
+    document.getElementById('cvPdfTpl').innerHTML=`<div class="tpl-wrap"><div class="tpl-hdr tpl-hdr-person">${photo?`<img class="tpl-avatar" src="${photo}">`:`<div class="tpl-avatar-ph">👤</div>`}<div class="tpl-hdr-info"><div class="tpl-badge">السيرة الذاتية — Curriculum Vitae</div><div class="tpl-name">${name}</div>${role?`<div class="tpl-role">${role}</div>`:''}<div class="tpl-contacts">${province?`<span class="tpl-contact-chip">📍 ${province}</span>`:''} ${phone?`<span class="tpl-contact-chip">📞 ${phone}</span>`:''} ${email?`<span class="tpl-contact-chip">✉️ ${email}</span>`:''}</div></div></div><div class="tpl-hdr-stripe"></div><div class="tpl-body">${summary?`<div class="tpl-section"><div class="tpl-sec-hdr"><div class="tpl-sec-icon tpl-sec-icon-green">✍</div><div class="tpl-sec-title tpl-sec-title-green">الملخص الشخصي</div></div><div class="tpl-summary-green">${summary}</div></div>`:''}<div class="tpl-section"><div class="tpl-sec-hdr"><div class="tpl-sec-icon tpl-sec-icon-green">👤</div><div class="tpl-sec-title tpl-sec-title-green">المعلومات الشخصية</div></div><div class="tpl-grid">${name?`<div class="tpl-field"><div class="tpl-field-lbl">الاسم</div><div class="tpl-field-val">${name}</div></div>`:''} ${province?`<div class="tpl-field"><div class="tpl-field-lbl">المحافظة</div><div class="tpl-field-val">${province}</div></div>`:''} ${phone?`<div class="tpl-field"><div class="tpl-field-lbl">الهاتف</div><div class="tpl-field-val">${phone}</div></div>`:''} ${email?`<div class="tpl-field"><div class="tpl-field-lbl">البريد</div><div class="tpl-field-val">${email}</div></div>`:''}</div></div><div class="tpl-section"><div class="tpl-sec-hdr"><div class="tpl-sec-icon tpl-sec-icon-green">🎓</div><div class="tpl-sec-title tpl-sec-title-green">المؤهلات والخبرة</div></div><div class="tpl-grid">${edu?`<div class="tpl-field"><div class="tpl-field-lbl">المؤهل</div><div class="tpl-field-val">${edu}</div></div>`:''} ${exp?`<div class="tpl-field"><div class="tpl-field-lbl">الخبرة</div><div class="tpl-field-val">${exp}</div></div>`:''} ${role?`<div class="tpl-field"><div class="tpl-field-lbl">المسمى</div><div class="tpl-field-val">${role}</div></div>`:''} ${salary?`<div class="tpl-field"><div class="tpl-field-lbl">الراتب المتوقع</div><div class="tpl-field-val">${Number(salary).toLocaleString()} د.ع</div></div>`:''}</div></div>${skills?`<div class="tpl-section"><div class="tpl-sec-hdr"><div class="tpl-sec-icon tpl-sec-icon-green">⚡</div><div class="tpl-sec-title tpl-sec-title-green">المهارات</div></div><div class="tpl-skills">${skills.split(',').filter(Boolean).map(s=>`<span class="tpl-skill-green">${s.trim()}</span>`).join('')}</div></div>`:''}</div><div class="tpl-footer tpl-footer-green"><div class="tpl-footer-brand">منصة كربلاء التجارية</div><div class="tpl-footer-txt">Karbala Commercial Platform</div><div class="tpl-footer-txt">${today}</div></div></div>`;
+}
+async function downloadCVPDFFromData(cv) {
+    showNotification('⏳','جاري إنشاء PDF...','info'); await new Promise(r=>setTimeout(r,100));
+    const today=new Date().toLocaleDateString('ar-IQ');
+    const avatarUrl=cv.avatar?DRIVE_BASE_URL+cv.avatar:null;
+    document.getElementById('cvPdfTpl').innerHTML=`<div class="tpl-wrap"><div class="tpl-hdr tpl-hdr-person">${avatarUrl?`<img class="tpl-avatar" src="${avatarUrl}" crossorigin="anonymous">`:`<div class="tpl-avatar-ph">👤</div>`}<div class="tpl-hdr-info"><div class="tpl-badge">السيرة الذاتية</div><div class="tpl-name">${cv.name||''}</div>${cv.jobTitle?`<div class="tpl-role">${cv.jobTitle}</div>`:''}<div class="tpl-contacts">${cv.province?`<span class="tpl-contact-chip">📍 ${cv.province}</span>`:''} ${cv.phone?`<span class="tpl-contact-chip">📞 ${cv.phone}</span>`:''}</div></div></div><div class="tpl-hdr-stripe"></div><div class="tpl-body"><div class="tpl-section"><div class="tpl-sec-hdr"><div class="tpl-sec-icon tpl-sec-icon-green">👤</div><div class="tpl-sec-title tpl-sec-title-green">المعلومات الشخصية</div></div><div class="tpl-grid">${cv.name?`<div class="tpl-field"><div class="tpl-field-lbl">الاسم</div><div class="tpl-field-val">${cv.name}</div></div>`:''} ${cv.age?`<div class="tpl-field"><div class="tpl-field-lbl">العمر</div><div class="tpl-field-val">${cv.age}</div></div>`:''} ${cv.province?`<div class="tpl-field"><div class="tpl-field-lbl">المحافظة</div><div class="tpl-field-val">${cv.province}</div></div>`:''} ${cv.phone?`<div class="tpl-field"><div class="tpl-field-lbl">الهاتف</div><div class="tpl-field-val">${cv.phone}</div></div>`:''}</div></div>${cv.skills?`<div class="tpl-section"><div class="tpl-sec-hdr"><div class="tpl-sec-icon tpl-sec-icon-green">⚡</div><div class="tpl-sec-title tpl-sec-title-green">المهارات</div></div><div class="tpl-skills">${cv.skills.split(',').filter(Boolean).map(s=>`<span class="tpl-skill-green">${s.trim()}</span>`).join('')}</div></div>`:''}</div><div class="tpl-footer tpl-footer-green"><div class="tpl-footer-brand">منصة كربلاء التجارية</div><div class="tpl-footer-txt">Karbala Commercial Platform</div><div class="tpl-footer-txt">${today}</div></div></div>`;
+    await _html2pdf('cvPdfTpl',`CV_${cv.name||'cv'}_${Date.now()}.pdf`);
+}
+function viewCVDetail(cv) {
+    const avatarSrc = cv.avatar ? DRIVE_BASE_URL+cv.avatar : `https://ui-avatars.com/api/?name=${encodeURIComponent(cv.name||'U')}&background=1e293b&color=fff`;
+    let existing=document.getElementById('cvDetailModal'); if(existing) existing.remove();
+    const modal=document.createElement('div'); modal.className='modal active'; modal.id='cvDetailModal';
+    modal.innerHTML=`<div class="modal-content" style="max-width:480px"><button class="close-modal" onclick="document.getElementById('cvDetailModal').remove()"><i class="fas fa-times"></i></button><div style="background:linear-gradient(135deg,#1e293b,#0f172a);padding:28px 20px 20px;display:flex;align-items:center;gap:16px;border-radius:20px 20px 0 0"><img src="${avatarSrc}" style="width:72px;height:72px;border-radius:50%;border:3px solid #10b981;object-fit:cover;flex-shrink:0"><div><div style="font-size:20px;font-weight:900;color:white">${cv.name||''}</div><div style="color:#10b981;font-size:14px;margin-top:3px">${cv.jobTitle||'باحث عن عمل'}</div></div></div><div style="padding:20px">${cv.skills?`<div style="margin-bottom:12px"><div style="font-size:12px;font-weight:700;color:#10b981;margin-bottom:6px">المهارات</div><div class="job-skills">${cv.skills.split(',').filter(Boolean).map(s=>`<span class="skill-tag">${s.trim()}</span>`).join('')}</div></div>`:''}<button class="action-btn-green" onclick='downloadCVPDFFromData(${JSON.stringify(cv).replace(/'/g,"&#39;")})'><i class="fas fa-file-pdf"></i> تنزيل PDF</button></div></div>`;
+    document.body.appendChild(modal);
+}
+
+// ╔══════════════════════════════════════════════════════╗
+// ║         رفع الصور (Google Drive)                    ║
+// ╚══════════════════════════════════════════════════════╝
+function handleImageSelect(input, areaId, previewWrapId, previewImgId) {
+    const file=input.files[0]; if(!file) return;
+    const area=document.getElementById(areaId), wrap=document.getElementById(previewWrapId), img=document.getElementById(previewImgId);
+    const reader=new FileReader(); reader.onload=e=>{img.src=e.target.result;wrap.style.display='block';if(area){area.classList.add('has-file');const t=area.querySelector('.upload-text');if(t)t.textContent=file.name;}}; reader.readAsDataURL(file);
+}
+function removeFile(inputId, areaId, previewId) {
+    const input=document.getElementById(inputId); if(input) input.value='';
+    const area=document.getElementById(areaId); if(area){area.classList.remove('has-file');const t=area.querySelector('.upload-text');if(t)t.textContent='اسحب أو اضغط لرفع ملف';}
+    const preview=document.getElementById(previewId); if(preview){preview.style.display='none';const img=preview.querySelector('img');if(img)img.src='';}
+}
+async function uploadToDrive(file, folderName) {
+    try {
+        const base64=await fileToBase64(file);
+        const form=new FormData(); form.append('fileName',file.name); form.append('mimeType',file.type); form.append('folder',folderName||'uploads'); form.append('data',base64);
+        const res=await fetch(DRIVE_UPLOAD_URL,{method:'POST',body:form});
+        let result={}; try{result=JSON.parse(await res.text());}catch(e){}
+        const fileId=result.fileId||result.id||null;
+        if(fileId){showNotification('✅','تم رفع الصورة','success');return fileId;}
+        showNotification('⚠️','تم إرسال الصورة','warning');
+        return `sent_${Date.now()}`;
+    } catch(e) { showNotification('❌','تعذّر رفع الصورة','error'); return null; }
+}
+function fileToBase64(file){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=e=>resolve(e.target.result.split(',')[1]);reader.onerror=reject;reader.readAsDataURL(file);});}
+
+// ╔══════════════════════════════════════════════════════╗
+// ║         التنقل والأقسام                             ║
+// ╚══════════════════════════════════════════════════════╝
+function showSection(section, btn) {
+    if (section !== 'jobs' && section !== 'admin') {
+        showNotification('⏳ قريباً','هذا القسم سيكون متاحاً قريباً!','warning'); return;
+    }
+    if (section === 'admin' && currentUser.role !== 'admin' && currentUser.role !== 'supervisor') {
+        showNotification('❌','غير مصرح','error'); return;
+    }
+    document.querySelectorAll('.section-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.main-btn').forEach(el => el.classList.remove('active'));
+    document.getElementById(section + '-section').classList.add('active');
+    if (btn) btn.classList.add('active');
+    if (section === 'admin') { loadAdminTab('jobs'); loadNotifCount(); }
+}
+function showJobTab(tab, btn) {
+    currentJobTab = tab;
+    document.querySelectorAll('.job-tab-ext').forEach(el => el.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    displayJobs();
+}
+function openLoginModal()    { document.getElementById('loginModal').classList.add('active'); }
+function closeLoginModal()   { document.getElementById('loginModal').classList.remove('active'); }
+function openRegisterModal() { document.getElementById('registerModal').classList.add('active'); }
+function closeRegisterModal(){ document.getElementById('registerModal').classList.remove('active'); }
+function selectSubscription(type) {
+    selectedSubscription = type;
+    ['trialCard','monthlyCard','yearlyCard'].forEach(id => document.getElementById(id)?.classList.remove('selected'));
+    document.getElementById(type+'Card')?.classList.add('selected');
+    document.getElementById('subscriptionBtn').innerHTML = type==='trial'
+        ? '<i class="fas fa-check"></i> تأكيد التجربة المجانية'
+        : '<i class="fas fa-credit-card"></i> إنشاء الحساب';
+}
+
+// ╔══════════════════════════════════════════════════════╗
+// ║              لوحة الأدمن                            ║
+// ╚══════════════════════════════════════════════════════╝
+let currentAdminTab = 'jobs';
+let adminApplications = [], adminUsers = [];
+
+function showAdminTab(tab, btn) {
+    currentAdminTab = tab;
+    document.querySelectorAll('.admin-tab').forEach(el => el.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    loadAdminTab(tab);
+}
+
+async function loadAdminTab(tab) {
+    const el = document.getElementById('adminContent');
+    el.innerHTML = '<div class="loading" style="color:#64748b"><i class="fas fa-spinner fa-spin"></i> تحميل...</div>';
+    try {
+        if (tab === 'jobs') {
+            const snap = await db.collection('jobs').where('type','==','job').get();
+            const items = snap.docs.map(d => ({id:d.id,...d.data()}));
+            renderAdminJobs(items);
+        } else if (tab === 'cvs') {
+            const snap = await db.collection('jobs').where('type','==','cv').get();
+            const items = snap.docs.map(d => ({id:d.id,...d.data()}));
+            renderAdminCvs(items);
+        } else if (tab === 'applications') {
+            const snap = await db.collection('applications').orderBy('createdAt','desc').get();
+            adminApplications = snap.docs.map(d => ({id:d.id,...d.data()}));
+            renderAdminApplications(adminApplications);
+        } else if (tab === 'users') {
+            const snap = await db.collection('users').get();
+            adminUsers = snap.docs.map(d => ({id:d.id,...d.data()}));
+            renderAdminUsers(adminUsers);
+        } else if (tab === 'notifications') {
+            await renderAdminNotifications();
+        }
+    } catch(e) {
+        // fallback بدون orderBy
+        if (tab === 'applications') {
+            const snap = await db.collection('applications').get();
+            adminApplications = snap.docs.map(d => ({id:d.id,...d.data()}));
+            renderAdminApplications(adminApplications);
+        } else if (tab === 'notifications') {
+            await renderAdminNotifications();
+        } else {
+            el.innerHTML = `<div style="color:#ef4444;padding:20px">خطأ: ${e.message}</div>`;
+        }
+    }
+}
+
+function statusLabel(s) {
+    if (!s || s === 'active')   return '<span class="status-badge status-active">فعال ✅</span>';
+    if (s === 'inactive')       return '<span class="status-badge status-inactive">غير فعال ❌</span>';
+    if (s === 'hired')          return '<span class="status-badge status-hired">تم التوظيف 🎉</span>';
+    if (s === 'pending')        return '<span class="status-badge" style="background:#dbeafe;color:#1e40af">قيد المراجعة</span>';
+    if (s === 'rejected')       return '<span class="status-badge status-inactive">مرفوض</span>';
+    if (s === 'accepted')       return '<span class="status-badge status-active">مقبول ✅</span>';
+    return `<span class="status-badge">${s}</span>`;
+}
+
+function renderAdminJobs(items) {
+    const el = document.getElementById('adminContent');
+    if (!items.length) { el.innerHTML = '<div style="color:#64748b;padding:20px;text-align:center">لا توجد وظائف</div>'; return; }
+    let html = `<div style="color:#94a3b8;font-size:13px;margin-bottom:12px">${items.length} وظيفة — إجمالي</div>`;
+    items.forEach(job => {
+        const inactive = job.status === 'inactive' || job.status === 'hired';
+        html += `
+        <div class="admin-card ${inactive ? 'inactive-card' : ''}">
+            <div class="admin-card-info">
+                <div class="admin-card-title">${job.title || '—'}</div>
+                <div class="admin-card-sub">${job.company || ''} ${job.province ? '· ' + job.province : ''}</div>
+                <div style="margin-top:6px">${statusLabel(job.status)}</div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+                ${!inactive ? `
+                <button class="admin-action-btn btn-hired" onclick="setJobStatus('${job.id}','hired')">
+                    <i class="fas fa-check-double"></i> أُشغلت
+                </button>
+                <button class="admin-action-btn btn-deactivate" onclick="setJobStatus('${job.id}','inactive')">
+                    <i class="fas fa-ban"></i> تعطيل
+                </button>` : `
+                <button class="admin-action-btn btn-activate" onclick="setJobStatus('${job.id}','active')">
+                    <i class="fas fa-redo"></i> إعادة تفعيل
+                </button>`}
+                <button class="admin-action-btn" style="background:#ef4444;color:white" onclick="deleteItem('jobs','${job.id}')">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>`;
+    });
+    el.innerHTML = html;
+}
+
+function renderAdminCvs(items) {
+    const el = document.getElementById('adminContent');
+    if (!items.length) { el.innerHTML = '<div style="color:#64748b;padding:20px;text-align:center">لا توجد سير ذاتية</div>'; return; }
+    let html = `<div style="color:#94a3b8;font-size:13px;margin-bottom:12px">${items.length} سيرة ذاتية</div>`;
+    items.forEach(cv => {
+        const inactive = cv.status === 'inactive' || cv.status === 'hired';
+        html += `
+        <div class="admin-card ${inactive ? 'inactive-card' : ''}">
+            <div class="admin-card-info">
+                <div class="admin-card-title">${cv.name || '—'}</div>
+                <div class="admin-card-sub">${cv.jobTitle || 'باحث عن عمل'} ${cv.province ? '· ' + cv.province : ''}</div>
+                <div style="margin-top:6px">${statusLabel(cv.status)}</div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+                ${!inactive ? `
+                <button class="admin-action-btn btn-hired" onclick="setCvStatus('${cv.id}','hired')">
+                    <i class="fas fa-user-check"></i> تم توظيفه
+                </button>
+                <button class="admin-action-btn btn-deactivate" onclick="setCvStatus('${cv.id}','inactive')">
+                    <i class="fas fa-ban"></i> إخفاء
+                </button>` : `
+                <button class="admin-action-btn btn-activate" onclick="setCvStatus('${cv.id}','active')">
+                    <i class="fas fa-redo"></i> إعادة عرض
+                </button>`}
+                <button class="admin-action-btn" style="background:#ef4444;color:white" onclick="deleteItem('jobs','${cv.id}')">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>`;
+    });
+    el.innerHTML = html;
+}
+
+function renderAdminApplications(items) {
+    const el = document.getElementById('adminContent');
+    if (!items.length) { el.innerHTML = '<div style="color:#64748b;padding:20px;text-align:center">لا توجد طلبات</div>'; return; }
+    let html = `
+    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+        <button onclick="filterApps('all')" style="background:#6366f1;color:white;border:none;padding:5px 14px;border-radius:20px;font-family:'Cairo',sans-serif;font-size:12px;cursor:pointer">الكل</button>
+        <button onclick="filterApps('pending')" style="background:#334155;color:#94a3b8;border:none;padding:5px 14px;border-radius:20px;font-family:'Cairo',sans-serif;font-size:12px;cursor:pointer">معلق</button>
+        <button onclick="filterApps('accepted')" style="background:#334155;color:#94a3b8;border:none;padding:5px 14px;border-radius:20px;font-family:'Cairo',sans-serif;font-size:12px;cursor:pointer">مقبول</button>
+        <button onclick="filterApps('hired')" style="background:#334155;color:#94a3b8;border:none;padding:5px 14px;border-radius:20px;font-family:'Cairo',sans-serif;font-size:12px;cursor:pointer">تم التوظيف</button>
+    </div>
+    <div id="appsListAdmin">`;
+    items.forEach(app => {
+        html += `
+        <div class="admin-card" id="appCard_${app.id}">
+            <div class="admin-card-info">
+                <div class="admin-card-title">${app.applicantName || '—'} ← ${app.jobTitle || '—'}</div>
+                <div class="admin-card-sub">${app.applicantEmail || ''} · ${app.phone || ''} · ${app.appNumber || ''}</div>
+                <div style="margin-top:6px">${statusLabel(app.status)}</div>
+                ${app.message ? `<div style="margin-top:6px;font-size:12px;color:#94a3b8;background:#0f172a;padding:8px;border-radius:8px">${app.message}</div>` : ''}
+            </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+                <button class="admin-action-btn btn-activate" onclick="setAppStatus('${app.id}','accepted')"><i class="fas fa-check"></i> قبول</button>
+                <button class="admin-action-btn btn-hired" onclick="setAppStatusAndDeactivate('${app.id}','${app.jobId}','${app.applicantUid}')"><i class="fas fa-handshake"></i> تم التوظيف</button>
+                <button class="admin-action-btn btn-deactivate" onclick="setAppStatus('${app.id}','rejected')"><i class="fas fa-times"></i> رفض</button>
+            </div>
+        </div>`;
+    });
+    html += '</div>';
+    el.innerHTML = html;
+}
+
+function filterApps(status) {
+    const filtered = status === 'all' ? adminApplications : adminApplications.filter(a => a.status === status);
+    document.getElementById('appsListAdmin').innerHTML = filtered.map(app => `
+        <div class="admin-card" id="appCard_${app.id}">
+            <div class="admin-card-info">
+                <div class="admin-card-title">${app.applicantName||'—'} ← ${app.jobTitle||'—'}</div>
+                <div class="admin-card-sub">${app.applicantEmail||''} · ${app.phone||''}</div>
+                <div style="margin-top:6px">${statusLabel(app.status)}</div>
+            </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+                <button class="admin-action-btn btn-activate" onclick="setAppStatus('${app.id}','accepted')"><i class="fas fa-check"></i> قبول</button>
+                <button class="admin-action-btn btn-hired" onclick="setAppStatusAndDeactivate('${app.id}','${app.jobId}','${app.applicantUid}')"><i class="fas fa-handshake"></i> تم التوظيف</button>
+                <button class="admin-action-btn btn-deactivate" onclick="setAppStatus('${app.id}','rejected')"><i class="fas fa-times"></i> رفض</button>
+            </div>
+        </div>`).join('');
+}
+
+function renderAdminUsers(items) {
+    const el = document.getElementById('adminContent');
+    if (!items.length) { el.innerHTML = '<div style="color:#64748b;padding:20px;text-align:center">لا يوجد مستخدمون</div>'; return; }
+    let html = `<div style="color:#94a3b8;font-size:13px;margin-bottom:12px">${items.length} مستخدم</div>`;
+    items.forEach(u => {
+        html += `
+        <div class="admin-card">
+            <img src="${u.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name||'U')}&background=6366f1&color=fff`}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;flex-shrink:0">
+            <div class="admin-card-info">
+                <div class="admin-card-title">${u.name||'—'}</div>
+                <div class="admin-card-sub">${u.email||''} · ${u.province||''} · ${u.phone||''}</div>
+                <div style="margin-top:5px">${statusLabel(u.role==='admin'?'active':u.status)}</div>
+            </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+                ${u.role !== 'admin' ? `
+                <button class="admin-action-btn" style="background:#6366f1;color:white" onclick="setUserRole('${u.id}','admin')">ترقية أدمن</button>
+                <button class="admin-action-btn btn-deactivate" onclick="setUserRole('${u.id}','banned')">حظر</button>` : '<span style="color:#6366f1;font-size:12px;font-weight:700">أدمن</span>'}
+            </div>
+        </div>`;
+    });
+    el.innerHTML = html;
+}
+
+// ═══ عمليات الأدمن على Firebase ═══
+async function setJobStatus(id, status) {
+    try {
+        await db.collection('jobs').doc(id).update({ status });
+        showNotification('✅', status==='hired' ? 'تم تعليمها كـ «أُشغلت»' : status==='inactive' ? 'تم تعطيل الوظيفة' : 'تم إعادة التفعيل', 'success');
+        loadAdminTab('jobs');
+        loadAllData();
+    } catch(e) { showNotification('❌', e.message, 'error'); }
+}
+async function setCvStatus(id, status) {
+    try {
+        await db.collection('jobs').doc(id).update({ status });
+        showNotification('✅', status==='hired' ? 'تم تعليمه كـ «تم توظيفه»' : status==='inactive' ? 'تم إخفاء السيرة' : 'تم إعادة العرض', 'success');
+        loadAdminTab('cvs');
+        loadAllData();
+    } catch(e) { showNotification('❌', e.message, 'error'); }
+}
+async function setAppStatus(id, status) {
+    try {
+        await db.collection('applications').doc(id).update({ status });
+        const idx = adminApplications.findIndex(a => a.id === id);
+        if (idx !== -1) adminApplications[idx].status = status;
+        showNotification('✅', 'تم تحديث حالة الطلب', 'success');
+        filterApps('all');
+    } catch(e) { showNotification('❌', e.message, 'error'); }
+}
+async function setAppStatusAndDeactivate(appId, jobId, cvUid) {
+    try {
+        // 1. تحديث حالة الطلب
+        await db.collection('applications').doc(appId).update({ status: 'hired' });
+        // 2. تعطيل الوظيفة
+        if (jobId) await db.collection('jobs').doc(jobId).update({ status: 'hired' }).catch(()=>{});
+        // 3. تعطيل سيرة المتقدم إن وجدت
+        if (cvUid) {
+            const cvSnap = await db.collection('jobs').where('type','==','cv').where('addedBy','==',cvUid).get();
+            cvSnap.forEach(async doc => await doc.ref.update({ status: 'hired' }));
+        }
+        const idx = adminApplications.findIndex(a => a.id === appId);
+        if (idx !== -1) adminApplications[idx].status = 'hired';
+        showNotification('🎉 تم التوظيف!', 'الوظيفة والسيرة الذاتية صارت غير فعالة تلقائياً', 'success');
+        filterApps('all');
+        loadAllData();
+    } catch(e) { showNotification('❌', e.message, 'error'); }
+}
+async function setUserRole(id, role) {
+    try {
+        await db.collection('users').doc(id).update({ role });
+        showNotification('✅', role==='admin' ? 'تم ترقية المستخدم' : 'تم حظر المستخدم', 'success');
+        loadAdminTab('users');
+    } catch(e) { showNotification('❌', e.message, 'error'); }
+}
+async function deleteItem(collection, id) {
+    if (!confirm('هل أنت متأكد من الحذف؟')) return;
+    try {
+        await db.collection(collection).doc(id).delete();
+        showNotification('✅', 'تم الحذف', 'success');
+        loadAdminTab(currentAdminTab);
+        loadAllData();
+    } catch(e) { showNotification('❌', e.message, 'error'); }
+}
+
+// ═══ إشعارات المستخدمين الجدد ═══
+async function loadNotifCount() {
+    try {
+        const snap = await db.collection('notifications').where('read','==',false).get();
+        const count = snap.size;
+        const el = document.getElementById('notifCount');
+        if (el) { el.textContent = count; el.style.display = count > 0 ? 'inline' : 'none'; }
+    } catch(e) {}
+}
+
+async function renderAdminNotifications() {
+    const el = document.getElementById('adminContent');
+    try {
+        const snap = await db.collection('notifications').orderBy('createdAt','desc').get();
+        if (snap.empty) { el.innerHTML = '<div style="color:#64748b;padding:20px;text-align:center">لا توجد إشعارات</div>'; return; }
+        let html = `<button onclick="markAllNotifsRead()" style="background:#6366f1;color:white;border:none;padding:7px 18px;border-radius:20px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:14px"><i class="fas fa-check-double"></i> تعليم الكل كمقروء</button>`;
+        snap.forEach(doc => {
+            const n = doc.data();
+            const isNew = !n.read;
+            const time = n.createdAt?.toDate ? n.createdAt.toDate().toLocaleString('ar-IQ') : '';
+            html += `
+            <div class="admin-card" style="${isNew ? 'border-color:#6366f1;background:#1e1b4b' : ''}">
+                <div style="font-size:24px">${n.method==='google' ? '🔵' : '📧'}</div>
+                <div class="admin-card-info">
+                    <div class="admin-card-title" style="color:${isNew?'#a5b4fc':'#f1f5f9'}">${n.title}</div>
+                    <div class="admin-card-sub">${n.message}</div>
+                    ${n.userPhone ? `<div class="admin-card-sub">📱 ${n.userPhone}</div>` : ''}
+                    <div class="admin-card-sub" style="margin-top:4px">${time}</div>
+                </div>
+                ${isNew ? `<span class="status-badge" style="background:#4f46e5;color:white;font-size:10px">جديد</span>` : ''}
+            </div>`;
+        });
+        el.innerHTML = html;
+    } catch(e) {
+        el.innerHTML = `<div style="color:#ef4444;padding:20px">خطأ: ${e.message}</div>`;
+    }
+}
+
+async function markAllNotifsRead() {
+    const snap = await db.collection('notifications').where('read','==',false).get();
+    const batch = db.batch();
+    snap.forEach(doc => batch.update(doc.ref, { read: true }));
+    await batch.commit();
+    loadAdminTab('notifications');
+    loadNotifCount();
+    showNotification('✅','تم تعليم الكل كمقروء','success');
+}
+
+</script>
+</body>
+</html>
