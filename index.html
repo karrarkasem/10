@@ -477,7 +477,7 @@
 <div class="header">
     <div class="logo"><h1>منصة <span>كربلاء</span> التجارية</h1></div>
     <div class="auth-buttons" id="authButtons">
-        <button class="auth-btn primary" onclick="openLoginModal()"><i class="fas fa-user"></i> دخول </button>
+        <button class="auth-btn primary" onclick="openLoginModal()"><i class="fab fa-google"></i> دخول بـ Google</button>
     </div>
     <div class="user-menu" id="userMenu" style="display:none;">
         <div class="user-welcome">
@@ -494,7 +494,7 @@
         <div class="ticker-item">💼 أعلن عن وظيفتك — مجاناً</div>
         <div class="ticker-item">📄 أنشئ سيرتك الذاتية بالذكاء الاصطناعي</div>
         <div class="ticker-item">🏢 ابحث عن الكفاءات في منصة كربلاء</div>
-        <div class="ticker-item">⚡ مدعوم بـسيرفرات — سريع وآمن</div>
+        <div class="ticker-item">⚡ مدعوم بـ Firebase — سريع وآمن</div>
     </div>
 </div>
 
@@ -619,7 +619,7 @@
 <!-- زر الإضافة -->
 <button class="add-btn" id="addBtn" onclick="openAddModal()" style="display:none;" title="إضافة"><i class="fas fa-plus"></i></button>
 <!-- مؤشر Firebase -->
-<div class="firebase-status"><div class="firebase-dot"></div>متصل</div>
+<div class="firebase-status"><div class="firebase-dot"></div> Firebase متصل</div>
 <div id="notificationContainer"></div>
 
 <!-- ═══ Modal تسجيل الدخول / حساب جديد ═══ -->
@@ -792,8 +792,13 @@ const db   = firebase.firestore();
 // ╔══════════════════════════════════════════════════════╗
 // ║              الإعدادات العامة                        ║
 // ╚══════════════════════════════════════════════════════╝
-const DRIVE_UPLOAD_URL = 'https://script.google.com/macros/s/AKfycbymRYZFWn_LKYkzQzO9uihp5b0ZNs2c8cpM3klbqYm6rcx6fO1w6ug7N_ag6zIji8eF/exec';
-const DRIVE_BASE_URL   = 'https://drive.google.com/thumbnail?id=';
+// ╔══════════════════════════════════════════════════════╗
+// ║   ImgBB — مخزن صور مجاني بالكامل                   ║
+// ║   api.imgbb.com → سجل → انسخ API Key                ║
+// ╚══════════════════════════════════════════════════════╝
+const IMGBB = {
+    apiKey: '0a42e570c7ccbc8fac74d577f7a03fe1'  // ← من api.imgbb.com
+};
 const GUEST_LIMIT      = 3;
 const provinces = ['بغداد','البصرة','نينوى','أربيل','كركوك','كربلاء','النجف','بابل','ذي قار','المثنى','القادسية','واسط','ميسان','ديالى','الأنبار','صلاح الدين','دهوك','السليمانية'];
 
@@ -912,13 +917,16 @@ function displayJobs() {
     let html  = '';
 
     dj.forEach((job, idx) => {
+        // أولوية الصورة: شعار الشركة > صورة بروفايل الناشر > حروف الشركة
+        const _uiLogo = `https://ui-avatars.com/api/?name=${encodeURIComponent(job.company||'C')}&background=2563eb&color=fff&bold=true`;
         const logoSrc = job.logo
-            ? `${DRIVE_BASE_URL}${job.logo}`
-            : `https://ui-avatars.com/api/?name=${encodeURIComponent(job.company||'C')}&background=2563eb&color=fff&bold=true`;
+            ? job.logo
+            : (job.addedByAvatar || _uiLogo);
+        const logoFallback = job.addedByAvatar || _uiLogo;
         html += `
         <div class="job-card-pro">
             <div class="job-header">
-                <img src="${logoSrc}" class="job-avatar" onerror="this.src='https://ui-avatars.com/api/?name=C&background=2563eb&color=fff'" alt="">
+                <img src="${logoSrc}" class="job-avatar" onerror="this.src='${logoFallback}'" alt="">
                 <div class="job-info">
                     <div class="job-title-text">${job.title||''}</div>
                     <div class="job-company">${job.company||''}</div>
@@ -929,12 +937,9 @@ function displayJobs() {
             <div class="job-skills">${(job.skills||'').split(',').filter(Boolean).map(s=>`<span class="skill-tag">${s.trim()}</span>`).join('')}</div>
             <div class="job-footer">
                 <div style="display:flex;align-items:center;gap:7px">
-                    <img src="${
-                        job.addedByAvatar
-                            ? (job.addedByAvatar.startsWith('http') ? job.addedByAvatar : DRIVE_BASE_URL + job.addedByAvatar)
-                            : `https://ui-avatars.com/api/?name=${encodeURIComponent(job.addedByName||job.addedBy||'U')}&background=334155&color=fff&size=64`
-                    }" style="width:26px;height:26px;border-radius:50%;object-fit:cover;border:2px solid #334155"
-                       onerror="this.src='https://ui-avatars.com/api/?name=U&background=334155&color=fff&size=64'">
+                    <img src="${job.addedByAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(job.addedByName||job.addedBy||'U')}&background=334155&color=fff&size=64`}"
+                         style="width:26px;height:26px;border-radius:50%;object-fit:cover;border:2px solid #334155"
+                         onerror="this.src='https://ui-avatars.com/api/?name=U&background=334155&color=fff&size=64'">
                     <span style="font-size:11px;color:#64748b">${job.addedByName || job.addedBy || 'النظام'}</span>
                 </div>
                 <button class="apply-btn" onclick='openApplyModal(${JSON.stringify(job).replace(/'/g,"&#39;")})'>
@@ -946,8 +951,7 @@ function displayJobs() {
 
     dc.forEach((cv, idx) => {
         const avatarSrc = cv.avatar
-            ? `${DRIVE_BASE_URL}${cv.avatar}`
-            : `https://ui-avatars.com/api/?name=${encodeURIComponent(cv.name||'U')}&background=f59e0b&color=fff&bold=true`;
+            || `https://ui-avatars.com/api/?name=${encodeURIComponent(cv.name||'U')}&background=f59e0b&color=fff&bold=true`;
         html += `
         <div class="cv-card">
             <div class="job-header">
@@ -1167,7 +1171,7 @@ function updateUIForUser() {
     if (loggedIn) {
         document.getElementById('userName').textContent = currentUser.name;
         document.getElementById('userAvatar').src = currentUser.avatar
-            ? (currentUser.avatar.startsWith('http') ? currentUser.avatar : DRIVE_BASE_URL + currentUser.avatar)
+            ? currentUser.avatar
             : `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.name)}&background=10b981&color=fff`;
         const statusEl = document.getElementById('userStatus');
         if (currentUser.role === 'admin') {
@@ -1361,7 +1365,7 @@ async function submitAdd() {
             data.salary   = parseFloat(document.getElementById('jobSalary')?.value) || 0;
             data.skills   = document.getElementById('jobSkills')?.value || '';
             const logoFile = document.getElementById('companyLogo')?.files[0];
-            if (logoFile) { const fn = await uploadToDrive(logoFile,'شعارات شركات'); if(fn) data.logo = fn; }
+            if (logoFile) { showNotification('⏳','جاري رفع الشعار...','info'); const fn = await uploadToStorage(logoFile,'logos'); if(fn) data.logo = fn; }
         } else {
             data.name     = document.getElementById('cvName')?.value || '';
             if (!data.name) { showNotification('❌','أدخل الاسم الكامل','error'); return; }
@@ -1374,7 +1378,7 @@ async function submitAdd() {
             data.province      = document.getElementById('cvProvince')?.value || '';
             data.skills        = document.getElementById('cvSkills')?.value || '';
             const photoFile = document.getElementById('cvPhoto')?.files[0];
-            if (photoFile) { const fn = await uploadToDrive(photoFile,'صور شخصية'); if(fn) data.avatar = fn; }
+            if (photoFile) { showNotification('⏳','جاري رفع الصورة...','info'); const fn = await uploadToStorage(photoFile,'avatars'); if(fn) data.avatar = fn; }
         }
         data.description = document.getElementById('description')?.value || '';
         // ═══ الحفظ في Firestore ═══
@@ -1597,12 +1601,12 @@ function _buildPersonTpl() {
 async function downloadCVPDFFromData(cv) {
     showNotification('⏳','جاري إنشاء PDF...','info'); await new Promise(r=>setTimeout(r,100));
     const today=new Date().toLocaleDateString('ar-IQ');
-    const avatarUrl=cv.avatar?DRIVE_BASE_URL+cv.avatar:null;
+    const avatarUrl=cv.avatar||null;
     document.getElementById('cvPdfTpl').innerHTML=`<div class="tpl-wrap"><div class="tpl-hdr tpl-hdr-person">${avatarUrl?`<img class="tpl-avatar" src="${avatarUrl}" crossorigin="anonymous">`:`<div class="tpl-avatar-ph">👤</div>`}<div class="tpl-hdr-info"><div class="tpl-badge">السيرة الذاتية</div><div class="tpl-name">${cv.name||''}</div>${cv.jobTitle?`<div class="tpl-role">${cv.jobTitle}</div>`:''}<div class="tpl-contacts">${cv.province?`<span class="tpl-contact-chip">📍 ${cv.province}</span>`:''} ${cv.phone?`<span class="tpl-contact-chip">📞 ${cv.phone}</span>`:''}</div></div></div><div class="tpl-hdr-stripe"></div><div class="tpl-body"><div class="tpl-section"><div class="tpl-sec-hdr"><div class="tpl-sec-icon tpl-sec-icon-green">👤</div><div class="tpl-sec-title tpl-sec-title-green">المعلومات الشخصية</div></div><div class="tpl-grid">${cv.name?`<div class="tpl-field"><div class="tpl-field-lbl">الاسم</div><div class="tpl-field-val">${cv.name}</div></div>`:''} ${cv.age?`<div class="tpl-field"><div class="tpl-field-lbl">العمر</div><div class="tpl-field-val">${cv.age}</div></div>`:''} ${cv.province?`<div class="tpl-field"><div class="tpl-field-lbl">المحافظة</div><div class="tpl-field-val">${cv.province}</div></div>`:''} ${cv.phone?`<div class="tpl-field"><div class="tpl-field-lbl">الهاتف</div><div class="tpl-field-val">${cv.phone}</div></div>`:''}</div></div>${cv.skills?`<div class="tpl-section"><div class="tpl-sec-hdr"><div class="tpl-sec-icon tpl-sec-icon-green">⚡</div><div class="tpl-sec-title tpl-sec-title-green">المهارات</div></div><div class="tpl-skills">${cv.skills.split(',').filter(Boolean).map(s=>`<span class="tpl-skill-green">${s.trim()}</span>`).join('')}</div></div>`:''}</div><div class="tpl-footer tpl-footer-green"><div class="tpl-footer-brand">منصة كربلاء التجارية</div><div class="tpl-footer-txt">Karbala Commercial Platform</div><div class="tpl-footer-txt">${today}</div></div></div>`;
     await _html2pdf('cvPdfTpl',`CV_${cv.name||'cv'}_${Date.now()}.pdf`);
 }
 function viewCVDetail(cv) {
-    const avatarSrc = cv.avatar ? DRIVE_BASE_URL+cv.avatar : `https://ui-avatars.com/api/?name=${encodeURIComponent(cv.name||'U')}&background=1e293b&color=fff`;
+    const avatarSrc = cv.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(cv.name||'U')}&background=1e293b&color=fff`;
     let existing=document.getElementById('cvDetailModal'); if(existing) existing.remove();
     const modal=document.createElement('div'); modal.className='modal active'; modal.id='cvDetailModal';
     modal.innerHTML=`<div class="modal-content" style="max-width:480px"><button class="close-modal" onclick="document.getElementById('cvDetailModal').remove()"><i class="fas fa-times"></i></button><div style="background:linear-gradient(135deg,#1e293b,#0f172a);padding:28px 20px 20px;display:flex;align-items:center;gap:16px;border-radius:20px 20px 0 0"><img src="${avatarSrc}" style="width:72px;height:72px;border-radius:50%;border:3px solid #10b981;object-fit:cover;flex-shrink:0"><div><div style="font-size:20px;font-weight:900;color:white">${cv.name||''}</div><div style="color:#10b981;font-size:14px;margin-top:3px">${cv.jobTitle||'باحث عن عمل'}</div></div></div><div style="padding:20px">${cv.skills?`<div style="margin-bottom:12px"><div style="font-size:12px;font-weight:700;color:#10b981;margin-bottom:6px">المهارات</div><div class="job-skills">${cv.skills.split(',').filter(Boolean).map(s=>`<span class="skill-tag">${s.trim()}</span>`).join('')}</div></div>`:''}<button class="action-btn-green" onclick='downloadCVPDFFromData(${JSON.stringify(cv).replace(/'/g,"&#39;")})'><i class="fas fa-file-pdf"></i> تنزيل PDF</button></div></div>`;
@@ -1622,19 +1626,60 @@ function removeFile(inputId, areaId, previewId) {
     const area=document.getElementById(areaId); if(area){area.classList.remove('has-file');const t=area.querySelector('.upload-text');if(t)t.textContent='اسحب أو اضغط لرفع ملف';}
     const preview=document.getElementById(previewId); if(preview){preview.style.display='none';const img=preview.querySelector('img');if(img)img.src='';}
 }
-async function uploadToDrive(file, folderName) {
+// ═══ رفع الصور على ImgBB (مجاني بالكامل) ═══
+async function uploadToStorage(file, folder) {
+    if (!IMGBB.apiKey || IMGBB.apiKey === 'YOUR_IMGBB_API_KEY') {
+        showNotification('⚠️','لم يتم إعداد ImgBB بعد — ارجع لإعدادات الأدمن','warning');
+        return null;
+    }
     try {
-        const base64=await fileToBase64(file);
-        const form=new FormData(); form.append('fileName',file.name); form.append('mimeType',file.type); form.append('folder',folderName||'uploads'); form.append('data',base64);
-        const res=await fetch(DRIVE_UPLOAD_URL,{method:'POST',body:form});
-        let result={}; try{result=JSON.parse(await res.text());}catch(e){}
-        const fileId=result.fileId||result.id||null;
-        if(fileId){showNotification('✅','تم رفع الصورة','success');return fileId;}
-        showNotification('⚠️','تم إرسال الصورة','warning');
-        return `sent_${Date.now()}`;
-    } catch(e) { showNotification('❌','تعذّر رفع الصورة','error'); return null; }
+        const compressed = await compressImage(file, 900, 0.85);
+        const base64 = await new Promise((res, rej) => {
+            const r = new FileReader();
+            r.onload = e => res(e.target.result.split(',')[1]);
+            r.onerror = rej;
+            r.readAsDataURL(compressed);
+        });
+        const form = new FormData();
+        form.append('key', IMGBB.apiKey);
+        form.append('image', base64);
+        const resp = await fetch('https://api.imgbb.com/1/upload', {
+            method: 'POST', body: form
+        });
+        const data = await resp.json();
+        if (data.success) return data.data.display_url; // رابط https مباشر
+        throw new Error(data.error?.message || 'فشل الرفع');
+    } catch(e) {
+        showNotification('❌', 'تعذّر رفع الصورة: ' + e.message, 'error');
+        return null;
+    }
 }
-function fileToBase64(file){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=e=>resolve(e.target.result.split(',')[1]);reader.onerror=reject;reader.readAsDataURL(file);});}
+
+// ضغط الصورة قبل الرفع
+function compressImage(file, maxPx, quality) {
+    return new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onload = e => {
+            const img = new Image();
+            img.onload = () => {
+                let w = img.width, h = img.height;
+                if (w > maxPx || h > maxPx) {
+                    if (w > h) { h = Math.round(h * maxPx / w); w = maxPx; }
+                    else       { w = Math.round(w * maxPx / h); h = maxPx; }
+                }
+                const canvas = document.createElement('canvas');
+                canvas.width = w; canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                canvas.toBlob(blob => resolve(blob || file), file.type, quality);
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+const uploadToDrive = uploadToStorage;
+function fileToBase64(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);});}
 
 // ╔══════════════════════════════════════════════════════╗
 // ║         التنقل والأقسام                             ║
@@ -2130,6 +2175,33 @@ function renderAdminSettings() {
         <h3><i class="fas fa-sliders-h" style="color:#94a3b8;margin-left:6px"></i> إعدادات النظام</h3>
     </div>
 
+    <!-- ImgBB -->
+    <div class="email-config-box" style="border-color:rgba(59,130,246,0.35)">
+        <div class="config-title">
+            <div class="config-icon" style="background:rgba(59,130,246,0.15)">🖼️</div>
+            <div>
+                <div style="color:#f1f5f9;font-weight:800;font-size:14px">ImgBB — مخزن الصور</div>
+                <div style="color:#475569;font-size:11px">مجاني بالكامل — رابط مباشر للصورة</div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label style="color:#94a3b8;font-size:12px">API Key</label>
+            <input id="imgbb_key" type="text" placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                value="${IMGBB.apiKey !== 'YOUR_IMGBB_API_KEY' ? IMGBB.apiKey : ''}"
+                style="background:#334155;color:#f1f5f9;border-color:#475569;direction:ltr">
+        </div>
+        <button class="submit-btn" style="background:linear-gradient(135deg,#1d4ed8,#2563eb)" onclick="saveImgbbConfig()">
+            <i class="fas fa-save"></i> حفظ API Key
+        </button>
+        <div style="margin-top:12px;background:#0f172a;border-radius:10px;padding:12px;font-size:12px;color:#64748b;line-height:2">
+            <strong style="color:#60a5fa">كيف تحصل على API Key؟ (دقيقتين فقط)</strong><br>
+            ١. روح <a href="https://imgbb.com" target="_blank" style="color:#60a5fa">imgbb.com</a> وسجل حساب مجاني<br>
+            ٢. بعد تسجيل الدخول روح <a href="https://api.imgbb.com" target="_blank" style="color:#60a5fa">api.imgbb.com</a><br>
+            ٣. اضغط <strong style="color:#fbbf24">Get API key</strong><br>
+            ٤. انسخ الـ Key والصقه هنا واحفظ ✅
+        </div>
+    </div>
+
     <!-- EmailJS -->
     <div class="email-config-box">
         <div class="config-title">
@@ -2217,6 +2289,14 @@ async function testEmail() {
 }
 
 // تحميل إعدادات EmailJS من Firestore عند تفعيل الأدمن
+function saveImgbbConfig() {
+    const key = document.getElementById('imgbb_key')?.value?.trim();
+    if (!key) { showNotification('❌','أدخل API Key','error'); return; }
+    IMGBB.apiKey = key;
+    db.collection('config').doc('imgbb').set({ apiKey: key }).catch(()=>{});
+    showNotification('✅','تم حفظ API Key بنجاح','success');
+}
+
 function saveTelegramConfig() {
     const token = document.getElementById('tg_token')?.value?.trim();
     const chat  = document.getElementById('tg_chat')?.value?.trim();
@@ -2253,6 +2333,11 @@ async function loadEmailJSConfig() {
             const d = tgDoc.data();
             TELEGRAM_CONFIG.botToken = d.token || TELEGRAM_CONFIG.botToken;
             TELEGRAM_CONFIG.chatId   = d.chat  || TELEGRAM_CONFIG.chatId;
+        }
+        const imgbbDoc = await db.collection('config').doc('imgbb').get();
+        if (imgbbDoc.exists) {
+            const d = imgbbDoc.data();
+            if (d.apiKey) IMGBB.apiKey = d.apiKey;
         }
     } catch(e) {}
 }
