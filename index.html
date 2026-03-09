@@ -165,7 +165,7 @@
         .ai-cv-msg.user { background: #1e3a5f; border: 1px solid #2563eb; color: #bfdbfe; border-left: 3px solid #3b82f6; }
         /* PDF Templates */
         #cvPdfTpl, #cvCompPdfTpl { position:fixed; top:-9999px; left:-9999px; width:794px; background:#0f172a; font-family:'Cairo','Arial',sans-serif; direction:rtl; color:#e2e8f0; display:none; }
-        .tpl-wrap { min-height:1123px; display:flex; flex-direction:column; }
+        .tpl-wrap { display:flex; flex-direction:column; }
         .tpl-hdr { padding:40px 44px 32px; display:flex; align-items:center; gap:30px; position:relative; overflow:hidden; }
         .tpl-hdr-person { background:linear-gradient(135deg,#059669,#10b981,#34d399); }
         .tpl-hdr-company { background:linear-gradient(135deg,#1d4ed8,#2563eb,#3b82f6); }
@@ -1587,10 +1587,30 @@ async function generateAndSendCVPDF() {
     _buildPersonTpl(); await _html2pdf('cvPdfTpl',`CV_${document.getElementById('cvb_name').value}_${Date.now()}.pdf`);
 }
 async function _html2pdf(elId, fileName) {
-    const el=document.getElementById(elId); el.style.display='block'; await document.fonts.ready; await new Promise(r=>setTimeout(r,400));
-    try { const canvas=await html2canvas(el,{scale:2,useCORS:true,allowTaint:true,backgroundColor:'#0f172a',logging:false,width:794,windowWidth:794}); const img=canvas.toDataURL('image/jpeg',0.95); const {jsPDF}=window.jspdf; const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'}); const W=210,H=297,ih=(canvas.height*W)/canvas.width; if(ih<=H){pdf.addImage(img,'JPEG',0,0,W,ih);}else{let y=0;while(y<ih){if(y>0)pdf.addPage();pdf.addImage(img,'JPEG',0,-y,W,ih);y+=H;}} pdf.save(fileName); showNotification('✅ تم التنزيل','تم إنشاء الـ PDF','success'); }
-    catch(e){showNotification('❌ خطأ','تعذّر إنشاء PDF','error');}
-    el.style.display='none';
+    const el = document.getElementById(elId);
+    el.style.display = 'block';
+    await document.fonts.ready;
+    await new Promise(r => setTimeout(r, 500));
+    try {
+        const canvas = await html2canvas(el, {
+            scale: 2, useCORS: true, allowTaint: true,
+            backgroundColor: '#0f172a', logging: false,
+            width: 794, windowWidth: 794
+        });
+        const img = canvas.toDataURL('image/jpeg', 0.95);
+        const { jsPDF } = window.jspdf;
+        const W = 210; // mm عرض A4
+        // ارتفاع PDF = ارتفاع الصورة الفعلي (بدون صفحات زيادة)
+        const ih = (canvas.height * W) / canvas.width;
+        const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [W, ih] });
+        pdf.addImage(img, 'JPEG', 0, 0, W, ih);
+        pdf.save(fileName);
+        showNotification('✅ تم التنزيل', 'تم إنشاء الـ PDF', 'success');
+    } catch(e) {
+        console.error(e);
+        showNotification('❌ خطأ', 'تعذّر إنشاء PDF', 'error');
+    }
+    el.style.display = 'none';
 }
 function _buildPersonTpl() {
     const v=id=>document.getElementById(id)?.value||''; const name=v('cvb_name'),role=v('cvb_role'),phone=v('cvb_phone'),email=v('cvb_email'),province=v('cvb_province'),exp=v('cvb_exp'),edu=v('cvb_edu'),skills=v('cvb_skills'),summary=v('cvb_summary'),salary=v('cvb_salary');
@@ -1606,10 +1626,71 @@ async function downloadCVPDFFromData(cv) {
     await _html2pdf('cvPdfTpl',`CV_${cv.name||'cv'}_${Date.now()}.pdf`);
 }
 function viewCVDetail(cv) {
-    const avatarSrc = cv.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(cv.name||'U')}&background=1e293b&color=fff`;
-    let existing=document.getElementById('cvDetailModal'); if(existing) existing.remove();
-    const modal=document.createElement('div'); modal.className='modal active'; modal.id='cvDetailModal';
-    modal.innerHTML=`<div class="modal-content" style="max-width:480px"><button class="close-modal" onclick="document.getElementById('cvDetailModal').remove()"><i class="fas fa-times"></i></button><div style="background:linear-gradient(135deg,#1e293b,#0f172a);padding:28px 20px 20px;display:flex;align-items:center;gap:16px;border-radius:20px 20px 0 0"><img src="${avatarSrc}" style="width:72px;height:72px;border-radius:50%;border:3px solid #10b981;object-fit:cover;flex-shrink:0"><div><div style="font-size:20px;font-weight:900;color:white">${cv.name||''}</div><div style="color:#10b981;font-size:14px;margin-top:3px">${cv.jobTitle||'باحث عن عمل'}</div></div></div><div style="padding:20px">${cv.skills?`<div style="margin-bottom:12px"><div style="font-size:12px;font-weight:700;color:#10b981;margin-bottom:6px">المهارات</div><div class="job-skills">${cv.skills.split(',').filter(Boolean).map(s=>`<span class="skill-tag">${s.trim()}</span>`).join('')}</div></div>`:''}<button class="action-btn-green" onclick='downloadCVPDFFromData(${JSON.stringify(cv).replace(/'/g,"&#39;")})'><i class="fas fa-file-pdf"></i> تنزيل PDF</button></div></div>`;
+    const avatarSrc = cv.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(cv.name||'U')}&background=059669&color=fff&size=128`;
+    let existing = document.getElementById('cvDetailModal');
+    if (existing) existing.remove();
+    const modal = document.createElement('div');
+    modal.className = 'modal active';
+    modal.id = 'cvDetailModal';
+
+    // دالة مساعدة لبناء صف معلومة
+    const row = (icon, lbl, val) => val ? `
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
+            <div style="width:32px;height:32px;border-radius:9px;background:rgba(16,185,129,0.12);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">${icon}</div>
+            <div>
+                <div style="font-size:10px;color:#475569;font-weight:600">${lbl}</div>
+                <div style="font-size:14px;color:#e2e8f0;font-weight:700">${val}</div>
+            </div>
+        </div>` : '';
+
+    modal.innerHTML = `
+    <div class="modal-content" style="max-width:500px;padding:0;overflow:hidden">
+        <button class="close-modal" onclick="document.getElementById('cvDetailModal').remove()" style="z-index:10">
+            <i class="fas fa-times"></i>
+        </button>
+
+        <!-- رأس البطاقة -->
+        <div style="background:linear-gradient(135deg,#064e3b,#065f46,#047857);padding:28px 24px 22px;display:flex;align-items:center;gap:16px;position:relative;overflow:hidden">
+            <div style="position:absolute;top:-30px;left:-30px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,0.05)"></div>
+            <img src="${avatarSrc}" style="width:80px;height:80px;border-radius:50%;border:3px solid rgba(255,255,255,0.4);object-fit:cover;flex-shrink:0;position:relative;z-index:1"
+                 onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(cv.name||'U')}&background=059669&color=fff&size=128'">
+            <div style="position:relative;z-index:1">
+                <div style="font-size:20px;font-weight:900;color:white">${cv.name||'—'}</div>
+                <div style="color:rgba(255,255,255,0.75);font-size:13px;margin-top:3px">${cv.jobTitle||'باحث عن عمل'}</div>
+                ${cv.province ? `<div style="margin-top:6px;display:inline-flex;align-items:center;gap:4px;background:rgba(0,0,0,0.2);padding:3px 10px;border-radius:20px;font-size:11px;color:rgba(255,255,255,0.8)">📍 ${cv.province}</div>` : ''}
+            </div>
+        </div>
+
+        <!-- التفاصيل -->
+        <div style="padding:20px;background:#0f172a;max-height:65vh;overflow-y:auto">
+
+            <!-- معلومات التواصل -->
+            <div style="font-size:11px;color:#10b981;font-weight:800;letter-spacing:1px;margin-bottom:6px;text-transform:uppercase">معلومات التواصل</div>
+            ${row('📞','رقم الهاتف', cv.phone)}
+            ${cv.addedBy ? row('📧','البريد الإلكتروني', cv.addedBy) : ''}
+
+            <!-- المعلومات الشخصية -->
+            <div style="font-size:11px;color:#6366f1;font-weight:800;letter-spacing:1px;margin:14px 0 6px;text-transform:uppercase">المعلومات الشخصية</div>
+            ${row('🎂','العمر', cv.age)}
+            ${row('🎓','المؤهل الدراسي', cv.education)}
+            ${row('💼','سنوات الخبرة', cv.experience)}
+            ${row('💰','الراتب المتوقع', cv.expectedSalary ? Number(cv.expectedSalary).toLocaleString() + ' د.ع' : null)}
+
+            <!-- المهارات -->
+            ${cv.skills ? `
+            <div style="font-size:11px;color:#f59e0b;font-weight:800;letter-spacing:1px;margin:14px 0 10px;text-transform:uppercase">المهارات</div>
+            <div class="job-skills">${cv.skills.split(',').filter(Boolean).map(s=>`<span class="skill-tag">${s.trim()}</span>`).join('')}</div>` : ''}
+
+            <!-- أزرار -->
+            <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap">
+                ${cv.phone ? `<a href="tel:${cv.phone}" class="action-btn-green" style="flex:1;text-align:center;text-decoration:none"><i class="fas fa-phone"></i> اتصال</a>` : ''}
+                ${cv.phone ? `<a href="https://wa.me/964${cv.phone.replace(/^0/,'')}" target="_blank" class="action-btn-green" style="flex:1;text-align:center;text-decoration:none;background:linear-gradient(135deg,#15803d,#16a34a)"><i class="fab fa-whatsapp"></i> واتساب</a>` : ''}
+                <button class="action-btn-green" style="flex:1" onclick='downloadCVPDFFromData(${JSON.stringify(cv).replace(/'/g,"&#39;")})'>
+                    <i class="fas fa-file-pdf"></i> PDF
+                </button>
+            </div>
+        </div>
+    </div>`;
     document.body.appendChild(modal);
 }
 
