@@ -477,7 +477,7 @@
 <div class="header">
     <div class="logo"><h1>منصة <span>كربلاء</span> التجارية</h1></div>
     <div class="auth-buttons" id="authButtons">
-        <button class="auth-btn primary" onclick="openLoginModal()"><i class="fab fa-google"></i> دخول بـ Google</button>
+        <button class="auth-btn primary" onclick="openLoginModal()"><i class="fab fa-google"></i> دخول </button>
     </div>
     <div class="user-menu" id="userMenu" style="display:none;">
         <div class="user-welcome">
@@ -1273,7 +1273,7 @@ async function submitApplication() {
 // ║         إضافة وظيفة / سيرة ذاتية                   ║
 // ╚══════════════════════════════════════════════════════╝
 function openAddModal() {
-    if (!currentUser.isLoggedIn) { showNotification('❌','يجب تسجيل الدخول بـ Google أولاً','error'); openLoginModal(); return; }
+    if (!currentUser.isLoggedIn) { showNotification('❌','يجب تسجيل الدخول أولاً','error'); openLoginModal(); return; }
     document.getElementById('dynamicForm').innerHTML = buildJobForm();
     toggleJobForm();
     document.getElementById('addModal').classList.add('active');
