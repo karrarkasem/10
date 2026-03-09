@@ -202,23 +202,270 @@
         .tpl-footer-blue { background:linear-gradient(135deg,#1e3a8a,#1d4ed8); }
         .tpl-footer-txt { font-size:11px; color:rgba(255,255,255,0.88); }
         .tpl-footer-brand { font-size:13px; font-weight:900; color:white; }
-        /* ═══ Stats Cards ═══ */
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px; }
-        .stat-card { background: #1e293b; border-radius: 16px; padding: 16px; text-align: center; border: 1px solid #334155; transition: all 0.3s; }
-        .stat-card:hover { transform: translateY(-3px); border-color: #6366f1; }
-        .stat-card .stat-num { font-size: 30px; font-weight: 900; margin: 6px 0; }
-        .stat-card .stat-lbl { font-size: 12px; color: #64748b; font-weight: 600; }
-        .stat-card .stat-icon { font-size: 22px; }
-        /* ═══ Search Bar ═══ */
-        .admin-search { width: 100%; padding: 10px 16px; background: #1e293b; border: 2px solid #334155; border-radius: 14px; font-family: 'Cairo', sans-serif; font-size: 14px; color: #f1f5f9; margin-bottom: 14px; transition: all 0.3s; }
-        .admin-search:focus { border-color: #6366f1; outline: none; }
-        .admin-search::placeholder { color: #475569; }
+        /* ══════════════════════════════════════════
+           لوحة الأدمن — تصميم احترافي
+        ══════════════════════════════════════════ */
+        #admin-section .section-title { display: none; }
+
+        .admin-shell {
+            background: #070d1a;
+            border-radius: 28px;
+            overflow: hidden;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+
+        /* ── شريط العنوان العلوي ── */
+        .admin-topbar {
+            background: linear-gradient(135deg, #0f1729 0%, #111827 100%);
+            padding: 20px 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            position: relative;
+            overflow: hidden;
+        }
+        .admin-topbar::before {
+            content: '';
+            position: absolute;
+            top: -40px; right: -40px;
+            width: 160px; height: 160px;
+            background: radial-gradient(circle, rgba(99,102,241,0.18) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .admin-topbar-title {
+            display: flex; align-items: center; gap: 12px;
+        }
+        .admin-topbar-icon {
+            width: 42px; height: 42px;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px;
+            box-shadow: 0 4px 14px rgba(99,102,241,0.4);
+        }
+        .admin-topbar h2 {
+            font-size: 18px; font-weight: 900; color: #f1f5f9;
+            letter-spacing: -0.3px;
+        }
+        .admin-topbar-sub { font-size: 12px; color: #475569; margin-top: 1px; }
+        .admin-live-badge {
+            display: flex; align-items: center; gap: 6px;
+            background: rgba(16,185,129,0.1);
+            border: 1px solid rgba(16,185,129,0.25);
+            padding: 6px 14px; border-radius: 30px;
+            font-size: 12px; font-weight: 700; color: #34d399;
+        }
+        .admin-live-dot {
+            width: 7px; height: 7px; border-radius: 50%;
+            background: #10b981;
+            animation: livePulse 1.5s ease-in-out infinite;
+        }
+        @keyframes livePulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.7)} }
+
+        /* ── إحصائيات ── */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        @media(max-width:700px){ .stats-grid { grid-template-columns: repeat(3,1fr); } }
+        .stat-card {
+            padding: 20px 16px;
+            text-align: center;
+            border-left: 1px solid rgba(255,255,255,0.05);
+            position: relative;
+            overflow: hidden;
+            transition: background 0.3s;
+        }
+        .stat-card:last-child { border-left: none; }
+        .stat-card:hover { background: rgba(255,255,255,0.03); }
+        .stat-card::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 50%; transform: translateX(-50%);
+            width: 0; height: 2px;
+            background: var(--sc);
+            transition: width 0.4s;
+        }
+        .stat-card:hover::after { width: 60%; }
+        .stat-card .stat-icon { font-size: 20px; margin-bottom: 6px; }
+        .stat-card .stat-num {
+            font-size: 28px; font-weight: 900;
+            color: var(--sc);
+            line-height: 1;
+            margin-bottom: 4px;
+            font-variant-numeric: tabular-nums;
+        }
+        .stat-card .stat-lbl { font-size: 11px; color: #475569; font-weight: 600; letter-spacing: 0.3px; }
+
+        /* ── التبويبات الجانبية ── */
+        .admin-body { display: flex; min-height: 600px; }
+        .admin-sidebar {
+            width: 200px;
+            flex-shrink: 0;
+            background: #0b1120;
+            border-left: 1px solid rgba(255,255,255,0.05);
+            padding: 16px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        @media(max-width:700px){
+            .admin-body { flex-direction: column; }
+            .admin-sidebar { width: 100%; flex-direction: row; overflow-x: auto; padding: 10px; border-left: none; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        }
+        .admin-tab {
+            display: flex; align-items: center; gap: 10px;
+            padding: 11px 14px;
+            border-radius: 12px;
+            border: none;
+            font-family: 'Cairo', sans-serif;
+            font-weight: 700; font-size: 13px;
+            cursor: pointer;
+            color: #475569;
+            background: transparent;
+            transition: all 0.2s;
+            width: 100%;
+            text-align: right;
+            white-space: nowrap;
+            position: relative;
+        }
+        .admin-tab:hover { background: rgba(255,255,255,0.04); color: #94a3b8; }
+        .admin-tab.active {
+            background: linear-gradient(135deg, rgba(79,70,229,0.2), rgba(124,58,237,0.1));
+            color: #a5b4fc;
+            border: 1px solid rgba(99,102,241,0.3);
+        }
+        .admin-tab.active i { color: #818cf8; }
+        .admin-tab i { width: 16px; text-align: center; font-size: 13px; }
+        .admin-tab .tab-badge {
+            margin-right: auto;
+            background: #ef4444; color: white;
+            border-radius: 10px; padding: 1px 7px;
+            font-size: 10px; font-weight: 900;
+        }
+        .admin-sidebar-section {
+            font-size: 10px; color: #1e293b;
+            font-weight: 700; letter-spacing: 1px;
+            padding: 10px 14px 4px;
+            text-transform: uppercase;
+        }
+        .admin-sidebar-divider {
+            height: 1px; background: rgba(255,255,255,0.05);
+            margin: 8px 6px;
+        }
+
+        /* ── المحتوى الرئيسي ── */
+        .admin-content-area {
+            flex: 1;
+            padding: 20px 22px;
+            overflow-y: auto;
+            background: #080e1c;
+        }
+
+        /* ── بطاقات المحتوى ── */
+        .admin-card {
+            background: #0f1729;
+            border-radius: 14px;
+            padding: 14px 16px;
+            margin-bottom: 10px;
+            border: 1px solid rgba(255,255,255,0.06);
+            display: flex; align-items: center; gap: 14px;
+            flex-wrap: wrap;
+            transition: all 0.25s;
+            animation: cardIn 0.3s ease both;
+        }
+        .admin-card:hover { border-color: rgba(99,102,241,0.3); background: #111827; transform: translateX(-2px); }
+        .admin-card.inactive-card { opacity: 0.38; border-style: dashed; }
+        @keyframes cardIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+        .admin-card-info { flex: 1; min-width: 0; }
+        .admin-card-title { font-size: 14px; font-weight: 800; color: #e2e8f0; margin-bottom: 3px; }
+        .admin-card-sub { font-size: 12px; color: #475569; margin-top: 2px; }
+
+        /* ── أزرار الإجراءات ── */
+        .admin-action-btn {
+            padding: 7px 14px;
+            border-radius: 20px; border: none;
+            font-family: 'Cairo', sans-serif; font-weight: 700; font-size: 11px;
+            cursor: pointer; transition: all 0.2s; white-space: nowrap;
+            display: flex; align-items: center; gap: 5px;
+        }
+        .admin-action-btn:hover { transform: translateY(-1px); filter: brightness(1.15); }
+        .btn-deactivate { background: rgba(239,68,68,0.15); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); }
+        .btn-activate   { background: rgba(16,185,129,0.15); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.3); }
+        .btn-hired      { background: rgba(245,158,11,0.15); color: #fcd34d; border: 1px solid rgba(245,158,11,0.3); }
+        .btn-danger     { background: rgba(239,68,68,0.12); color: #f87171; border: 1px solid rgba(239,68,68,0.2); }
+
+        /* ── Badges حالة ── */
+        .status-badge   { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; }
+        .status-active  { background: rgba(16,185,129,0.12); color: #34d399; border: 1px solid rgba(16,185,129,0.2); }
+        .status-inactive{ background: rgba(239,68,68,0.12); color: #f87171; border: 1px solid rgba(239,68,68,0.2); }
+        .status-hired   { background: rgba(245,158,11,0.12); color: #fbbf24; border: 1px solid rgba(245,158,11,0.2); }
+
+        /* ── شريط البحث والفلتر ── */
+        .admin-search {
+            width: 100%; padding: 10px 16px 10px 40px;
+            background: #0b1120;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            font-family: 'Cairo', sans-serif; font-size: 13px;
+            color: #e2e8f0;
+            margin-bottom: 0;
+            transition: all 0.2s;
+        }
+        .admin-search:focus { border-color: rgba(99,102,241,0.5); outline: none; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+        .admin-search::placeholder { color: #2d3f5a; }
         .filter-row { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
-        .filter-select { padding: 7px 12px; background: #1e293b; border: 2px solid #334155; border-radius: 10px; font-family: 'Cairo', sans-serif; font-size: 13px; color: #94a3b8; cursor: pointer; }
-        .export-btn { background: linear-gradient(135deg, #059669, #10b981); color: white; border: none; padding: 8px 18px; border-radius: 20px; font-family: 'Cairo', sans-serif; font-weight: 700; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 7px; margin-right: auto; transition: all 0.3s; }
-        .export-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(16,185,129,0.3); }
-        /* ═══ Email config ═══ */
-        .email-config-box { background: #0f172a; border: 2px solid #334155; border-radius: 14px; padding: 16px; margin-bottom: 16px; }
+        .search-wrap { position: relative; flex: 1; }
+        .search-wrap::before { content: '🔍'; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 13px; pointer-events: none; }
+        .filter-select {
+            padding: 9px 12px; background: #0b1120;
+            border: 1px solid rgba(255,255,255,0.08); border-radius: 10px;
+            font-family: 'Cairo', sans-serif; font-size: 12px; color: #64748b; cursor: pointer;
+        }
+        .export-btn {
+            background: linear-gradient(135deg, #065f46, #059669);
+            color: #6ee7b7; border: 1px solid rgba(16,185,129,0.3);
+            padding: 8px 16px; border-radius: 20px;
+            font-family: 'Cairo', sans-serif; font-weight: 700; font-size: 12px;
+            cursor: pointer; display: flex; align-items: center; gap: 6px;
+            transition: all 0.2s; white-space: nowrap;
+        }
+        .export-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(5,150,105,0.3); }
+
+        /* ── إعدادات ── */
+        .email-config-box {
+            background: #0b1120;
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 16px; padding: 20px; margin-bottom: 14px;
+        }
+        .config-title {
+            display: flex; align-items: center; gap: 10px;
+            margin-bottom: 16px; padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .config-icon {
+            width: 36px; height: 36px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px;
+        }
+
+        /* ── عنوان القسم ── */
+        .admin-section-hdr {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 14px; padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .admin-section-hdr h3 { font-size: 14px; font-weight: 800; color: #94a3b8; }
+        .admin-count-badge {
+            background: rgba(99,102,241,0.15); color: #a5b4fc;
+            border: 1px solid rgba(99,102,241,0.25);
+            padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 700;
+        }
+
         /* Firebase status indicator */
         .firebase-status { position:fixed; bottom:90px; left:25px; background:white; border-radius:20px; padding:8px 14px; font-size:12px; font-weight:700; box-shadow:0 4px 15px rgba(0,0,0,0.1); display:flex; align-items:center; gap:6px; z-index:998; }
         .firebase-dot { width:8px; height:8px; border-radius:50%; background:#10b981; animation:pulse 2s infinite; }
@@ -280,25 +527,91 @@
 
     <!-- ═══ قسم الأدمن ═══ -->
     <div id="admin-section" class="section-content">
-        <div class="section-title"><i class="fas fa-user-shield" style="color:#6366f1"></i> لوحة الأدمن</div>
-        <div class="admin-panel">
-            <!-- إحصائيات سريعة -->
+        <div class="admin-shell">
+
+            <!-- الشريط العلوي -->
+            <div class="admin-topbar">
+                <div class="admin-topbar-title">
+                    <div class="admin-topbar-icon">🛡️</div>
+                    <div>
+                        <div class="admin-topbar h2" style="font-size:18px;font-weight:900;color:#f1f5f9">لوحة التحكم</div>
+                        <div class="admin-topbar-sub">منصة كربلاء التجارية — صلاحيات كاملة</div>
+                    </div>
+                </div>
+                <div class="admin-live-badge">
+                    <div class="admin-live-dot"></div>
+                    مباشر
+                </div>
+            </div>
+
+            <!-- الإحصائيات -->
             <div class="stats-grid" id="adminStats">
-                <div class="stat-card"><div class="stat-icon">💼</div><div class="stat-num" id="st_jobs" style="color:#10b981">—</div><div class="stat-lbl">وظيفة فعالة</div></div>
-                <div class="stat-card"><div class="stat-icon">📄</div><div class="stat-num" id="st_cvs" style="color:#f59e0b">—</div><div class="stat-lbl">سيرة ذاتية</div></div>
-                <div class="stat-card"><div class="stat-icon">📨</div><div class="stat-num" id="st_apps" style="color:#3b82f6">—</div><div class="stat-lbl">طلب تقديم</div></div>
-                <div class="stat-card"><div class="stat-icon">👥</div><div class="stat-num" id="st_users" style="color:#8b5cf6">—</div><div class="stat-lbl">مستخدم</div></div>
-                <div class="stat-card"><div class="stat-icon">🎉</div><div class="stat-num" id="st_hired" style="color:#ec4899">—</div><div class="stat-lbl">تم توظيفه</div></div>
+                <div class="stat-card" style="--sc:#10b981">
+                    <div class="stat-icon">💼</div>
+                    <div class="stat-num" id="st_jobs">—</div>
+                    <div class="stat-lbl">وظيفة فعالة</div>
+                </div>
+                <div class="stat-card" style="--sc:#f59e0b">
+                    <div class="stat-icon">📄</div>
+                    <div class="stat-num" id="st_cvs">—</div>
+                    <div class="stat-lbl">سيرة ذاتية</div>
+                </div>
+                <div class="stat-card" style="--sc:#3b82f6">
+                    <div class="stat-icon">📨</div>
+                    <div class="stat-num" id="st_apps">—</div>
+                    <div class="stat-lbl">طلب تقديم</div>
+                </div>
+                <div class="stat-card" style="--sc:#8b5cf6">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-num" id="st_users">—</div>
+                    <div class="stat-lbl">مستخدم مسجل</div>
+                </div>
+                <div class="stat-card" style="--sc:#ec4899">
+                    <div class="stat-icon">🎉</div>
+                    <div class="stat-num" id="st_hired">—</div>
+                    <div class="stat-lbl">تم توظيفه</div>
+                </div>
             </div>
-            <div class="admin-tabs">
-                <button class="admin-tab active" onclick="showAdminTab('jobs',this)"><i class="fas fa-briefcase"></i> الوظائف</button>
-                <button class="admin-tab" onclick="showAdminTab('cvs',this)"><i class="fas fa-user-tie"></i> السير الذاتية</button>
-                <button class="admin-tab" onclick="showAdminTab('applications',this)"><i class="fas fa-paper-plane"></i> الطلبات</button>
-                <button class="admin-tab" onclick="showAdminTab('users',this)"><i class="fas fa-users"></i> المستخدمون</button>
-                <button class="admin-tab" id="notifTab" onclick="showAdminTab('notifications',this)"><i class="fas fa-bell"></i> الإشعارات <span id="notifCount" style="background:#ef4444;color:white;border-radius:50%;padding:1px 6px;font-size:11px;display:none">0</span></button>
-                <button class="admin-tab" onclick="showAdminTab('settings',this)"><i class="fas fa-cog"></i> الإعدادات</button>
+
+            <!-- الجسم: sidebar + محتوى -->
+            <div class="admin-body">
+
+                <!-- القائمة الجانبية -->
+                <div class="admin-sidebar">
+                    <div class="admin-sidebar-section">القسم الرئيسي</div>
+                    <button class="admin-tab active" id="atab_jobs" onclick="showAdminTab('jobs',this)">
+                        <i class="fas fa-briefcase"></i> الوظائف
+                    </button>
+                    <button class="admin-tab" id="atab_cvs" onclick="showAdminTab('cvs',this)">
+                        <i class="fas fa-id-card"></i> السير الذاتية
+                    </button>
+                    <button class="admin-tab" id="atab_applications" onclick="showAdminTab('applications',this)">
+                        <i class="fas fa-paper-plane"></i> الطلبات
+                    </button>
+                    <div class="admin-sidebar-divider"></div>
+                    <div class="admin-sidebar-section">المستخدمون</div>
+                    <button class="admin-tab" id="atab_users" onclick="showAdminTab('users',this)">
+                        <i class="fas fa-users"></i> المستخدمون
+                    </button>
+                    <button class="admin-tab" id="atab_notifications" onclick="showAdminTab('notifications',this)">
+                        <i class="fas fa-bell"></i> الإشعارات
+                        <span class="tab-badge" id="notifCount" style="display:none">0</span>
+                    </button>
+                    <div class="admin-sidebar-divider"></div>
+                    <div class="admin-sidebar-section">النظام</div>
+                    <button class="admin-tab" id="atab_settings" onclick="showAdminTab('settings',this)">
+                        <i class="fas fa-sliders-h"></i> الإعدادات
+                    </button>
+                </div>
+
+                <!-- منطقة المحتوى -->
+                <div class="admin-content-area" id="adminContent">
+                    <div style="display:flex;align-items:center;justify-content:center;height:200px;color:#1e293b">
+                        <i class="fas fa-spinner fa-spin" style="font-size:28px"></i>
+                    </div>
+                </div>
+
             </div>
-            <div id="adminContent"><div class="loading" style="color:#64748b">تحميل...</div></div>
         </div>
     </div>
 </div>
@@ -1353,7 +1666,9 @@ let adminApplications = [], adminUsers = [];
 function showAdminTab(tab, btn) {
     currentAdminTab = tab;
     document.querySelectorAll('.admin-tab').forEach(el => el.classList.remove('active'));
-    if (btn) btn.classList.add('active');
+    // تنشيط الـ sidebar button المناسب
+    const sideBtn = document.getElementById('atab_' + tab);
+    if (sideBtn) sideBtn.classList.add('active');
     loadAdminTab(tab);
 }
 
@@ -1416,17 +1731,22 @@ function renderAdminJobs(items) {
 function _renderJobsList(items) {
     const el = document.getElementById('adminContent');
     let html = `
+    <div class="admin-section-hdr">
+        <h3><i class="fas fa-briefcase" style="color:#818cf8;margin-left:6px"></i> إدارة الوظائف</h3>
+        <span class="admin-count-badge">${items.length} وظيفة</span>
+    </div>
     <div class="filter-row">
-        <input class="admin-search" placeholder="🔍 بحث باسم الوظيفة أو الشركة..." oninput="filterAdminJobs(this.value)" style="flex:1;margin-bottom:0">
+        <div class="search-wrap" style="flex:1">
+            <input class="admin-search" placeholder="ابحث بالمسمى أو الشركة أو المحافظة..." oninput="filterAdminJobs(this.value)">
+        </div>
         <select class="filter-select" onchange="filterAdminJobsByStatus(this.value)">
             <option value="all">كل الحالات</option>
-            <option value="active">فعال</option>
-            <option value="inactive">معطل</option>
-            <option value="hired">أُشغلت</option>
+            <option value="active">✅ فعال</option>
+            <option value="inactive">❌ معطل</option>
+            <option value="hired">🎉 أُشغلت</option>
         </select>
-        <button class="export-btn" onclick="exportToExcel('jobs')"><i class="fas fa-file-excel"></i> تصدير Excel</button>
+        <button class="export-btn" onclick="exportToExcel('jobs')"><i class="fas fa-file-excel"></i> Excel</button>
     </div>
-    <div style="color:#94a3b8;font-size:13px;margin-bottom:12px">${items.length} وظيفة</div>
     <div id="jobsAdminList">`;
     items.forEach(job => {
         const inactive = job.status === 'inactive' || job.status === 'hired';
@@ -1443,7 +1763,7 @@ function _renderJobsList(items) {
                 <button class="admin-action-btn btn-hired" onclick="setJobStatus('${job.id}','hired')"><i class="fas fa-check-double"></i> أُشغلت</button>
                 <button class="admin-action-btn btn-deactivate" onclick="setJobStatus('${job.id}','inactive')"><i class="fas fa-ban"></i> تعطيل</button>` : `
                 <button class="admin-action-btn btn-activate" onclick="setJobStatus('${job.id}','active')"><i class="fas fa-redo"></i> تفعيل</button>`}
-                <button class="admin-action-btn" style="background:#ef4444;color:white" onclick="deleteItem('jobs','${job.id}')"><i class="fas fa-trash"></i></button>
+                <button class="admin-action-btn btn-danger" onclick="deleteItem('jobs','${job.id}')"><i class="fas fa-trash-alt"></i></button>
             </div>
         </div>`;
     });
@@ -1480,15 +1800,20 @@ function renderAdminCvs(items) {
     _adminCvsData = items;
     const el = document.getElementById('adminContent');
     let html = `
+    <div class="admin-section-hdr">
+        <h3><i class="fas fa-id-card" style="color:#fbbf24;margin-left:6px"></i> إدارة السير الذاتية</h3>
+        <span class="admin-count-badge">${items.length} سيرة</span>
+    </div>
     <div class="filter-row">
-        <input class="admin-search" placeholder="🔍 بحث بالاسم أو المسمى..." oninput="filterAdminCvs(this.value)" style="flex:1;margin-bottom:0">
+        <div class="search-wrap" style="flex:1">
+            <input class="admin-search" placeholder="ابحث بالاسم أو المسمى الوظيفي..." oninput="filterAdminCvs(this.value)">
+        </div>
         <select class="filter-select" onchange="filterAdminCvsByProvince(this.value)">
             <option value="">كل المحافظات</option>
             ${provinces.map(p=>`<option>${p}</option>`).join('')}
         </select>
-        <button class="export-btn" onclick="exportToExcel('cvs')"><i class="fas fa-file-excel"></i> تصدير Excel</button>
+        <button class="export-btn" onclick="exportToExcel('cvs')"><i class="fas fa-file-excel"></i> Excel</button>
     </div>
-    <div style="color:#94a3b8;font-size:13px;margin-bottom:12px">${items.length} سيرة ذاتية</div>
     <div id="cvsAdminList">`;
     html += _buildCvCards(items) + '</div>';
     el.innerHTML = html;
@@ -1518,11 +1843,16 @@ function renderAdminApplications(items) {
     const el = document.getElementById('adminContent');
     if (!items.length) { el.innerHTML = '<div style="color:#64748b;padding:20px;text-align:center">لا توجد طلبات</div>'; return; }
     let html = `
-    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
-        <button onclick="filterApps('all')" style="background:#6366f1;color:white;border:none;padding:5px 14px;border-radius:20px;font-family:'Cairo',sans-serif;font-size:12px;cursor:pointer">الكل</button>
-        <button onclick="filterApps('pending')" style="background:#334155;color:#94a3b8;border:none;padding:5px 14px;border-radius:20px;font-family:'Cairo',sans-serif;font-size:12px;cursor:pointer">معلق</button>
-        <button onclick="filterApps('accepted')" style="background:#334155;color:#94a3b8;border:none;padding:5px 14px;border-radius:20px;font-family:'Cairo',sans-serif;font-size:12px;cursor:pointer">مقبول</button>
-        <button onclick="filterApps('hired')" style="background:#334155;color:#94a3b8;border:none;padding:5px 14px;border-radius:20px;font-family:'Cairo',sans-serif;font-size:12px;cursor:pointer">تم التوظيف</button>
+    <div class="admin-section-hdr">
+        <h3><i class="fas fa-paper-plane" style="color:#60a5fa;margin-left:6px"></i> إدارة الطلبات</h3>
+        <button class="export-btn" onclick="exportToExcel('applications')" style="font-size:11px;padding:5px 12px"><i class="fas fa-file-excel"></i> Excel</button>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">
+        <button onclick="filterApps('all')" style="background:rgba(99,102,241,0.2);color:#a5b4fc;border:1px solid rgba(99,102,241,0.3);padding:6px 14px;border-radius:20px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;cursor:pointer">الكل</button>
+        <button onclick="filterApps('pending')" style="background:rgba(245,158,11,0.1);color:#fbbf24;border:1px solid rgba(245,158,11,0.2);padding:6px 14px;border-radius:20px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;cursor:pointer">⏳ معلق</button>
+        <button onclick="filterApps('accepted')" style="background:rgba(16,185,129,0.1);color:#34d399;border:1px solid rgba(16,185,129,0.2);padding:6px 14px;border-radius:20px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;cursor:pointer">✅ مقبول</button>
+        <button onclick="filterApps('hired')" style="background:rgba(236,72,153,0.1);color:#f9a8d4;border:1px solid rgba(236,72,153,0.2);padding:6px 14px;border-radius:20px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;cursor:pointer">🎉 تم التوظيف</button>
+        <button onclick="filterApps('rejected')" style="background:rgba(239,68,68,0.1);color:#fca5a5;border:1px solid rgba(239,68,68,0.2);padding:6px 14px;border-radius:20px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;cursor:pointer">❌ مرفوض</button>
     </div>
     <div id="appsListAdmin">`;
     items.forEach(app => {
@@ -1567,15 +1897,20 @@ function renderAdminUsers(items) {
     _adminUsersData = items;
     const el = document.getElementById('adminContent');
     let html = `
+    <div class="admin-section-hdr">
+        <h3><i class="fas fa-users" style="color:#a78bfa;margin-left:6px"></i> إدارة المستخدمين</h3>
+        <span class="admin-count-badge">${items.length} مستخدم</span>
+    </div>
     <div class="filter-row">
-        <input class="admin-search" placeholder="🔍 بحث بالاسم أو الإيميل أو الهاتف..." oninput="filterAdminUsers(this.value)" style="flex:1;margin-bottom:0">
+        <div class="search-wrap" style="flex:1">
+            <input class="admin-search" placeholder="ابحث بالاسم أو الإيميل أو الهاتف..." oninput="filterAdminUsers(this.value)">
+        </div>
         <select class="filter-select" onchange="filterAdminUsersByProvince(this.value)">
             <option value="">كل المحافظات</option>
             ${provinces.map(p=>`<option>${p}</option>`).join('')}
         </select>
-        <button class="export-btn" onclick="exportToExcel('users')"><i class="fas fa-file-excel"></i> تصدير Excel</button>
+        <button class="export-btn" onclick="exportToExcel('users')"><i class="fas fa-file-excel"></i> Excel</button>
     </div>
-    <div style="color:#94a3b8;font-size:13px;margin-bottom:12px">${items.length} مستخدم</div>
     <div id="usersAdminList">`;
     html += _buildUserCards(items) + '</div>';
     el.innerHTML = html;
@@ -1675,7 +2010,11 @@ async function renderAdminNotifications() {
     try {
         const snap = await db.collection('notifications').orderBy('createdAt','desc').get();
         if (snap.empty) { el.innerHTML = '<div style="color:#64748b;padding:20px;text-align:center">لا توجد إشعارات</div>'; return; }
-        let html = `<button onclick="markAllNotifsRead()" style="background:#6366f1;color:white;border:none;padding:7px 18px;border-radius:20px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:14px"><i class="fas fa-check-double"></i> تعليم الكل كمقروء</button>`;
+        let html = `
+        <div class="admin-section-hdr">
+            <h3><i class="fas fa-bell" style="color:#f472b6;margin-left:6px"></i> الإشعارات</h3>
+            <button onclick="markAllNotifsRead()" style="background:rgba(99,102,241,0.15);color:#a5b4fc;border:1px solid rgba(99,102,241,0.3);padding:6px 14px;border-radius:20px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px"><i class="fas fa-check-double"></i> تعليم الكل كمقروء</button>
+        </div>`;
         snap.forEach(doc => {
             const n = doc.data();
             const isNew = !n.read;
@@ -1773,13 +2112,18 @@ async function loadAdminStats() {
 function renderAdminSettings() {
     const el = document.getElementById('adminContent');
     el.innerHTML = `
-    <div style="color:#94a3b8;font-size:13px;margin-bottom:16px">إعدادات الإشعارات — Gmail + Telegram</div>
+    <div class="admin-section-hdr">
+        <h3><i class="fas fa-sliders-h" style="color:#94a3b8;margin-left:6px"></i> إعدادات النظام</h3>
+    </div>
 
     <!-- EmailJS -->
     <div class="email-config-box">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
-            <i class="fas fa-envelope" style="color:#6366f1;font-size:20px"></i>
-            <span style="color:#f1f5f9;font-weight:700;font-size:15px">إعداد Gmail (EmailJS)</span>
+        <div class="config-title">
+            <div class="config-icon" style="background:rgba(99,102,241,0.15)">📧</div>
+            <div>
+                <div style="color:#f1f5f9;font-weight:800;font-size:14px">إعداد Gmail (EmailJS)</div>
+                <div style="color:#475569;font-size:11px">إشعارات البريد الإلكتروني</div>
+            </div>
         </div>
         <div class="form-group"><label style="color:#94a3b8;font-size:12px">Public Key</label><input id="ejs_pk" type="text" placeholder="YOUR_EMAILJS_PUBLIC_KEY" value="${EMAILJS_CONFIG.publicKey!=='YOUR_EMAILJS_PUBLIC_KEY'?EMAILJS_CONFIG.publicKey:''}" style="background:#334155;color:#f1f5f9;border-color:#475569"></div>
         <div class="form-group"><label style="color:#94a3b8;font-size:12px">Service ID</label><input id="ejs_sid" type="text" placeholder="service_xxxxxxx" value="${EMAILJS_CONFIG.serviceId!=='YOUR_SERVICE_ID'?EMAILJS_CONFIG.serviceId:''}" style="background:#334155;color:#f1f5f9;border-color:#475569"></div>
@@ -1796,10 +2140,13 @@ function renderAdminSettings() {
     </div>
 
     <!-- Telegram -->
-    <div class="email-config-box" style="margin-top:12px;border-color:#2563eb">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
-            <i class="fab fa-telegram" style="color:#2563eb;font-size:22px"></i>
-            <span style="color:#f1f5f9;font-weight:700;font-size:15px">إعداد Telegram Bot</span>
+    <div class="email-config-box" style="border-color:rgba(37,99,235,0.3)">
+        <div class="config-title">
+            <div class="config-icon" style="background:rgba(37,99,235,0.15)">✈️</div>
+            <div>
+                <div style="color:#f1f5f9;font-weight:800;font-size:14px">إعداد Telegram Bot</div>
+                <div style="color:#475569;font-size:11px">إشعارات فورية على التيلجرام</div>
+            </div>
         </div>
         <div class="form-group"><label style="color:#94a3b8;font-size:12px">Bot Token</label><input id="tg_token" type="text" placeholder="123456789:AAF..." value="${TELEGRAM_CONFIG.botToken}" style="background:#334155;color:#f1f5f9;border-color:#475569"></div>
         <div class="form-group"><label style="color:#94a3b8;font-size:12px">Chat ID</label><input id="tg_chat" type="text" placeholder="121053876" value="${TELEGRAM_CONFIG.chatId}" style="background:#334155;color:#f1f5f9;border-color:#475569"></div>
@@ -1811,8 +2158,14 @@ function renderAdminSettings() {
     </div>
 
     <!-- اختبار الإرسال -->
-    <div class="email-config-box" style="margin-top:12px;border-color:#f59e0b">
-        <div style="color:#f1f5f9;font-weight:700;margin-bottom:14px"><i class="fas fa-vial" style="color:#f59e0b"></i> اختبار الإرسال</div>
+    <div class="email-config-box" style="border-color:rgba(245,158,11,0.3)">
+        <div class="config-title">
+            <div class="config-icon" style="background:rgba(245,158,11,0.15)">🧪</div>
+            <div>
+                <div style="color:#f1f5f9;font-weight:800;font-size:14px">اختبار الإرسال</div>
+                <div style="color:#475569;font-size:11px">تحقق من عمل الإشعارات</div>
+            </div>
+        </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap">
             <button class="submit-btn" style="background:#6366f1;flex:1" onclick="testEmail()"><i class="fas fa-envelope"></i> اختبار Gmail</button>
             <button class="submit-btn" style="background:#2563eb;flex:1" onclick="testTelegram()"><i class="fab fa-telegram"></i> اختبار Telegram</button>
