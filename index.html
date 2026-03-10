@@ -22,7 +22,27 @@
 
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Cairo', sans-serif; background: linear-gradient(145deg, #f8fafc 0%, #f1f5f9 100%); min-height: 100vh; color: #0f172a; }
+        :root {
+            --bg: linear-gradient(145deg,#f8fafc,#f1f5f9);
+            --bg-card: #ffffff;
+            --bg-card2: #f8fafc;
+            --text: #0f172a;
+            --text2: #475569;
+            --border: #e2e8f0;
+            --input-bg: #f8fafc;
+            --header-bg: #ffffff;
+        }
+        [data-theme="dark"] {
+            --bg: linear-gradient(145deg,#0a0f1e,#0d1526);
+            --bg-card: #0f172a;
+            --bg-card2: #1e293b;
+            --text: #f1f5f9;
+            --text2: #94a3b8;
+            --border: #1e293b;
+            --input-bg: #1e293b;
+            --header-bg: #0b1120;
+        }
+        body { font-family: 'Cairo', sans-serif; background: var(--bg); min-height: 100vh; color: var(--text); transition: background 0.3s, color 0.3s; }
 
         /* ═══ قريباً ═══ */
         .coming-soon-btn { opacity: 0.55; position: relative; }
@@ -37,7 +57,7 @@
         .ticker-content { display: flex; animation: tickerMove 40s linear infinite; white-space: nowrap; }
         .ticker-item { display: inline-flex; align-items: center; background: rgba(255,255,255,0.1); padding: 6px 20px; margin: 0 8px; border-radius: 40px; color: white; font-weight: 600; border-right: 3px solid #10b981; font-size: 13px; }
         @keyframes tickerMove { from { transform: translateX(100%); } to { transform: translateX(-100%); } }
-        .header { background: white; padding: 15px 20px; border-radius: 0 0 30px 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
+        .header { background: var(--header-bg); padding: 15px 20px; border-radius: 0 0 30px 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; transition: background 0.3s; }
         .logo h1 { font-size: 24px; font-weight: 900; color: #0f172a; }
         .logo span { color: #10b981; }
         .auth-buttons { display: flex; gap: 10px; }
@@ -45,6 +65,8 @@
         .auth-btn.primary { background: #10b981; color: white; }
         .auth-btn.primary:hover { background: #059669; }
         .user-menu { display: flex; align-items: center; gap: 15px; }
+        .theme-btn { width:38px;height:38px;border-radius:50%;border:2px solid var(--border);background:var(--bg-card2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all 0.3s;flex-shrink:0; }
+        .theme-btn:hover { transform:rotate(20deg); }
         .user-welcome { background: #f1f5f9; padding: 8px 20px; border-radius: 40px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
         .user-welcome img { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; }
         .logout-icon { background: #ef4444; color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s; }
@@ -466,6 +488,127 @@
             padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 700;
         }
 
+
+        /* ═══ تبويبات الخدمات ═══ */
+        .services-tabs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:20px; background:var(--bg-card2); padding:6px; border-radius:18px; border:1px solid var(--border); }
+        .svc-tab { flex:1; min-width:110px; padding:10px 8px; border:none; border-radius:14px; font-family:'Cairo',sans-serif; font-weight:700; font-size:12px; cursor:pointer; transition:all 0.25s; background:transparent; color:var(--text2); display:flex; align-items:center; justify-content:center; gap:6px; }
+        .svc-tab:hover { background:var(--bg-card); }
+        .svc-tab.active { background:linear-gradient(135deg,#4f46e5,#7c3aed); color:white; box-shadow:0 4px 14px rgba(79,70,229,0.35); }
+        .svc-tab i { font-size:13px; }
+
+        /* ═══ بطاقة المقابلة ═══ */
+        .interview-shell { background:var(--bg-card); border-radius:24px; overflow:hidden; border:1px solid var(--border); }
+        .interview-hero { background:linear-gradient(135deg,#1e1b4b,#312e81,#3730a3); padding:28px 24px; position:relative; overflow:hidden; }
+        .interview-hero::before { content:''; position:absolute; top:-40px;right:-40px; width:180px;height:180px; border-radius:50%; background:rgba(255,255,255,0.05); }
+        .interview-hero h2 { color:white; font-size:20px; font-weight:900; margin-bottom:6px; }
+        .interview-hero p { color:rgba(255,255,255,0.7); font-size:13px; }
+        .spec-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:10px; padding:20px; }
+        .spec-card { background:var(--bg-card2); border:2px solid var(--border); border-radius:16px; padding:16px 12px; text-align:center; cursor:pointer; transition:all 0.25s; }
+        .spec-card:hover { border-color:#6366f1; transform:translateY(-3px); box-shadow:0 8px 20px rgba(99,102,241,0.15); }
+        .spec-card.selected { border-color:#6366f1; background:rgba(99,102,241,0.08); }
+        .spec-card .spec-icon { font-size:28px; margin-bottom:8px; }
+        .spec-card .spec-name { font-size:12px; font-weight:700; color:var(--text); }
+        .interview-chat { padding:0 20px 20px; }
+        .interview-msg { padding:12px 16px; border-radius:16px; margin-bottom:10px; font-size:13px; line-height:1.7; animation:msgIn 0.3s ease; }
+        @keyframes msgIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+        .interview-msg.ai { background:linear-gradient(135deg,rgba(79,70,229,0.08),rgba(124,58,237,0.05)); border:1px solid rgba(99,102,241,0.2); border-right:3px solid #6366f1; color:var(--text); }
+        .interview-msg.user { background:linear-gradient(135deg,rgba(16,185,129,0.08),rgba(5,150,105,0.05)); border:1px solid rgba(16,185,129,0.2); border-left:3px solid #10b981; color:var(--text); }
+        .interview-msg.feedback { background:linear-gradient(135deg,rgba(245,158,11,0.08),rgba(217,119,6,0.05)); border:1px solid rgba(245,158,11,0.2); border-right:3px solid #f59e0b; color:var(--text); }
+        .interview-score { display:inline-flex;align-items:center;gap:6px;background:rgba(16,185,129,0.1);color:#10b981;border:1px solid rgba(16,185,129,0.2);padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;margin-top:6px; }
+        .interview-input-row { display:flex;gap:10px;margin-top:14px; }
+        .interview-input { flex:1;padding:12px 16px;background:var(--input-bg);border:2px solid var(--border);border-radius:14px;font-family:'Cairo',sans-serif;font-size:13px;color:var(--text);resize:none;min-height:54px;transition:border 0.2s; }
+        .interview-input:focus { border-color:#6366f1;outline:none; }
+        .interview-send-btn { background:linear-gradient(135deg,#4f46e5,#7c3aed);color:white;border:none;padding:12px 20px;border-radius:14px;font-family:'Cairo',sans-serif;font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:7px;transition:all 0.2s; }
+        .interview-send-btn:hover { transform:translateY(-2px);box-shadow:0 6px 18px rgba(79,70,229,0.35); }
+        .interview-send-btn:disabled { opacity:0.5;cursor:not-allowed;transform:none; }
+        .interview-progress { height:4px;background:var(--border);border-radius:2px;margin-bottom:16px;overflow:hidden; }
+        .interview-progress-bar { height:100%;background:linear-gradient(90deg,#6366f1,#8b5cf6);border-radius:2px;transition:width 0.5s ease; }
+
+        /* ═══ الدورات التدريبية ═══ */
+        .courses-hero { background:linear-gradient(135deg,#064e3b,#065f46,#047857); padding:28px 24px; border-radius:24px 24px 0 0; position:relative; overflow:hidden; }
+        .courses-hero::before { content:''; position:absolute;top:-50px;left:-50px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,0.04); }
+        .courses-hero h2 { color:white;font-size:20px;font-weight:900;margin-bottom:6px; }
+        .courses-hero p { color:rgba(255,255,255,0.7);font-size:13px; }
+        .course-card { background:var(--bg-card);border:1px solid var(--border);border-radius:18px;overflow:hidden;transition:all 0.25s;cursor:pointer; }
+        .course-card:hover { transform:translateY(-4px);box-shadow:0 12px 30px rgba(0,0,0,0.08);border-color:#10b981; }
+        .course-card-header { padding:18px 18px 14px; }
+        .course-icon { width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:12px; }
+        .course-title { font-size:15px;font-weight:800;color:var(--text);margin-bottom:4px; }
+        .course-desc { font-size:12px;color:var(--text2);line-height:1.6; }
+        .course-footer { padding:12px 18px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between; }
+        .course-badge { font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px; }
+        .course-start-btn { background:var(--bg-card2);border:1px solid var(--border);color:var(--text2);padding:6px 14px;border-radius:20px;font-family:'Cairo',sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:all 0.2s; }
+        .course-start-btn:hover { background:linear-gradient(135deg,#059669,#10b981);color:white;border-color:transparent; }
+        .course-modal-body { padding:20px;max-height:70vh;overflow-y:auto; }
+        .lesson-item { display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px;margin-bottom:8px;background:var(--bg-card2);border:1px solid var(--border);cursor:pointer;transition:all 0.2s; }
+        .lesson-item:hover { border-color:#10b981; }
+        .lesson-num { width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#059669,#10b981);color:white;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;flex-shrink:0; }
+        .lesson-title { font-size:13px;font-weight:700;color:var(--text); }
+        .lesson-dur { font-size:11px;color:var(--text2);margin-top:2px; }
+        .ai-lesson-content { background:var(--bg-card2);border-radius:16px;padding:18px;margin-top:14px;border:1px solid var(--border);line-height:2;font-size:13px;color:var(--text);min-height:100px; }
+
+        /* ═══ Skeleton Loading ═══ */
+        .skeleton { background:linear-gradient(90deg,var(--bg-card2) 25%,var(--border) 50%,var(--bg-card2) 75%); background-size:200% 100%; animation:shimmer 1.4s infinite; border-radius:10px; }
+        @keyframes shimmer { from{background-position:200% 0} to{background-position:-200% 0} }
+        .sk-card { background:var(--bg-card);border-radius:20px;padding:20px;border:1px solid var(--border);margin-bottom:14px; }
+        .sk-line { height:14px;margin-bottom:10px; }
+        .sk-line.wide { width:70%; }
+        .sk-line.mid { width:45%; }
+        .sk-line.short { width:25%; }
+        .sk-circle { width:56px;height:56px;border-radius:50%;flex-shrink:0; }
+
+        /* ═══ Form Improvements ═══ */
+        .pw-wrap { position:relative; }
+        .pw-toggle { position:absolute;left:14px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text2);font-size:15px;padding:4px; }
+        .form-error { color:#ef4444;font-size:11px;font-weight:600;margin-top:4px;display:none; }
+        .form-group input.invalid { border-color:#ef4444 !important; }
+        .form-group input.valid { border-color:#10b981 !important; }
+
+        /* ═══ فلترة متقدمة ═══ */
+        .adv-filter-bar { display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;padding:12px;background:var(--bg-card);border-radius:16px;border:1px solid var(--border); }
+        .filter-chip { padding:6px 14px;border-radius:20px;border:1.5px solid var(--border);background:var(--bg-card2);font-family:'Cairo',sans-serif;font-size:11px;font-weight:700;color:var(--text2);cursor:pointer;transition:all 0.2s;white-space:nowrap; }
+        .filter-chip.active { background:linear-gradient(135deg,#4f46e5,#6366f1);color:white;border-color:transparent; }
+        .filter-chip:hover:not(.active) { border-color:#6366f1;color:#6366f1; }
+
+
+        /* ═══ منشئ السيرة الذاتية المحسّن ═══ */
+        .cvb-shell { background:var(--bg-card);border-radius:24px;overflow:hidden;border:1px solid var(--border); }
+        .cvb-hero { background:linear-gradient(135deg,#064e3b,#065f46,#059669);padding:24px;position:relative;overflow:hidden; }
+        .cvb-hero::before { content:'';position:absolute;top:-30px;right:-30px;width:150px;height:150px;border-radius:50%;background:rgba(255,255,255,0.05); }
+        .cvb-hero h2 { color:white;font-size:18px;font-weight:900;margin-bottom:4px; }
+        .cvb-hero p { color:rgba(255,255,255,0.7);font-size:12px; }
+        .cvb-body { display:grid;grid-template-columns:340px 1fr;gap:0;min-height:500px; }
+        @media(max-width:768px){ .cvb-body { grid-template-columns:1fr; } }
+        .cvb-ai-panel { background:var(--bg-card2);border-left:1px solid var(--border);padding:20px;display:flex;flex-direction:column; }
+        .cvb-ai-title { font-size:13px;font-weight:800;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:8px; }
+        .cvb-ai-title .ai-badge { background:linear-gradient(135deg,#4f46e5,#7c3aed);color:white;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700; }
+        .cvb-ai-msgs { flex:1;overflow-y:auto;min-height:120px;max-height:220px;margin-bottom:12px;display:flex;flex-direction:column;gap:8px; }
+        .cvb-ai-msg { padding:10px 13px;border-radius:14px;font-size:12px;line-height:1.7; }
+        .cvb-ai-msg.ai { background:rgba(79,70,229,0.08);border:1px solid rgba(99,102,241,0.15);color:var(--text); }
+        .cvb-ai-msg.user { background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.15);color:var(--text);align-self:flex-end; }
+        .cvb-ai-input { display:flex;gap:8px; }
+        .cvb-ai-input input { flex:1;padding:9px 13px;background:var(--input-bg);border:1.5px solid var(--border);border-radius:12px;font-family:'Cairo',sans-serif;font-size:12px;color:var(--text); }
+        .cvb-ai-input input:focus { border-color:#6366f1;outline:none; }
+        .cvb-ai-send { background:linear-gradient(135deg,#4f46e5,#7c3aed);color:white;border:none;padding:9px 14px;border-radius:12px;cursor:pointer;font-size:12px;white-space:nowrap;transition:all 0.2s; }
+        .cvb-ai-send:hover { transform:translateY(-1px); }
+        .cvb-form-panel { padding:20px; }
+        .cvb-section-title { font-size:11px;font-weight:800;color:var(--text2);letter-spacing:1px;text-transform:uppercase;margin:16px 0 10px;display:flex;align-items:center;gap:7px; }
+        .cvb-section-title::after { content:'';flex:1;height:1px;background:var(--border); }
+        .cvb-grid-2 { display:grid;grid-template-columns:1fr 1fr;gap:10px; }
+        .cvb-actions { display:flex;gap:10px;margin-top:18px;flex-wrap:wrap; }
+        .cvb-btn { padding:11px 20px;border-radius:14px;border:none;font-family:'Cairo',sans-serif;font-weight:700;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all 0.2s; }
+        .cvb-btn:hover { transform:translateY(-2px); }
+        .cvb-btn-green { background:linear-gradient(135deg,#059669,#10b981);color:white;box-shadow:0 4px 14px rgba(16,185,129,0.3); }
+        .cvb-btn-blue { background:linear-gradient(135deg,#4f46e5,#6366f1);color:white;box-shadow:0 4px 14px rgba(79,70,229,0.3); }
+        .cvb-btn-outline { background:var(--bg-card2);border:1.5px solid var(--border);color:var(--text2); }
+        .cvb-photo-wrap { display:flex;align-items:center;gap:14px;padding:14px;background:var(--bg-card2);border-radius:14px;border:1.5px dashed var(--border); }
+        .cvb-photo-circle { width:64px;height:64px;border-radius:50%;border:2px solid #10b981;overflow:hidden;flex-shrink:0;background:var(--border);display:flex;align-items:center;justify-content:center;font-size:22px; }
+        .cvb-ats-box { background:rgba(79,70,229,0.06);border:1px solid rgba(99,102,241,0.2);border-radius:14px;padding:14px;margin-top:14px; }
+        .cvb-ats-title { font-size:12px;font-weight:800;color:#6366f1;margin-bottom:8px;display:flex;align-items:center;gap:6px; }
+        .cvb-ats-keywords { display:flex;flex-wrap:wrap;gap:6px; }
+        .ats-kw { background:rgba(99,102,241,0.1);color:#4f46e5;border:1px solid rgba(99,102,241,0.2);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;transition:all 0.2s; }
+        .ats-kw:hover { background:#4f46e5;color:white; }
+
         /* Firebase status indicator */
         .firebase-status { position:fixed; bottom:90px; left:25px; background:white; border-radius:20px; padding:8px 14px; font-size:12px; font-weight:700; box-shadow:0 4px 15px rgba(0,0,0,0.1); display:flex; align-items:center; gap:6px; z-index:998; }
         .firebase-dot { width:8px; height:8px; border-radius:50%; background:#10b981; animation:pulse 2s infinite; }
@@ -485,6 +628,7 @@
             <span id="userName">مستخدم</span>
             <span id="userStatus"></span>
         </div>
+        <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="الوضع الليلي">🌙</button>
         <div class="logout-icon" onclick="logout()" title="تسجيل خروج"><i class="fas fa-sign-out-alt"></i></div>
     </div>
 </div>
@@ -514,14 +658,35 @@
     <!-- ═══ قسم التوظيف ═══ -->
     <div id="jobs-section" class="section-content active">
         <div class="section-title"><i class="fas fa-briefcase" style="color:#10b981"></i> منصة التوظيف</div>
-        <div class="job-tabs-extended">
-            <button class="job-tab-ext active" onclick="showJobTab('all',this)"><i class="fas fa-th-list"></i> الكل</button>
-            <button class="job-tab-ext" onclick="showJobTab('jobs',this)"><i class="fas fa-building"></i> طلبات التوظيف</button>
-            <button class="job-tab-ext" onclick="showJobTab('cvs',this)"><i class="fas fa-user-tie"></i> السير الذاتية</button>
-            <button class="job-tab-ext" onclick="showJobTab('cv-builder',this)"><i class="fas fa-magic"></i> منشئ السيرة</button>
+        <!-- تبويبات الخدمات -->
+        <div class="services-tabs">
+            <button class="svc-tab active" id="stab_all" onclick="showJobTab('all',this)"><i class="fas fa-layer-group"></i> الكل</button>
+            <button class="svc-tab" id="stab_jobs" onclick="showJobTab('jobs',this)"><i class="fas fa-briefcase"></i> الوظائف</button>
+            <button class="svc-tab" id="stab_cvs" onclick="showJobTab('cvs',this)"><i class="fas fa-id-card"></i> السير الذاتية</button>
+            <button class="svc-tab" id="stab_cv-builder" onclick="showJobTab('cv-builder',this)"><i class="fas fa-wand-magic-sparkles"></i> منشئ السيرة</button>
+            <button class="svc-tab" id="stab_interview" onclick="showJobTab('interview',this)"><i class="fas fa-comments"></i> مقابلة ذكية</button>
+            <button class="svc-tab" id="stab_courses" onclick="showJobTab('courses',this)"><i class="fas fa-graduation-cap"></i> دورات تدريبية</button>
         </div>
+
+        <!-- فلترة متقدمة — تظهر فقط في تبويب الوظائف -->
+        <div class="adv-filter-bar" id="advFilterBar" style="display:none">
+            <span style="font-size:12px;font-weight:700;color:var(--text2);align-self:center;margin-left:6px"><i class="fas fa-filter"></i> فلترة:</span>
+            <button class="filter-chip active" onclick="filterByType('all',this)">الكل</button>
+            <button class="filter-chip" onclick="filterByType('full',this)">دوام كامل</button>
+            <button class="filter-chip" onclick="filterByType('part',this)">دوام جزئي</button>
+            <button class="filter-chip" onclick="filterByType('remote',this)">عن بعد</button>
+            <span style="width:1px;background:var(--border);margin:0 4px"></span>
+            <button class="filter-chip" onclick="filterByCategory('eng',this)"><i class="fas fa-cog"></i> هندسة</button>
+            <button class="filter-chip" onclick="filterByCategory('tech',this)"><i class="fas fa-laptop-code"></i> تقنية</button>
+            <button class="filter-chip" onclick="filterByCategory('med',this)"><i class="fas fa-stethoscope"></i> طب</button>
+            <button class="filter-chip" onclick="filterByCategory('biz',this)"><i class="fas fa-chart-line"></i> أعمال</button>
+            <button class="filter-chip" onclick="filterByCategory('edu',this)"><i class="fas fa-chalkboard-teacher"></i> تعليم</button>
+        </div>
+
         <div id="jobs-list"></div>
         <div id="cv-builder-section" style="display:none;"></div>
+        <div id="interview-section" style="display:none;"></div>
+        <div id="courses-section" style="display:none;"></div>
     </div>
 </div>
 
@@ -634,7 +799,7 @@
         <!-- نموذج الدخول -->
         <div id="signinForm">
             <div class="form-group"><label>البريد الإلكتروني</label><input type="email" id="loginEmail" placeholder="example@email.com"></div>
-            <div class="form-group"><label>كلمة المرور</label><input type="password" id="loginPassword" placeholder="••••••••"></div>
+            <div class="form-group"><label>كلمة المرور</label><div class="pw-wrap"><input type="password" id="loginPassword" placeholder="••••••••" style="padding-left:44px"><button type="button" class="pw-toggle" onclick="togglePw('loginPassword',this)"><i class="fas fa-eye"></i></button></div></div>
             <button class="submit-btn" id="loginBtn" onclick="handleEmailLogin()"><i class="fas fa-sign-in-alt"></i> دخول</button>
             <div style="display:flex;align-items:center;gap:10px;margin:16px 0"><div style="flex:1;height:1px;background:#e2e8f0"></div><span style="color:#94a3b8;font-size:12px">أو</span><div style="flex:1;height:1px;background:#e2e8f0"></div></div>
             <button id="googleSignInBtn" onclick="signInWithGoogle()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:12px;background:white;border:2px solid #e2e8f0;border-radius:14px;padding:12px 20px;font-family:'Cairo',sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:all 0.3s;box-shadow:0 2px 8px rgba(0,0,0,0.05)">
@@ -646,7 +811,7 @@
         <div id="signupForm" style="display:none">
             <div class="form-group"><label>الاسم الكامل <span style="color:#ef4444">*</span></label><input type="text" id="regName" placeholder="محمد علي"></div>
             <div class="form-group"><label>البريد الإلكتروني <span style="color:#ef4444">*</span></label><input type="email" id="regEmail" placeholder="example@email.com"></div>
-            <div class="form-group"><label>كلمة المرور <span style="color:#ef4444">*</span></label><input type="password" id="regPassword" placeholder="6 أحرف على الأقل"></div>
+            <div class="form-group"><label>كلمة المرور <span style="color:#ef4444">*</span></label><div class="pw-wrap"><input type="password" id="regPassword" placeholder="6 أحرف على الأقل" style="padding-left:44px"><button type="button" class="pw-toggle" onclick="togglePw('regPassword',this)"><i class="fas fa-eye"></i></button></div></div>
             <div class="form-group"><label>رقم الهاتف</label><input type="tel" id="regPhone" placeholder="07xxxxxxxxx"></div>
             <div class="form-group"><label>المحافظة</label>
                 <select id="regProvince">
@@ -800,6 +965,81 @@ const IMGBB = {
     apiKey: '0a42e570c7ccbc8fac74d577f7a03fe1'  // ← من api.imgbb.com
 };
 const GUEST_LIMIT      = 3;
+
+// ╔══════════════════════════════════════════════════════╗
+// ║   Dark Mode                                          ║
+// ╚══════════════════════════════════════════════════════╝
+function toggleTheme() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
+    const btn = document.getElementById('themeBtn');
+    if (btn) btn.textContent = isDark ? '🌙' : '☀️';
+    localStorage.setItem('theme', isDark ? 'light' : 'dark');
+}
+function initTheme() {
+    const saved = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', saved);
+    const btn = document.getElementById('themeBtn');
+    if (btn) btn.textContent = saved === 'dark' ? '☀️' : '🌙';
+}
+
+// ╔══════════════════════════════════════════════════════╗
+// ║   Skeleton Screens                                   ║
+// ╚══════════════════════════════════════════════════════╝
+function showSkeletonCards(containerId, count=3) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    el.innerHTML = Array(count).fill(`
+    <div class="sk-card">
+        <div style="display:flex;gap:14px;align-items:flex-start">
+            <div class="skeleton sk-circle"></div>
+            <div style="flex:1">
+                <div class="skeleton sk-line wide" style="margin-bottom:10px"></div>
+                <div class="skeleton sk-line mid" style="margin-bottom:8px"></div>
+                <div class="skeleton sk-line short"></div>
+            </div>
+        </div>
+        <div style="margin-top:14px">
+            <div class="skeleton sk-line" style="width:90%"></div>
+        </div>
+    </div>`).join('');
+}
+
+// ╔══════════════════════════════════════════════════════╗
+// ║   فلترة متقدمة                                      ║
+// ╚══════════════════════════════════════════════════════╝
+let activeTypeFilter = 'all';
+let activeCategoryFilter = '';
+function filterByType(type, btn) {
+    activeTypeFilter = type;
+    document.querySelectorAll('.adv-filter-bar .filter-chip').forEach(c => {
+        if (['all','full','part','remote'].some(t => c.getAttribute('onclick')?.includes(`'${t}'`))) c.classList.remove('active');
+    });
+    btn.classList.add('active');
+    displayJobs();
+}
+function filterByCategory(cat, btn) {
+    const chips = document.querySelectorAll('.adv-filter-bar .filter-chip');
+    const wasActive = btn.classList.contains('active');
+    chips.forEach(c => {
+        if (['eng','tech','med','biz','edu'].some(t => c.getAttribute('onclick')?.includes(`'${t}'`))) c.classList.remove('active');
+    });
+    activeCategoryFilter = wasActive ? '' : cat;
+    if (!wasActive) btn.classList.add('active');
+    displayJobs();
+}
+
+// ╔══════════════════════════════════════════════════════╗
+// ║   إظهار / إخفاء كلمة المرور                        ║
+// ╚══════════════════════════════════════════════════════╝
+function togglePw(inputId, btn) {
+    const inp = document.getElementById(inputId);
+    if (!inp) return;
+    if (inp.type === 'password') { inp.type = 'text'; btn.innerHTML = '<i class="fas fa-eye-slash"></i>'; }
+    else { inp.type = 'password'; btn.innerHTML = '<i class="fas fa-eye"></i>'; }
+}
+
+
 const provinces = ['بغداد','البصرة','نينوى','أربيل','كركوك','كربلاء','النجف','بابل','ذي قار','المثنى','القادسية','واسط','ميسان','ديالى','الأنبار','صلاح الدين','دهوك','السليمانية'];
 
 // ╔══════════════════════════════════════════════════════╗
@@ -870,6 +1110,8 @@ auth.onAuthStateChanged(async (firebaseUser) => {
 // ║         جلب البيانات من Firestore                   ║
 // ╚══════════════════════════════════════════════════════╝
 async function loadAllData() {
+    initTheme();
+    showSkeletonCards('jobs-list', 4);
     try {
         const snap = await db.collection('jobs').orderBy('createdAt', 'desc').get();
         jobsData = [];
@@ -1455,62 +1697,121 @@ async function submitAdd() {
 // ╚══════════════════════════════════════════════════════╝
 function renderCVBuilder() {
     const saved = {
-        name: document.getElementById('cvb_name')?.value || currentUser.name || '',
-        role: document.getElementById('cvb_role')?.value || '',
-        phone: document.getElementById('cvb_phone')?.value || currentUser.phone || '',
-        email: document.getElementById('cvb_email')?.value || currentUser.email || '',
+        name    : document.getElementById('cvb_name')?.value     || currentUser.name     || '',
+        role    : document.getElementById('cvb_role')?.value     || '',
+        phone   : document.getElementById('cvb_phone')?.value    || currentUser.phone    || '',
+        email   : document.getElementById('cvb_email')?.value    || currentUser.email    || '',
         province: document.getElementById('cvb_province')?.value || currentUser.province || '',
-        salary: document.getElementById('cvb_salary')?.value || '',
-        exp: document.getElementById('cvb_exp')?.value || '',
-        edu: document.getElementById('cvb_edu')?.value || '',
-        skills: document.getElementById('cvb_skills')?.value || '',
-        summary: document.getElementById('cvb_summary')?.value || '',
+        salary  : document.getElementById('cvb_salary')?.value   || '',
+        exp     : document.getElementById('cvb_exp')?.value      || '',
+        edu     : document.getElementById('cvb_edu')?.value      || '',
+        skills  : document.getElementById('cvb_skills')?.value   || '',
+        summary : document.getElementById('cvb_summary')?.value  || '',
     };
     document.getElementById('cv-builder-section').innerHTML = `
-    <div class="cv-builder-wrap">
-        <div class="cv-builder-title"><i class="fas fa-magic" style="color:#10b981"></i> منشئ السيرة الذاتية الذكي</div>
-        <!-- مساعد AI -->
-        <div class="ai-cv-assistant">
-            <div class="ai-cv-header">
-                <div class="ai-cv-avatar">🤖</div>
-                <div><div class="ai-cv-title">مساعد AI</div><div class="ai-cv-sub">اكتب وظيفتك وسأملأ البيانات تلقائياً</div></div>
-            </div>
-            <div class="ai-cv-messages" id="aiCvMessages">
-                <div class="ai-cv-msg ai">مرحباً! أخبرني بمجالك — مثال: "محاسب خبرة 3 سنوات"</div>
-            </div>
-            <div class="ai-cv-input-row">
-                <input class="ai-cv-input" id="aiCvInput" type="text" placeholder="اكتب مجالك أو وظيفتك..." onkeypress="if(event.key==='Enter')sendAICvMessage()">
-                <button class="ai-cv-send-btn" id="aiCvSendBtn" onclick="sendAICvMessage()"><i class="fas fa-magic"></i> اسأل AI</button>
-            </div>
+    <div class="cvb-shell">
+        <!-- رأس منشئ السيرة -->
+        <div class="cvb-hero">
+            <h2><i class="fas fa-wand-magic-sparkles" style="margin-left:8px"></i> منشئ السيرة الذاتية الذكي</h2>
+            <p>أدخل مجالك وسيملأ الذكاء الاصطناعي بياناتك تلقائياً — مع تحسين ATS واقتراح كلمات مفتاحية</p>
         </div>
-        <!-- نموذج الفرد -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <div class="form-group"><label>الاسم الكامل <span style="color:#ef4444">*</span></label><input id="cvb_name" type="text" value="${saved.name}"></div>
-            <div class="form-group"><label>المسمى الوظيفي</label><input id="cvb_role" type="text" placeholder="مثال: محاسب" value="${saved.role}"></div>
-            <div class="form-group"><label>الهاتف</label><input id="cvb_phone" type="tel" value="${saved.phone}"></div>
-            <div class="form-group"><label>البريد</label><input id="cvb_email" type="email" value="${saved.email}"></div>
-            <div class="form-group"><label>المحافظة</label><select id="cvb_province">${provinces.map(p=>`<option ${p===(saved.province||currentUser.province)?'selected':''}>${p}</option>`).join('')}</select></div>
-            <div class="form-group"><label>الراتب المتوقع (د.ع)</label><input id="cvb_salary" type="number" placeholder="500000" value="${saved.salary}"></div>
-            <div class="form-group"><label>سنوات الخبرة</label><input id="cvb_exp" type="text" placeholder="5 سنوات" value="${saved.exp}"></div>
-            <div class="form-group"><label>المؤهل العلمي</label><input id="cvb_edu" type="text" placeholder="بكالوريوس محاسبة" value="${saved.edu}"></div>
-        </div>
-        <div class="form-group"><label>المهارات (مفصولة بفواصل)</label><input id="cvb_skills" type="text" placeholder="Excel, إنجليزي, تسويق" value="${saved.skills}"></div>
-        <div class="form-group"><label>ملخص شخصي</label><textarea id="cvb_summary" rows="3" placeholder="اكتب ملخصاً موجزاً...">${saved.summary}</textarea></div>
-        <div class="form-group"><label>صورة شخصية</label>
-            <div class="upload-area" id="cvbPhotoArea">
-                <div class="upload-icon"><i class="fas fa-user-circle"></i></div>
-                <div class="upload-text">اسحب أو اضغط لرفع صورتك</div>
-                <input type="file" id="cvb_photo" accept="image/*" onchange="onCVPhoto(this)">
+
+        <div class="cvb-body">
+            <!-- لوحة AI — يسار -->
+            <div class="cvb-ai-panel">
+                <div class="cvb-ai-title">
+                    <i class="fas fa-robot" style="color:#6366f1"></i>
+                    مساعد AI
+                    <span class="ai-badge">Powered by Claude</span>
+                </div>
+                <div class="cvb-ai-msgs" id="aiCvMessages">
+                    <div class="cvb-ai-msg ai">أهلاً! أخبرني بتخصصك وخبرتك — مثال:<br><em>"محاسب خبرة 5 سنوات بكالوريوس"</em><br>وسأملأ كل البيانات لك فوراً ✨</div>
+                </div>
+                <div class="cvb-ai-input">
+                    <input type="text" id="aiCvInput" placeholder="اكتب مجالك..." onkeypress="if(event.key==='Enter')sendAICvMessage()">
+                    <button class="cvb-ai-send" id="aiCvSendBtn" onclick="sendAICvMessage()">
+                        <i class="fas fa-magic"></i> توليد
+                    </button>
+                </div>
+
+                <!-- ATS Keywords -->
+                <div class="cvb-ats-box" id="atsBox" style="display:none">
+                    <div class="cvb-ats-title">
+                        <i class="fas fa-key"></i> كلمات مفتاحية ATS
+                        <small style="color:var(--text2);font-weight:400;font-size:10px">اضغط لإضافتها</small>
+                    </div>
+                    <div class="cvb-ats-keywords" id="atsKeywords"></div>
+                </div>
+
+                <!-- زر تحسين الملخص -->
+                <button class="cvb-btn cvb-btn-outline" style="margin-top:12px;width:100%;justify-content:center" onclick="improveAISummary()">
+                    <i class="fas fa-sparkles"></i> تحسين الملخص بـ AI
+                </button>
             </div>
-            <div style="text-align:center;margin-top:8px"><img id="cvb_photo_preview" src="" style="width:76px;height:76px;border-radius:50%;border:3px solid #10b981;object-fit:cover;display:none"></div>
-        </div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
-            <button class="action-btn-green" onclick="previewCV()"><i class="fas fa-eye"></i> معاينة</button>
-            <button class="action-btn-blue" onclick="generateAndSendCVPDF()"><i class="fas fa-file-pdf"></i> تنزيل PDF</button>
-        </div>
-        <div id="cv_preview_section" style="display:none;margin-top:20px">
-            <div style="font-size:14px;font-weight:900;margin-bottom:12px;border-right:4px solid #10b981;padding-right:12px">📄 معاينة</div>
-            <div class="cv-preview" id="cv_preview_content"></div>
+
+            <!-- نموذج البيانات — يمين -->
+            <div class="cvb-form-panel">
+                <!-- الصورة الشخصية -->
+                <div class="cvb-photo-wrap">
+                    <div class="cvb-photo-circle" id="cvbPhotoCircle">
+                        <img id="cvb_photo_preview" src="" style="width:100%;height:100%;object-fit:cover;display:none">
+                        <span id="cvbPhotoPlaceholder"><i class="fas fa-user"></i></span>
+                    </div>
+                    <div>
+                        <div style="font-size:13px;font-weight:700;color:var(--text)">الصورة الشخصية</div>
+                        <div style="font-size:11px;color:var(--text2);margin:3px 0">JPG أو PNG — حجم مناسب</div>
+                        <label style="cursor:pointer;background:var(--bg-card2);border:1.5px solid var(--border);padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;color:var(--text2)">
+                            <i class="fas fa-upload"></i> رفع صورة
+                            <input type="file" id="cvb_photo" accept="image/*" onchange="onCVPhoto(this)" style="display:none">
+                        </label>
+                    </div>
+                </div>
+
+                <!-- المعلومات الأساسية -->
+                <div class="cvb-section-title"><i class="fas fa-user" style="color:#10b981"></i> المعلومات الأساسية</div>
+                <div class="cvb-grid-2">
+                    <div class="form-group"><label>الاسم الكامل <span style="color:#ef4444">*</span></label><input id="cvb_name" type="text" value="${saved.name}" placeholder="محمد أحمد"></div>
+                    <div class="form-group"><label>المسمى الوظيفي</label><input id="cvb_role" type="text" placeholder="مثال: مهندس برمجيات" value="${saved.role}"></div>
+                    <div class="form-group"><label>الهاتف</label><input id="cvb_phone" type="tel" value="${saved.phone}" placeholder="07xxxxxxxx"></div>
+                    <div class="form-group"><label>البريد الإلكتروني</label><input id="cvb_email" type="email" value="${saved.email}" placeholder="example@mail.com"></div>
+                    <div class="form-group"><label>المحافظة</label><select id="cvb_province">${provinces.map(p=>`<option ${p===(saved.province||currentUser.province)?'selected':''}>${p}</option>`).join('')}</select></div>
+                    <div class="form-group"><label>الراتب المتوقع (د.ع)</label><input id="cvb_salary" type="number" placeholder="500,000" value="${saved.salary}"></div>
+                </div>
+
+                <!-- المؤهلات -->
+                <div class="cvb-section-title"><i class="fas fa-graduation-cap" style="color:#6366f1"></i> المؤهلات والخبرة</div>
+                <div class="cvb-grid-2">
+                    <div class="form-group"><label>سنوات الخبرة</label><input id="cvb_exp" type="text" placeholder="5 سنوات" value="${saved.exp}"></div>
+                    <div class="form-group"><label>المؤهل العلمي</label><input id="cvb_edu" type="text" placeholder="بكالوريوس محاسبة" value="${saved.edu}"></div>
+                </div>
+
+                <!-- المهارات -->
+                <div class="cvb-section-title"><i class="fas fa-bolt" style="color:#f59e0b"></i> المهارات</div>
+                <div class="form-group"><input id="cvb_skills" type="text" placeholder="Excel, تواصل, إدارة وقت, Python..." value="${saved.skills}"></div>
+
+                <!-- الملخص -->
+                <div class="cvb-section-title"><i class="fas fa-align-right" style="color:#ec4899"></i> الملخص الشخصي</div>
+                <div class="form-group"><textarea id="cvb_summary" rows="4" placeholder="اكتب ملخصاً قوياً يبرز قيمتك وخبرتك...">${saved.summary}</textarea></div>
+
+                <!-- الأزرار -->
+                <div class="cvb-actions">
+                    <button class="cvb-btn cvb-btn-green" onclick="previewCV()">
+                        <i class="fas fa-eye"></i> معاينة السيرة
+                    </button>
+                    <button class="cvb-btn cvb-btn-blue" onclick="generateAndSendCVPDF()">
+                        <i class="fas fa-file-pdf"></i> تنزيل PDF
+                    </button>
+                    <button class="cvb-btn cvb-btn-outline" onclick="saveCVToFirestore()">
+                        <i class="fas fa-cloud-upload-alt"></i> نشر
+                    </button>
+                </div>
+
+                <!-- معاينة -->
+                <div id="cv_preview_section" style="display:none;margin-top:18px">
+                    <div class="cvb-section-title"><i class="fas fa-file-alt" style="color:#10b981"></i> المعاينة</div>
+                    <div class="cv-preview" id="cv_preview_content"></div>
+                </div>
+            </div>
         </div>
     </div>`;
     _cvPhotoB64 = null;
@@ -1522,12 +1823,12 @@ async function sendAICvMessage() {
     if (!userText) return;
     const messagesEl = document.getElementById('aiCvMessages');
     const sendBtn    = document.getElementById('aiCvSendBtn');
-    messagesEl.innerHTML += `<div class="ai-cv-msg user">${userText}</div>`;
+    messagesEl.innerHTML += `<div class="cvb-ai-msg user">${userText}</div>`;
     input.value = '';
     sendBtn.disabled = true;
     sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
     const typingId = 'cvT_' + Date.now();
-    messagesEl.innerHTML += `<div class="ai-cv-msg ai" id="${typingId}"><i class="fas fa-circle-notch fa-spin"></i> يحلل...</div>`;
+    messagesEl.innerHTML += `<div class="cvb-ai-msg ai" id="${typingId}"><i class="fas fa-circle-notch fa-spin"></i> يحلل ويولّد بياناتك...</div>`;
     messagesEl.scrollTop = messagesEl.scrollHeight;
     try {
         const res = await fetch("https://api.anthropic.com/v1/messages", {
@@ -1535,30 +1836,91 @@ async function sendAICvMessage() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 model: "claude-sonnet-4-20250514",
-                max_tokens: 800,
-                messages: [{ role:"user", content:`أنت مساعد سير ذاتية. المستخدم: "${userText}". أرجع JSON فقط:\n{"role":"المسمى","exp":"الخبرة","edu":"المؤهل","skills":"مهارة1, مهارة2, مهارة3","summary":"ملخص 3 جمل","salary":"الراتب رقم","aiMessage":"رسالة قصيرة"}` }]
+                max_tokens: 1000,
+                messages: [{ role:"user", content:
+                    `أنت خبير موارد بشرية وسير ذاتية. المستخدم: "${userText}".
+أرجع JSON فقط بدون أي نص آخر:
+{
+  "role": "المسمى الوظيفي الدقيق",
+  "exp": "سنوات الخبرة",
+  "edu": "المؤهل العلمي المناسب",
+  "skills": "مهارة1, مهارة2, مهارة3, مهارة4, مهارة5",
+  "summary": "ملخص شخصي احترافي 3 جمل يتخطى أنظمة ATS",
+  "salary": "راتب رقمي مناسب بالدينار العراقي",
+  "atsKeywords": ["كلمة1","كلمة2","كلمة3","كلمة4","كلمة5","كلمة6"],
+  "aiMessage": "رسالة تشجيعية قصيرة"
+}` }]
             })
         });
         const data = await res.json();
         const raw  = data.content?.map(i=>i.text||'').join('') || '';
-        const parsed = JSON.parse(raw.replace(/```json|```/g,'').trim());
+        const parsed = JSON.parse(raw.replace(/\`\`\`json|\`\`\`/g,'').trim());
         if(parsed.role)    { const el=document.getElementById('cvb_role');    if(el) el.value=parsed.role; }
         if(parsed.exp)     { const el=document.getElementById('cvb_exp');     if(el) el.value=parsed.exp; }
         if(parsed.edu)     { const el=document.getElementById('cvb_edu');     if(el) el.value=parsed.edu; }
         if(parsed.skills)  { const el=document.getElementById('cvb_skills');  if(el) el.value=parsed.skills; }
         if(parsed.summary) { const el=document.getElementById('cvb_summary'); if(el) el.value=parsed.summary; }
         if(parsed.salary)  { const el=document.getElementById('cvb_salary');  if(el) el.value=parsed.salary; }
-        document.getElementById(typingId).outerHTML = `<div class="ai-cv-msg ai">✅ ${parsed.aiMessage||'تم ملء البيانات!'}</div>`;
+        // عرض كلمات ATS
+        if(parsed.atsKeywords?.length) {
+            const atsBox = document.getElementById('atsBox');
+            const atsKws = document.getElementById('atsKeywords');
+            if(atsBox && atsKws) {
+                atsBox.style.display = 'block';
+                atsKws.innerHTML = parsed.atsKeywords.map(k =>
+                    `<span class="ats-kw" onclick="addAtsKeyword('${k}')">${k}</span>`
+                ).join('');
+            }
+        }
+        document.getElementById(typingId).outerHTML = `<div class="cvb-ai-msg ai"><i class="fas fa-check-circle" style="color:#10b981"></i> ${parsed.aiMessage||'تم ملء البيانات!'}</div>`;
     } catch(e) {
         const fb = generateOfflineCV(userText);
         if(fb.role)   { const el=document.getElementById('cvb_role');   if(el) el.value=fb.role; }
         if(fb.skills) { const el=document.getElementById('cvb_skills'); if(el) el.value=fb.skills; }
         if(fb.summary){ const el=document.getElementById('cvb_summary');if(el) el.value=fb.summary; }
-        document.getElementById(typingId).outerHTML = `<div class="ai-cv-msg ai">✅ تم ملء البيانات الأساسية.</div>`;
+        document.getElementById(typingId).outerHTML = `<div class="cvb-ai-msg ai"><i class="fas fa-check-circle" style="color:#10b981"></i> تم ملء البيانات الأساسية.</div>`;
     }
     sendBtn.disabled = false;
-    sendBtn.innerHTML = '<i class="fas fa-magic"></i> اسأل AI';
+    sendBtn.innerHTML = '<i class="fas fa-magic"></i> توليد';
     messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function addAtsKeyword(kw) {
+    const el = document.getElementById('cvb_skills');
+    if (!el) return;
+    const current = el.value.trim();
+    el.value = current ? current + ', ' + kw : kw;
+    showNotification('✅', `تمت إضافة "${kw}" للمهارات`, 'success');
+}
+
+async function improveAISummary() {
+    const role    = document.getElementById('cvb_role')?.value || '';
+    const exp     = document.getElementById('cvb_exp')?.value  || '';
+    const skills  = document.getElementById('cvb_skills')?.value || '';
+    const current = document.getElementById('cvb_summary')?.value || '';
+    if (!role) { showNotification('⚠️','أدخل المسمى الوظيفي أولاً','warning'); return; }
+    showNotification('⏳','يحسّن الملخص...','info');
+    try {
+        const res = await fetch("https://api.anthropic.com/v1/messages", {
+            method:"POST", headers:{"Content-Type":"application/json"},
+            body: JSON.stringify({
+                model:"claude-sonnet-4-20250514", max_tokens:400,
+                messages:[{ role:"user", content:
+                    `حسّن هذا الملخص الشخصي ليتخطى أنظمة ATS ويكون أكثر احترافية:
+المسمى: ${role}، الخبرة: ${exp}، المهارات: ${skills}
+الملخص الحالي: ${current || 'لا يوجد'}
+أعطني ملخصاً محسّناً باللغة العربية فقط — 3 جمل قوية ومباشرة.`
+                }]
+            })
+        });
+        const data = await res.json();
+        const text = data.content?.map(i=>i.text||'').join('').trim() || '';
+        if (text) {
+            const el = document.getElementById('cvb_summary');
+            if (el) el.value = text;
+            showNotification('✅','تم تحسين الملخص','success');
+        }
+    } catch(e) { showNotification('❌','تعذّر التحسين','error'); }
 }
 function generateOfflineCV(t) {
     const tx=t.toLowerCase();
@@ -1568,8 +1930,16 @@ function generateOfflineCV(t) {
     return {role:t,skills:'تواصل, عمل فريق, إدارة وقت',summary:`متخصص في مجال ${t} يسعى للتطوير المستمر.`};
 }
 function onCVPhoto(input) {
-    const file=input.files[0]; if(!file) return;
-    const reader=new FileReader(); reader.onload=e=>{ _cvPhotoB64=e.target.result.split(',')[1]; const img=document.getElementById('cvb_photo_preview'); if(img){img.src=e.target.result;img.style.display='block';} }; reader.readAsDataURL(file);
+    const file = input.files[0]; if(!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        _cvPhotoB64 = e.target.result.split(',')[1];
+        const img = document.getElementById('cvb_photo_preview');
+        const ph  = document.getElementById('cvbPhotoPlaceholder');
+        if (img) { img.src = e.target.result; img.style.display = 'block'; }
+        if (ph)  ph.style.display = 'none';
+    };
+    reader.readAsDataURL(file);
 }
 function previewCV() {
     const name=document.getElementById('cvb_name')?.value; if(!name){showNotification('❌','أدخل الاسم الكامل','error');return;}
@@ -1722,6 +2092,378 @@ function viewCVDetail(cv) {
     document.body.appendChild(modal);
 }
 
+
+// ╔══════════════════════════════════════════════════════╗
+// ║         المقابلة الذكية                              ║
+// ╚══════════════════════════════════════════════════════╝
+const SPECIALIZATIONS = [
+    { id:'tech',   name:'برمجة وتقنية',    icon:'💻', color:'#3b82f6' },
+    { id:'eng',    name:'هندسة',           icon:'⚙️',  color:'#f59e0b' },
+    { id:'med',    name:'طب وصحة',         icon:'🏥', color:'#ef4444' },
+    { id:'biz',    name:'أعمال ومبيعات',   icon:'📊', color:'#8b5cf6' },
+    { id:'edu',    name:'تعليم وتدريس',    icon:'📚', color:'#10b981' },
+    { id:'law',    name:'قانون',           icon:'⚖️',  color:'#64748b' },
+    { id:'art',    name:'تصميم وإبداع',    icon:'🎨', color:'#ec4899' },
+    { id:'fin',    name:'محاسبة ومالية',   icon:'💰', color:'#059669' },
+    { id:'hr',     name:'موارد بشرية',     icon:'👥', color:'#7c3aed' },
+    { id:'other',  name:'تخصص آخر',        icon:'🔍', color:'#475569' },
+];
+let interviewState = { spec:null, questions:[], currentQ:0, answers:[], scores:[], started:false };
+
+function renderInterviewSection() {
+    const el = document.getElementById('interview-section');
+    if (!el) return;
+    el.innerHTML = `
+    <div class="interview-shell">
+        <div class="interview-hero">
+            <h2><i class="fas fa-comments" style="margin-left:8px"></i> المقابلة الذكية</h2>
+            <p>تدرّب على المقابلات الوظيفية بمساعدة الذكاء الاصطناعي — أسئلة حقيقية وتقييم فوري</p>
+        </div>
+        <div id="interviewBody"></div>
+    </div>`;
+    renderSpecPicker();
+}
+
+function renderSpecPicker() {
+    const body = document.getElementById('interviewBody');
+    interviewState = { spec:null, questions:[], currentQ:0, answers:[], scores:[], started:false };
+    body.innerHTML = `
+    <div style="padding:20px">
+        <div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:14px">
+            <i class="fas fa-hand-pointer" style="color:#6366f1;margin-left:6px"></i> اختر تخصصك
+        </div>
+        <div class="spec-grid">
+            ${SPECIALIZATIONS.map(s => `
+            <div class="spec-card" onclick="selectSpec('${s.id}')" id="spec_${s.id}">
+                <div class="spec-icon">${s.icon}</div>
+                <div class="spec-name">${s.name}</div>
+            </div>`).join('')}
+        </div>
+        <div id="startInterviewBtn" style="padding:0 0 10px;display:none">
+            <button class="interview-send-btn" style="width:100%;justify-content:center;font-size:15px;padding:14px" onclick="startInterview()">
+                <i class="fas fa-play"></i> ابدأ المقابلة
+            </button>
+        </div>
+    </div>`;
+}
+
+function selectSpec(id) {
+    interviewState.spec = SPECIALIZATIONS.find(s => s.id === id);
+    document.querySelectorAll('.spec-card').forEach(c => c.classList.remove('selected'));
+    document.getElementById('spec_' + id)?.classList.add('selected');
+    document.getElementById('startInterviewBtn').style.display = 'block';
+}
+
+async function startInterview() {
+    if (!interviewState.spec) return;
+    const body = document.getElementById('interviewBody');
+    body.innerHTML = `
+    <div style="padding:20px">
+        <div class="interview-progress"><div class="interview-progress-bar" id="iProgressBar" style="width:0%"></div></div>
+        <div id="iMessages" style="max-height:420px;overflow-y:auto;padding-bottom:8px"></div>
+        <div class="interview-input-row" id="iInputRow">
+            <textarea class="interview-input" id="iInput" placeholder="اكتب إجابتك هنا..." rows="2"
+                onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendInterviewAnswer()}"></textarea>
+            <button class="interview-send-btn" id="iSendBtn" onclick="sendInterviewAnswer()">
+                <i class="fas fa-paper-plane"></i> إرسال
+            </button>
+        </div>
+    </div>`;
+
+    addInterviewMsg('ai', `مرحباً! سنبدأ مقابلة في مجال <strong>${interviewState.spec.name}</strong> — سأطرح عليك 5 أسئلة وأقيّم إجاباتك. خذ وقتك وأجب بشكل كامل 💪`);
+    await new Promise(r => setTimeout(r, 600));
+    await fetchInterviewQuestion(true);
+}
+
+function addInterviewMsg(type, html, score=null) {
+    const msgs = document.getElementById('iMessages');
+    if (!msgs) return;
+    const scoreHtml = score !== null ? `<div class="interview-score"><i class="fas fa-star"></i> التقييم: ${score}/10</div>` : '';
+    msgs.innerHTML += `<div class="interview-msg ${type}">${html}${scoreHtml}</div>`;
+    msgs.scrollTop = msgs.scrollHeight;
+}
+
+async function fetchInterviewQuestion(isFirst=false) {
+    const qNum = interviewState.currentQ + 1;
+    if (qNum > 5) { showInterviewResult(); return; }
+
+    const bar = document.getElementById('iProgressBar');
+    if (bar) bar.style.width = ((qNum-1)/5*100) + '%';
+
+    const btn = document.getElementById('iSendBtn');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
+
+    const prevQA = interviewState.questions.map((q,i) => `س${i+1}: ${q}\nج: ${interviewState.answers[i]||'—'}`).join('\n');
+
+    try {
+        const res = await fetch("https://api.anthropic.com/v1/messages", {
+            method:"POST", headers:{"Content-Type":"application/json"},
+            body: JSON.stringify({
+                model:"claude-sonnet-4-20250514", max_tokens:600,
+                messages:[{ role:"user", content:
+                    `أنت محاور وظيفي خبير. التخصص: ${interviewState.spec.name}.
+السؤال رقم ${qNum} من 5.
+${prevQA ? 'الأسئلة والأجوبة السابقة:\n' + prevQA : ''}
+أرجع JSON فقط:
+{"question":"سؤال مقابلة وظيفية واقعي ومناسب للتخصص","tip":"تلميح قصير للإجابة الجيدة"}`
+                }]
+            })
+        });
+        const data = await res.json();
+        const raw = data.content?.map(i=>i.text||'').join('') || '{}';
+        const parsed = JSON.parse(raw.replace(/\`\`\`json|\`\`\`/g,'').trim());
+        interviewState.questions.push(parsed.question);
+        addInterviewMsg('ai', `<strong>السؤال ${qNum}/5:</strong> ${parsed.question}<br><small style="color:var(--text2);margin-top:6px;display:block"><i class="fas fa-lightbulb" style="color:#f59e0b"></i> ${parsed.tip||''}</small>`);
+    } catch(e) {
+        const fallbacks = {
+            tech:['اشرح الفرق بين var و let و const في JavaScript','ما هي مبادئ OOP؟','كيف تتعامل مع خطأ في الكود تحت ضغط الوقت؟','اشرح مفهوم REST API','ما أكبر تحدٍّ برمجي واجهته وكيف حللته؟'],
+            biz:['كيف تتعامل مع عميل غاضب؟','صف أكبر صفقة أنجزتها','ما استراتيجيتك في إيجاد عملاء جدد؟','كيف تحدد أولوياتك اليومية؟','ما نقاط قوتك وضعفك في المبيعات؟'],
+            eng:['اشرح مبدأ عملك الهندسي الأساسي','كيف تضمن جودة عملك؟','صف مشروعاً معقداً أشرفت عليه','كيف تتعامل مع تغيير المتطلبات؟','ما أحدث تقنية تعلمتها في مجالك؟'],
+        };
+        const list = fallbacks[interviewState.spec.id] || fallbacks.biz;
+        const q = list[interviewState.currentQ] || `ما خبرتك في ${interviewState.spec.name}؟`;
+        interviewState.questions.push(q);
+        addInterviewMsg('ai', `<strong>السؤال ${qNum}/5:</strong> ${q}`);
+    }
+
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane"></i> إرسال'; }
+}
+
+async function sendInterviewAnswer() {
+    const input = document.getElementById('iInput');
+    const answer = input?.value?.trim();
+    if (!answer) return;
+    input.value = '';
+
+    addInterviewMsg('user', answer);
+    const btn = document.getElementById('iSendBtn');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> يقيّم...'; }
+
+    const q = interviewState.questions[interviewState.currentQ];
+    interviewState.answers.push(answer);
+
+    try {
+        const res = await fetch("https://api.anthropic.com/v1/messages", {
+            method:"POST", headers:{"Content-Type":"application/json"},
+            body: JSON.stringify({
+                model:"claude-sonnet-4-20250514", max_tokens:400,
+                messages:[{ role:"user", content:
+                    `أنت محاور خبير. التخصص: ${interviewState.spec.name}.
+السؤال: ${q}
+إجابة المتقدم: ${answer}
+قيّم الإجابة وأرجع JSON فقط:
+{"score":رقم_من_1_لـ10,"feedback":"تغذية راجعة قصيرة 2-3 جمل باللغة العربية","improvement":"اقتراح تحسين واحد"}`
+                }]
+            })
+        });
+        const data = await res.json();
+        const raw = data.content?.map(i=>i.text||'').join('') || '{}';
+        const ev = JSON.parse(raw.replace(/\`\`\`json|\`\`\`/g,'').trim());
+        interviewState.scores.push(ev.score||5);
+        addInterviewMsg('feedback',
+            `<strong><i class="fas fa-comment-dots" style="color:#f59e0b"></i> التقييم:</strong> ${ev.feedback||'إجابة جيدة'}<br>
+            <small style="color:#10b981"><i class="fas fa-arrow-up"></i> ${ev.improvement||''}</small>`,
+            ev.score||5
+        );
+    } catch(e) {
+        interviewState.scores.push(6);
+        addInterviewMsg('feedback', 'إجابة معقولة، حاول التوسع أكثر في تفاصيل خبرتك.', 6);
+    }
+
+    interviewState.currentQ++;
+    await new Promise(r => setTimeout(r, 800));
+    await fetchInterviewQuestion();
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane"></i> إرسال'; }
+}
+
+function showInterviewResult() {
+    const bar = document.getElementById('iProgressBar');
+    if (bar) bar.style.width = '100%';
+    const inputRow = document.getElementById('iInputRow');
+    if (inputRow) inputRow.style.display = 'none';
+
+    const avg = interviewState.scores.length
+        ? Math.round(interviewState.scores.reduce((a,b)=>a+b,0) / interviewState.scores.length * 10) / 10
+        : 0;
+    const grade = avg >= 8 ? {t:'ممتاز 🏆', c:'#10b981'} : avg >= 6 ? {t:'جيد جداً 👍', c:'#f59e0b'} : {t:'يحتاج تطوير 📈', c:'#ef4444'};
+
+    addInterviewMsg('ai', `
+    <div style="text-align:center;padding:10px 0">
+        <div style="font-size:32px;margin-bottom:8px">${grade.t}</div>
+        <div style="font-size:28px;font-weight:900;color:${grade.c};margin-bottom:4px">${avg}/10</div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:16px">متوسط تقييمك في ${interviewState.questions.length} أسئلة</div>
+        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+            <button class="interview-send-btn" onclick="renderSpecPicker();document.getElementById('interviewBody').innerHTML='';renderSpecPicker()">
+                <i class="fas fa-redo"></i> مقابلة جديدة
+            </button>
+            <button class="interview-send-btn" style="background:linear-gradient(135deg,#059669,#10b981)" onclick="showJobTab('cv-builder',null)">
+                <i class="fas fa-file-alt"></i> أنشئ سيرتك الذاتية
+            </button>
+        </div>
+    </div>`);
+}
+
+
+// ╔══════════════════════════════════════════════════════╗
+// ║         الدورات التدريبية                            ║
+// ╚══════════════════════════════════════════════════════╝
+const COURSES_DATA = [
+    { id:'excel', title:'Excel للمبتدئين', desc:'تعلم أساسيات Excel من الصفر حتى الاحتراف — الدوال، الجداول، والتقارير', icon:'📊', color:'#059669', bg:'rgba(5,150,105,0.1)', badge:'مجاني', badgeColor:'#10b981', lessons:[
+        {t:'مقدمة Excel وواجهة البرنامج', d:'25 دقيقة'},
+        {t:'إدخال البيانات والتنسيق', d:'30 دقيقة'},
+        {t:'الدوال الأساسية SUM, IF, VLOOKUP', d:'45 دقيقة'},
+        {t:'الجداول المحورية Pivot Tables', d:'40 دقيقة'},
+        {t:'الرسوم البيانية والتقارير', d:'35 دقيقة'},
+    ]},
+    { id:'cv_writing', title:'كتابة السيرة الذاتية', desc:'كيف تكتب CV احترافي يتخطى أنظمة ATS ويجذب أصحاب العمل', icon:'📝', color:'#4f46e5', bg:'rgba(79,70,229,0.1)', badge:'مجاني', badgeColor:'#6366f1', lessons:[
+        {t:'مكونات السيرة الذاتية الاحترافية', d:'20 دقيقة'},
+        {t:'كيف تتخطى أنظمة ATS', d:'25 دقيقة'},
+        {t:'صياغة الملخص الشخصي', d:'20 دقيقة'},
+        {t:'وصف الخبرات والمهارات', d:'30 دقيقة'},
+        {t:'أخطاء شائعة يجب تجنبها', d:'15 دقيقة'},
+    ]},
+    { id:'interview_prep', title:'فن المقابلة الوظيفية', desc:'استعد للمقابلات بثقة — أسرار النجاح وأشهر الأسئلة وكيف تجيب', icon:'🎯', color:'#dc2626', bg:'rgba(220,38,38,0.1)', badge:'مهم', badgeColor:'#ef4444', lessons:[
+        {t:'أنواع المقابلات وكيف تستعد', d:'25 دقيقة'},
+        {t:'الأسئلة الأكثر شيوعاً وإجاباتها', d:'40 دقيقة'},
+        {t:'لغة الجسد والمظهر الاحترافي', d:'20 دقيقة'},
+        {t:'طريقة STAR للإجابة', d:'30 دقيقة'},
+        {t:'الأسئلة التي تطرحها أنت', d:'15 دقيقة'},
+    ]},
+    { id:'digital_marketing', title:'التسويق الرقمي', desc:'أساسيات التسويق عبر الإنترنت — Social Media, SEO, Google Ads', icon:'📱', color:'#7c3aed', bg:'rgba(124,58,237,0.1)', badge:'مطلوب', badgeColor:'#7c3aed', lessons:[
+        {t:'مقدمة في التسويق الرقمي', d:'25 دقيقة'},
+        {t:'إدارة حسابات Social Media', d:'40 دقيقة'},
+        {t:'أساسيات SEO', d:'35 دقيقة'},
+        {t:'Google Ads للمبتدئين', d:'45 دقيقة'},
+        {t:'تحليل النتائج والتقارير', d:'30 دقيقة'},
+    ]},
+    { id:'communication', title:'مهارات التواصل', desc:'طور مهاراتك في التواصل والعمل الجماعي — أساس أي وظيفة ناجحة', icon:'🗣️', color:'#0891b2', bg:'rgba(8,145,178,0.1)', badge:'للجميع', badgeColor:'#0891b2', lessons:[
+        {t:'أسس التواصل الفعّال', d:'25 دقيقة'},
+        {t:'مهارات الاستماع النشط', d:'20 دقيقة'},
+        {t:'حل النزاعات في بيئة العمل', d:'30 دقيقة'},
+        {t:'العروض التقديمية الاحترافية', d:'35 دقيقة'},
+        {t:'التواصل الكتابي — Emails', d:'25 دقيقة'},
+    ]},
+    { id:'freelance', title:'العمل الحر (Freelancing)', desc:'ابدأ مسيرتك كمستقل — كيف تجد العملاء وتسعّر خدماتك', icon:'💼', color:'#f59e0b', bg:'rgba(245,158,11,0.1)', badge:'للشباب', badgeColor:'#f59e0b', lessons:[
+        {t:'ما هو Freelancing وكيف تبدأ', d:'20 دقيقة'},
+        {t:'المنصات الأفضل للعمل الحر', d:'30 دقيقة'},
+        {t:'كيف تكتب proposal ناجح', d:'35 دقيقة'},
+        {t:'تسعير خدماتك بشكل صحيح', d:'25 دقيقة'},
+        {t:'إدارة العملاء والمشاريع', d:'30 دقيقة'},
+    ]},
+];
+let activeCourse = null;
+let activeLesson = null;
+
+function renderCoursesSection() {
+    const el = document.getElementById('courses-section');
+    if (!el) return;
+    el.innerHTML = `
+    <div style="background:var(--bg-card);border-radius:24px;overflow:hidden;border:1px solid var(--border)">
+        <div class="courses-hero">
+            <h2><i class="fas fa-graduation-cap" style="margin-left:8px"></i> الدورات التدريبية</h2>
+            <p>دورات مجانية لتطوير مهاراتك وزيادة فرصك في سوق العمل — مدعومة بالذكاء الاصطناعي</p>
+        </div>
+        <div style="padding:20px">
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px">
+                ${COURSES_DATA.map(c => `
+                <div class="course-card" onclick="openCourse('${c.id}')">
+                    <div class="course-card-header">
+                        <div class="course-icon" style="background:${c.bg}">${c.icon}</div>
+                        <div class="course-title">${c.title}</div>
+                        <div class="course-desc">${c.desc}</div>
+                    </div>
+                    <div class="course-footer">
+                        <span class="course-badge" style="background:${c.bg};color:${c.color}">${c.badge}</span>
+                        <button class="course-start-btn">ابدأ الدورة <i class="fas fa-arrow-left"></i></button>
+                    </div>
+                </div>`).join('')}
+            </div>
+        </div>
+    </div>`;
+}
+
+function openCourse(id) {
+    activeCourse = COURSES_DATA.find(c => c.id === id);
+    if (!activeCourse) return;
+    const el = document.getElementById('courses-section');
+    el.innerHTML = `
+    <div style="background:var(--bg-card);border-radius:24px;overflow:hidden;border:1px solid var(--border)">
+        <div class="courses-hero" style="background:linear-gradient(135deg,${activeCourse.color}dd,${activeCourse.color}99)">
+            <button onclick="renderCoursesSection()" style="background:rgba(255,255,255,0.2);border:none;color:white;padding:7px 14px;border-radius:20px;font-family:'Cairo',sans-serif;font-size:12px;cursor:pointer;margin-bottom:12px">
+                <i class="fas fa-arrow-right"></i> الدورات
+            </button>
+            <h2>${activeCourse.icon} ${activeCourse.title}</h2>
+            <p>${activeCourse.desc}</p>
+        </div>
+        <div class="course-modal-body">
+            <div style="font-size:13px;font-weight:800;color:var(--text2);margin-bottom:12px">
+                <i class="fas fa-list-ul" style="margin-left:6px"></i> محتوى الدورة — ${activeCourse.lessons.length} دروس
+            </div>
+            ${activeCourse.lessons.map((l,i) => `
+            <div class="lesson-item" onclick="startLesson(${i})">
+                <div class="lesson-num">${i+1}</div>
+                <div style="flex:1">
+                    <div class="lesson-title">${l.t}</div>
+                    <div class="lesson-dur"><i class="fas fa-clock"></i> ${l.d}</div>
+                </div>
+                <i class="fas fa-play" style="color:var(--text2);font-size:11px"></i>
+            </div>`).join('')}
+            <div id="lessonContent"></div>
+        </div>
+    </div>`;
+}
+
+async function startLesson(idx) {
+    activeLesson = activeCourse.lessons[idx];
+    const lessonEl = document.getElementById('lessonContent');
+    lessonEl.innerHTML = `
+    <div style="margin-top:18px">
+        <div style="font-size:14px;font-weight:900;color:var(--text);margin-bottom:10px;border-right:3px solid ${activeCourse.color};padding-right:12px">
+            الدرس ${idx+1}: ${activeLesson.t}
+        </div>
+        <div class="ai-lesson-content" id="lessonAIContent">
+            <div style="text-align:center;padding:20px;color:var(--text2)">
+                <i class="fas fa-spinner fa-spin" style="font-size:22px;color:${activeCourse.color}"></i>
+                <div style="margin-top:10px;font-size:13px">يحضّر المحتوى بالذكاء الاصطناعي...</div>
+            </div>
+        </div>
+    </div>`;
+    lessonEl.scrollIntoView({behavior:'smooth'});
+
+    try {
+        const res = await fetch("https://api.anthropic.com/v1/messages", {
+            method:"POST", headers:{"Content-Type":"application/json"},
+            body: JSON.stringify({
+                model:"claude-sonnet-4-20250514", max_tokens:1000,
+                messages:[{ role:"user", content:
+                    `أنت مدرّب تعليمي. اشرح درس "${activeLesson.t}" من دورة "${activeCourse.title}" بالعربية.
+اكتب شرحاً تعليمياً منظماً يناسب المبتدئين، يتضمن:
+- مقدمة قصيرة
+- النقاط الرئيسية (3-5 نقاط)
+- مثال عملي
+- خلاصة وتطبيق
+استخدم HTML بسيط (p, ul, li, strong, em) فقط. لا تستخدم Markdown.`
+                }]
+            })
+        });
+        const data = await res.json();
+        const text = data.content?.map(i=>i.text||'').join('') || '';
+        document.getElementById('lessonAIContent').innerHTML = `
+            <div style="line-height:2;color:var(--text)">${text}</div>
+            <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border);display:flex;gap:10px">
+                ${idx < activeCourse.lessons.length-1 ?
+                    `<button class="interview-send-btn" style="background:linear-gradient(135deg,${activeCourse.color},${activeCourse.color}cc)" onclick="startLesson(${idx+1})">
+                        <i class="fas fa-arrow-left"></i> الدرس التالي
+                    </button>` : `<div style="color:#10b981;font-weight:700"><i class="fas fa-check-circle"></i> أكملت الدورة! 🎉</div>`}
+            </div>`;
+    } catch(e) {
+        document.getElementById('lessonAIContent').innerHTML = `
+            <div style="color:var(--text)"><strong>${activeLesson.t}</strong><br><br>
+            محتوى هذا الدرس يغطي: ${activeLesson.t}<br>
+            ابحث عن هذا الموضوع على YouTube أو Google للمزيد من التفاصيل.</div>`;
+    }
+}
+
 // ╔══════════════════════════════════════════════════════╗
 // ║         رفع الصور (Google Drive)                    ║
 // ╚══════════════════════════════════════════════════════╝
@@ -1808,8 +2550,34 @@ function showSection(section, btn) {
 }
 function showJobTab(tab, btn) {
     currentJobTab = tab;
-    document.querySelectorAll('.job-tab-ext').forEach(el => el.classList.remove('active'));
-    if (btn) btn.classList.add('active');
+    document.querySelectorAll('.svc-tab').forEach(el => el.classList.remove('active'));
+    const activeBtn = document.getElementById('stab_' + tab);
+    if (activeBtn) activeBtn.classList.add('active');
+
+    const jobsEl      = document.getElementById('jobs-list');
+    const builderEl   = document.getElementById('cv-builder-section');
+    const interviewEl = document.getElementById('interview-section');
+    const coursesEl   = document.getElementById('courses-section');
+    const filterBar   = document.getElementById('advFilterBar');
+
+    [jobsEl, builderEl, interviewEl, coursesEl].forEach(el => { if(el) el.style.display = 'none'; });
+    if (filterBar) filterBar.style.display = 'none';
+
+    if (tab === 'interview') {
+        if(interviewEl) { interviewEl.style.display = 'block'; renderInterviewSection(); }
+        return;
+    }
+    if (tab === 'courses') {
+        if(coursesEl) { coursesEl.style.display = 'block'; renderCoursesSection(); }
+        return;
+    }
+    if (tab === 'cv-builder') {
+        if(builderEl) { builderEl.style.display = 'block'; renderCVBuilder(); }
+        return;
+    }
+
+    if(jobsEl) jobsEl.style.display = 'block';
+    if(filterBar && (tab === 'all' || tab === 'jobs')) filterBar.style.display = 'flex';
     displayJobs();
 }
 function openLoginModal()    { document.getElementById('loginModal').classList.add('active'); }
