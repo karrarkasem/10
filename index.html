@@ -650,8 +650,8 @@
         @media(max-width:480px) { .main-container { padding: 14px 12px 100px; } }
 
         /* Firebase status indicator */
-        .firebase-status { position:fixed; bottom:90px; left:25px; background:white; border-radius:20px; padding:8px 14px; font-size:12px; font-weight:700; box-shadow:0 4px 15px rgba(0,0,0,0.1); display:flex; align-items:center; gap:6px; z-index:998; }
-        .firebase-dot { width:8px; height:8px; border-radius:50%; background:#10b981; animation:pulse 2s infinite; }
+        .firebase-status { position:fixed; bottom:20px; left:20px; z-index:998; }
+        .firebase-dot { width:10px; height:10px; border-radius:50%; background:#10b981; animation:pulse 2s infinite; box-shadow:0 0 0 3px rgba(16,185,129,0.2); display:block; }
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
     </style>
 </head>
@@ -852,7 +852,7 @@
 <!-- زر الإضافة -->
 <button class="add-btn" id="addBtn" onclick="openAddModal()" style="display:none;" title="إضافة"><i class="fas fa-plus"></i></button>
 <!-- مؤشر Firebase -->
-<div class="firebase-status"><div class="firebase-dot"></div> Firebase متصل</div>
+<div class="firebase-status"><div class="firebase-dot" title="Firebase متصل"></div></div>
 <div id="notificationContainer"></div>
 
 <!-- ═══ Modal تسجيل الدخول / حساب جديد ═══ -->
@@ -1037,7 +1037,7 @@ async function sendTelegram(text) {
     try {
         await fetch(`https://api.telegram.org/bot${TELEGRAM_CONFIG.botToken}/sendMessage`, {
             method  : 'POST',
-            headers : { 'Content-Type': 'application/json' },
+            headers : { 'Content-Type': 'application/json', 'anthropic-dangerous-direct-browser-access': 'true' },
             body    : JSON.stringify({
                 chat_id    : TELEGRAM_CONFIG.chatId,
                 text,
@@ -1214,6 +1214,12 @@ auth.onAuthStateChanged(async (firebaseUser) => {
 // ╚══════════════════════════════════════════════════════╝
 async function loadAllData() {
     initTheme();
+    // إظهار skeleton مع ضمان ظهور قائمة الوظائف
+    const jobsListEl = document.getElementById('jobs-list');
+    if (jobsListEl) {
+        jobsListEl.style.display = 'block';
+        jobsListEl.removeAttribute('hidden');
+    }
     showSkeletonCards('jobs-list', 4);
     try {
         const snap = await db.collection('jobs').orderBy('createdAt', 'desc').get();
@@ -1224,11 +1230,11 @@ async function loadAllData() {
             if (d.type === 'job') jobsData.push(d);
             else if (d.type === 'cv') cvsData.push(d);
         });
-        document.getElementById('jobsBadge').textContent = jobsData.length + cvsData.length;
-        displayJobs();
+        const badge = document.getElementById('jobsBadge');
+        if (badge) badge.textContent = jobsData.length + cvsData.length;
+        forceDisplayJobs();
     } catch(e) {
         console.error('خطأ تحميل:', e);
-        // إذا فشل بسبب index، نجرب بدون ترتيب
         try {
             const snap2 = await db.collection('jobs').get();
             jobsData = []; cvsData = [];
@@ -1237,10 +1243,23 @@ async function loadAllData() {
                 if (d.type === 'job') jobsData.push(d);
                 else if (d.type === 'cv') cvsData.push(d);
             });
-            document.getElementById('jobsBadge').textContent = jobsData.length + cvsData.length;
-            displayJobs();
+            const badge = document.getElementById('jobsBadge');
+            if (badge) badge.textContent = jobsData.length + cvsData.length;
+            forceDisplayJobs();
         } catch(e2) { console.error('خطأ ثانوي:', e2); }
     }
+}
+
+// دالة مضمونة تُظهر الوظائف مهما كان
+function forceDisplayJobs() {
+    const listEl = document.getElementById('jobs-list');
+    if (!listEl) return;
+    listEl.style.display = 'block';
+    listEl.style.visibility = 'visible';
+    listEl.style.opacity = '1';
+    // إعادة تعيين currentJobTab للـ default
+    if (!['all','jobs','cvs'].includes(currentJobTab)) currentJobTab = 'all';
+    displayJobs();
 }
 
 // ╔══════════════════════════════════════════════════════╗
@@ -1250,7 +1269,10 @@ function displayJobs() {
     const listEl    = document.getElementById('jobs-list');
     const builderEl = document.getElementById('cv-builder-section');
     if (!listEl) return;
-    listEl.style.display = 'block';
+    // إزالة skeleton وإظهار القائمة
+    listEl.style.display   = 'block';
+    listEl.style.visibility = 'visible';
+    listEl.style.opacity    = '1';
     if (builderEl) builderEl.style.display = 'none';
 
     // فقط العناصر الفعالة
@@ -1338,9 +1360,15 @@ function displayJobs() {
                 <div class="cv-info-item"><strong>العمر</strong>${cv.age||'—'}</div>
                 <div class="cv-info-item"><strong>الخبرة</strong>${cv.experience||'—'}</div>
                 <div class="cv-info-item"><strong>المؤهل</strong>${cv.education||'—'}</div>
-                ${cv.interviewScore ? `<div class="cv-info-item" style="color:#6366f1"><strong>🎯 مقابلة AI</strong>${cv.interviewScore}/10</div>` : ''}
+                ${cv.languages ? `<div class="cv-info-item"><strong>اللغات</strong>${cv.languages}</div>` : ''}
                 <div class="cv-info-item"><strong>الراتب المتوقع</strong>${cv.expectedSalary?Number(cv.expectedSalary).toLocaleString()+' د.ع':'—'}</div>
             </div>
+            ${cv.interviewScore ? `<div style="display:flex;align-items:center;gap:8px;margin:8px 0;padding:8px 12px;background:linear-gradient(135deg,rgba(99,102,241,0.1),rgba(124,58,237,0.05));border:1px solid rgba(99,102,241,0.2);border-radius:12px">
+                <div style="background:linear-gradient(135deg,#4f46e5,#7c3aed);color:white;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;flex-shrink:0">${cv.interviewScore}</div>
+                <div><div style="font-size:11px;font-weight:800;color:#4f46e5"><i class="fas fa-robot"></i> اجتاز مقابلة الذكاء الاصطناعي</div>
+                <div style="font-size:10px;color:#7c3aed">درجة ${cv.interviewScore}/10 — ${cv.interviewSpec||'عام'}</div></div>
+                <i class="fas fa-check-circle" style="color:#10b981;margin-right:auto;font-size:16px"></i>
+            </div>` : ''}
             ${cv.description ? `<div class="job-desc">${cv.description}</div>` : ''}
             <div class="job-skills">${(cv.skills||'').split(',').filter(Boolean).map(s=>`<span class="skill-tag">${s.trim()}</span>`).join('')}</div>
             <div class="job-footer">
@@ -1769,6 +1797,7 @@ function buildJobForm() {
             </div>
         </div>
         <div class="form-group"><label>المهارات</label><input type="text" id="cvSkills" placeholder="Excel, إنجليزي, قيادة, برمجة..."></div>
+        <div class="form-group"><label>اللغات</label><input type="text" id="cvLanguages" placeholder="العربية - ممتاز, الإنجليزية - جيد, الكردية - متوسط"></div>
         <div class="form-group"><label>سبب ترك العمل السابق (اختياري)</label>
             <select id="cvLeaveReason">
                 <option value="">-- اختر إذا رأيت مناسباً --</option>
@@ -1839,6 +1868,7 @@ async function submitAdd() {
             data.available     = document.getElementById('cvAvailable')?.value || 'yes';
             data.leaveReason   = document.getElementById('cvLeaveReason')?.value || '';
             data.workPref      = document.getElementById('cvWorkPref')?.value || 'any';
+            data.languages     = document.getElementById('cvLanguages')?.value || '';
             const photoFile = document.getElementById('cvPhoto')?.files[0];
             if (photoFile) { showNotification('⏳','جاري رفع الصورة...','info'); const fn = await uploadToStorage(photoFile,'avatars'); if(fn) data.avatar = fn; }
         }
@@ -2053,7 +2083,7 @@ async function sendAICvMessage() {
     try {
         const res = await fetch("https://api.anthropic.com/v1/messages", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", "anthropic-dangerous-direct-browser-access": "true" },
             body: JSON.stringify({
                 model: "claude-sonnet-4-20250514",
                 max_tokens: 1000,
@@ -2122,7 +2152,7 @@ async function improveAISummary() {
     showNotification('⏳','يحسّن الملخص...','info');
     try {
         const res = await fetch("https://api.anthropic.com/v1/messages", {
-            method:"POST", headers:{"Content-Type":"application/json"},
+            method:"POST", headers:{"Content-Type":"application/json","anthropic-dangerous-direct-browser-access":"true"},
             body: JSON.stringify({
                 model:"claude-sonnet-4-20250514", max_tokens:400,
                 messages:[{ role:"user", content:
@@ -2431,6 +2461,12 @@ function copyInviteLink() {
 // ║   الأزرار العائمة والـ Panels                        ║
 // ╚══════════════════════════════════════════════════════╝
 function toggleFloatPanel(id) {
+    // المقابلة الذكية للمستخدمين المسجلين فقط
+    if (id === 'interviewPanel' && !currentUser.isLoggedIn) {
+        showNotification('🔒','المقابلة الذكية متاحة للمستخدمين المسجلين فقط','warning');
+        openLoginModal();
+        return;
+    }
     const panel = document.getElementById(id);
     if (!panel) return;
     const isVisible = panel.style.display !== 'none';
@@ -2457,105 +2493,459 @@ function showCoursesComingSoon() {
     showNotification('قريباً','الدورات التدريبية ستُطلق قريباً!','info');
 }
 function renderInterviewInto(cnt) {
-    cnt.innerHTML = '<div id="interview-section" style="display:block"></div>';
-    renderInterviewSection();
+    // نرسم المقابلة مباشرة في الـ container بدون الاعتماد على getElementById
+    cnt.innerHTML = `
+    <div class="interview-shell">
+        <div class="interview-hero">
+            <h2><i class="fas fa-comments" style="margin-left:8px"></i> المقابلة الذكية</h2>
+            <p>تدرّب على المقابلات الوظيفية بمساعدة Claude AI — أسئلة حقيقية وتقييم فوري لكل إجابة</p>
+        </div>
+        <div id="panelInterviewBody"></div>
+    </div>`;
+    renderPanelSpecPicker();
+}
+
+function renderPanelSpecPicker() {
+    const body = document.getElementById('panelInterviewBody');
+    if (!body) return;
+    interviewState = { spec:null, questions:[], currentQ:0, answers:[], scores:[], started:false };
+    body.innerHTML = `
+    <div style="padding:16px">
+        <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:12px">
+            <i class="fas fa-hand-pointer" style="color:#6366f1;margin-left:6px"></i> اختر تخصصك
+        </div>
+        <div class="spec-grid">
+            ${SPECIALIZATIONS.map(s => `
+            <div class="spec-card" onclick="panelSelectSpec('${s.id}')" id="pspec_${s.id}">
+                <div class="spec-icon">${s.icon}</div>
+                <div class="spec-name">${s.name}</div>
+            </div>`).join('')}
+        </div>
+        <div id="panelStartBtn" style="padding:10px 0;display:none">
+            <button class="interview-send-btn" style="width:100%;justify-content:center;font-size:14px;padding:14px" onclick="panelStartInterview()">
+                <i class="fas fa-play"></i> ابدأ المقابلة
+            </button>
+        </div>
+    </div>`;
+}
+
+function panelSelectSpec(id) {
+    interviewState.spec = SPECIALIZATIONS.find(s => s.id === id);
+    document.querySelectorAll('.spec-card').forEach(c => c.classList.remove('selected'));
+    document.getElementById('pspec_' + id)?.classList.add('selected');
+    document.getElementById('panelStartBtn').style.display = 'block';
+}
+
+async function panelStartInterview() {
+    if (!interviewState.spec) return;
+
+    // تحقق 48 ساعة
+    if (currentUser.isLoggedIn && currentUser.uid) {
+        try {
+            const userDoc = await db.collection('users').doc(currentUser.uid).get();
+            if (userDoc.exists) {
+                const d = userDoc.data();
+                if (d.interviewDate) {
+                    const lastTime = d.interviewDate.toMillis ? d.interviewDate.toMillis() : d.interviewDate;
+                    const diffHours = (Date.now() - lastTime) / 3600000;
+                    if (diffHours < 48) {
+                        const remaining = Math.ceil(48 - diffHours);
+                        showNotification('⏳ انتظر', `يمكنك إعادة المقابلة بعد ${remaining} ساعة`, 'warning');
+                        return;
+                    }
+                }
+            }
+        } catch(e) {}
+    }
+
+    const body = document.getElementById('panelInterviewBody');
+    if (!body) return;
+    body.innerHTML = `
+    <div style="padding:16px">
+        <div class="interview-progress"><div class="interview-progress-bar" id="iProgressBar" style="width:0%"></div></div>
+        <div style="font-size:11px;font-weight:700;color:#6366f1;margin-bottom:12px;text-align:center">${interviewState.spec.icon} ${interviewState.spec.name}</div>
+        <div id="iMessages" style="max-height:380px;overflow-y:auto;padding-bottom:8px"></div>
+        <div class="interview-input-row" id="iInputRow">
+            <textarea class="interview-input" id="iInput" placeholder="اكتب إجابتك هنا..." rows="3"
+                onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendInterviewAnswer()}"></textarea>
+            <button class="interview-send-btn" id="iSendBtn" onclick="sendInterviewAnswer()">
+                <i class="fas fa-paper-plane"></i> إرسال
+            </button>
+        </div>
+    </div>`;
+    addInterviewMsg('ai', `مرحباً! سنجري معاً مقابلة وظيفية في مجال <strong>${interviewState.spec.name}</strong>.<br>سأطرح عليك <strong>5 أسئلة حقيقية</strong> من مقابلات العمل الفعلية، وأقيّم كل إجابة بالتفصيل 🎯<br>خذ وقتك وأجب بشكل كامل ومفصّل.`);
+    await new Promise(r => setTimeout(r, 700));
+    await fetchInterviewQuestion(true);
 }
 
 function renderCVBuilderInto(container) {
-    const saved = { name:currentUser.name||'', phone:currentUser.phone||'', email:currentUser.email||'', province:currentUser.province||'' };
-    const pvOpts = ['بغداد','البصرة','نينوى','أربيل','كركوك','كربلاء','النجف','بابل','ذي قار','المثنى','القادسية','واسط','ميسان','ديالى','الأنبار','صلاح الدين','دهوك','السليمانية'].map(p=>`<option ${p===saved.province?'selected':''}>${p}</option>`).join('');
+    // ── قيود الزائر: مرة كل 12 ساعة ──
+    if (!currentUser.isLoggedIn) {
+        const lastCVGuest = localStorage.getItem('guestCVTime');
+        if (lastCVGuest) {
+            const diffH = (Date.now() - Number(lastCVGuest)) / 3600000;
+            if (diffH < 12) {
+                const remH = Math.ceil(12 - diffH);
+                container.innerHTML = `
+                <div style="text-align:center;padding:40px 20px">
+                    <div style="font-size:48px;margin-bottom:12px">⏳</div>
+                    <div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:8px">خدمة مجانية للزوار</div>
+                    <div style="font-size:13px;color:var(--text2);margin-bottom:16px">يمكنك استخدام منشئ السيرة مرة كل 12 ساعة</div>
+                    <div style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.3);border-radius:14px;padding:16px;font-size:14px;font-weight:800;color:#6366f1;margin-bottom:20px">
+                        ⌛ باقي ${remH} ساعة
+                    </div>
+                    <button onclick="closeProfilePanel();openLoginModal()" style="background:linear-gradient(135deg,#059669,#10b981);color:white;border:none;padding:12px 28px;border-radius:14px;font-family:'Cairo',sans-serif;font-weight:800;font-size:14px;cursor:pointer">
+                        <i class="fas fa-user-plus"></i> سجّل مجاناً للاستخدام غير المحدود
+                    </button>
+                </div>`;
+                return;
+            }
+        }
+    }
+
+    const saved = {
+        name    : currentUser.name     || '',
+        phone   : currentUser.phone    || '',
+        email   : currentUser.email    || '',
+        province: currentUser.province || 'كربلاء'
+    };
+    const pvOpts = ['بغداد','البصرة','نينوى','أربيل','كركوك','كربلاء','النجف','بابل','ذي قار','المثنى','القادسية','واسط','ميسان','ديالى','الأنبار','صلاح الدين','دهوك','السليمانية']
+        .map(p=>`<option ${p===saved.province?'selected':''}>${p}</option>`).join('');
+
+    // أزرار اختيار مهارات شائعة
+    const commonSkills = ['Excel','Word','PowerPoint','Python','JavaScript','SQL','تسويق رقمي','إدارة فريق','تحليل بيانات','خدمة عملاء','قيادة','تصميم','محاسبة','تدريس'];
+    const skillBtns = commonSkills.map(s=>`<button type="button" onclick="toggleSkill('${s}')" class="skill-chip-btn" id="sc_${s.replace(/\s/g,'_')}">${s}</button>`).join('');
+
+    // أزرار اختيار لغات
+    const langOptions = [
+        {l:'العربية',lvls:['مبتدئ','متوسط','جيد','جيد جداً','ممتاز','اللغة الأم']},
+        {l:'الإنجليزية',lvls:['مبتدئ','متوسط','جيد','جيد جداً','ممتاز']},
+        {l:'الكردية',lvls:['مبتدئ','متوسط','جيد','ممتاز']},
+        {l:'الفارسية',lvls:['مبتدئ','متوسط','جيد','ممتاز']},
+        {l:'التركية',lvls:['مبتدئ','متوسط','جيد']},
+        {l:'الفرنسية',lvls:['مبتدئ','متوسط','جيد']},
+    ];
+    const langRows = langOptions.map(({l,lvls})=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)">
+        <div style="min-width:90px;font-size:12px;font-weight:700;color:var(--text)">${l}</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap">
+            ${lvls.map(lv=>`<button type="button" onclick="toggleLang('${l}','${lv}',this)" class="lang-chip" data-lang="${l}" data-lvl="${lv}">${lv}</button>`).join('')}
+        </div>
+    </div>`).join('');
+
     container.innerHTML = `
-    <div class="cvb-shell" style="border:none">
+    <style>
+        .skill-chip-btn{padding:5px 10px;border-radius:20px;border:1.5px solid var(--border);background:var(--bg-card2);color:var(--text2);font-family:'Cairo',sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:all .2s}
+        .skill-chip-btn.active{background:linear-gradient(135deg,#059669,#10b981);color:white;border-color:transparent}
+        .lang-chip{padding:4px 8px;border-radius:16px;border:1.5px solid var(--border);background:var(--bg-card2);color:var(--text2);font-family:'Cairo',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .2s}
+        .lang-chip.active{background:linear-gradient(135deg,#6366f1,#7c3aed);color:white;border-color:transparent}
+        .fp-radio-group{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+        .fp-radio-btn{padding:7px 14px;border-radius:20px;border:1.5px solid var(--border);background:var(--bg-card2);color:var(--text);font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s}
+        .fp-radio-btn.active{background:linear-gradient(135deg,#059669,#10b981);color:white;border-color:transparent}
+        .salary-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+        .salary-chip{padding:5px 12px;border-radius:16px;border:1.5px solid var(--border);background:var(--bg-card2);color:var(--text2);font-family:'Cairo',sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:all .2s}
+        .salary-chip.active{background:linear-gradient(135deg,#f59e0b,#d97706);color:white;border-color:transparent}
+    </style>
+    <div class="cvb-shell" style="border:none;padding:0">
+        <!-- مساعد AI -->
         <div class="cvb-hero" style="border-radius:14px;margin-bottom:14px">
             <h2><i class="fas fa-robot" style="margin-left:8px"></i> مساعد AI لكتابة سيرتك</h2>
-            <p>صف نفسك بالعربية (8 كلمات على الأقل) — اذكر: الخبرة، المهارات، اللغات</p>
+            <p>صف نفسك بالعربية (8 كلمات على الأقل) — مثلاً: خبرتك، مهاراتك، لغاتك، مؤهلك</p>
         </div>
-        <div class="cvb-ai-panel" style="border:1px solid var(--border);border-radius:14px;margin-bottom:14px">
-            <div class="cvb-ai-msgs" id="panelAiMsgs" style="min-height:60px;max-height:140px">
+        <div class="cvb-ai-panel" style="border:1px solid var(--border);border-radius:14px;margin-bottom:16px">
+            <div class="cvb-ai-msgs" id="panelAiMsgs" style="min-height:50px;max-height:120px">
                 <div class="cvb-ai-msg ai">مثال: <em>"محاسب خبرة 5 سنوات أجيد Excel وSAP أتحدث العربية والإنجليزية لدي بكالوريوس محاسبة"</em></div>
             </div>
             <div style="padding:10px;border-top:1px solid var(--border)">
-                <div id="panelWordCount" style="font-size:10px;color:#ef4444;margin-bottom:6px;display:none"><i class="fas fa-exclamation-triangle"></i> اكتب 8 كلمات عربية على الأقل</div>
                 <div style="display:flex;gap:8px">
-                    <textarea id="panelAiInput" rows="2" placeholder="اكتب وصفاً كاملاً عن نفسك بالعربية..."
+                    <textarea id="panelAiInput" rows="2" placeholder="اكتب وصفك هنا بالعربية (8 كلمات +)..."
                         style="flex:1;padding:9px;background:var(--input-bg);border:1.5px solid var(--border);border-radius:10px;font-family:'Cairo',sans-serif;font-size:12px;color:var(--text);resize:none"></textarea>
-                    <button id="panelAiSend" onclick="sendPanelAI()" class="cvb-ai-send" style="padding:9px 14px;align-self:flex-end"><i class="fas fa-magic"></i></button>
+                    <button id="panelAiSend" onclick="sendPanelAI()" class="cvb-ai-send" style="padding:9px 16px;align-self:flex-end;font-size:18px"><i class="fas fa-magic"></i></button>
                 </div>
             </div>
         </div>
+
+        <!-- المعلومات الأساسية -->
+        <div style="font-size:12px;font-weight:800;color:var(--text2);margin-bottom:10px;display:flex;align-items:center;gap:6px">
+            <i class="fas fa-user-circle" style="color:#10b981"></i> المعلومات الأساسية
+        </div>
         <div class="cvb-grid-2" style="gap:10px;margin-bottom:10px">
-            <div class="form-group"><label>الاسم الكامل *</label><input id="fp_name" type="text" value="${saved.name}" placeholder="محمد أحمد"></div>
-            <div class="form-group"><label>المسمى الوظيفي</label><input id="fp_role" type="text" placeholder="مهندس/محاسب..."></div>
-            <div class="form-group"><label>الهاتف</label><input id="fp_phone" type="tel" value="${saved.phone}"></div>
-            <div class="form-group"><label>البريد</label><input id="fp_email" type="email" value="${saved.email}"></div>
-            <div class="form-group"><label>المحافظة</label><select id="fp_province">${pvOpts}</select></div>
-            <div class="form-group"><label>الراتب المتوقع (د.ع)</label><input id="fp_salary" type="number" placeholder="700000"></div>
-            <div class="form-group"><label>سنوات الخبرة</label>
-                <select id="fp_exp">
-                    <option>بدون خبرة</option><option>أقل من سنة</option><option>1-2 سنة</option>
-                    <option>3-5 سنوات</option><option>5-10 سنوات</option><option>أكثر من 10 سنوات</option>
-                </select>
-            </div>
-            <div class="form-group"><label>المؤهل العلمي</label>
-                <select id="fp_edu">
-                    <option>إعدادية</option><option>دبلوم</option><option>بكالوريوس</option>
-                    <option>ماجستير</option><option>دكتوراه</option><option>شهادة مهنية</option>
-                </select>
+            <div class="form-group"><label>الاسم الكامل *</label>
+                <input id="fp_name" type="text" value="${saved.name}" placeholder="محمد أحمد العلي"></div>
+            <div class="form-group"><label>المسمى الوظيفي</label>
+                <input id="fp_role" type="text" placeholder="محاسب، مهندس، مدرس..."></div>
+            <div class="form-group"><label>الهاتف</label>
+                <input id="fp_phone" type="tel" value="${saved.phone}" placeholder="07xxxxxxxxx"></div>
+            <div class="form-group"><label>المحافظة</label>
+                <select id="fp_province">${pvOpts}</select></div>
+        </div>
+
+        <!-- سنوات الخبرة - راديو -->
+        <div class="form-group" style="margin-bottom:14px">
+            <label><i class="fas fa-briefcase" style="color:#10b981;margin-left:4px"></i> سنوات الخبرة</label>
+            <div class="fp-radio-group" id="expGroup">
+                ${['بدون خبرة','أقل من سنة','1-2 سنة','3-5 سنوات','5-10 سنوات','أكثر من 10 سنوات'].map((e,i)=>
+                    `<button type="button" class="fp-radio-btn ${i===0?'active':''}" onclick="fpSelectRadio('expGroup','fp_exp',this,'${e}')">${e}</button>`
+                ).join('')}
+                <input type="hidden" id="fp_exp" value="بدون خبرة">
             </div>
         </div>
-        <div class="form-group"><label>المهارات</label><input id="fp_skills" placeholder="Excel, Python, تسويق..."></div>
-        <div class="form-group"><label>النبذة التعريفية</label><textarea id="fp_summary" rows="3" placeholder="اكتب ملخصاً يعبّر عن شخصيتك المهنية..."></textarea></div>
-        <div class="cvb-photo-wrap" style="margin-bottom:14px">
+
+        <!-- المؤهل العلمي - راديو -->
+        <div class="form-group" style="margin-bottom:14px">
+            <label><i class="fas fa-graduation-cap" style="color:#6366f1;margin-left:4px"></i> المؤهل العلمي</label>
+            <div class="fp-radio-group" id="eduGroup">
+                ${['إعدادية','دبلوم','بكالوريوس','ماجستير','دكتوراه','شهادة مهنية'].map((e,i)=>
+                    `<button type="button" class="fp-radio-btn ${i===2?'active':''}" onclick="fpSelectRadio('eduGroup','fp_edu',this,'${e}')">${e}</button>`
+                ).join('')}
+                <input type="hidden" id="fp_edu" value="بكالوريوس">
+            </div>
+        </div>
+
+        <!-- الراتب المتوقع - شرائح -->
+        <div class="form-group" style="margin-bottom:14px">
+            <label><i class="fas fa-money-bill-wave" style="color:#f59e0b;margin-left:4px"></i> الراتب المتوقع (دينار عراقي)</label>
+            <div class="salary-chips">
+                ${[['300,000','300000'],['500,000','500000'],['700,000','700000'],['1,000,000','1000000'],['1,500,000','1500000'],['2,000,000+','2000000']].map(([lbl,val])=>
+                    `<button type="button" class="salary-chip" onclick="fpSelectSalary(this,'${val}')">${lbl}</button>`
+                ).join('')}
+            </div>
+            <input type="hidden" id="fp_salary" value="">
+            <input type="text" id="fp_salary_custom" placeholder="أو اكتب رقماً محدداً..." 
+                style="margin-top:8px;padding:8px;background:var(--input-bg);border:1.5px solid var(--border);border-radius:10px;font-family:'Cairo',sans-serif;font-size:12px;color:var(--text);width:100%"
+                oninput="document.getElementById('fp_salary').value=this.value">
+        </div>
+
+        <!-- المهارات - checkboxes -->
+        <div class="form-group" style="margin-bottom:14px">
+            <label><i class="fas fa-bolt" style="color:#f59e0b;margin-left:4px"></i> المهارات (اختر أو اكتب)</label>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">${skillBtns}</div>
+            <input type="hidden" id="fp_skills" value="">
+            <input type="text" id="fp_skills_extra" placeholder="أضف مهارات إضافية مفصولة بفواصل..."
+                style="padding:8px;background:var(--input-bg);border:1.5px solid var(--border);border-radius:10px;font-family:'Cairo',sans-serif;font-size:12px;color:var(--text);width:100%"
+                oninput="updateSkillsValue()">
+        </div>
+
+        <!-- اللغات -->
+        <div class="form-group" style="margin-bottom:14px">
+            <label><i class="fas fa-language" style="color:#6366f1;margin-left:4px"></i> اللغات ومستوياتها</label>
+            <div style="border:1px solid var(--border);border-radius:12px;padding:4px 12px">
+                ${langRows}
+            </div>
+            <input type="hidden" id="fp_languages" value="">
+        </div>
+
+        <!-- النبذة التعريفية -->
+        <div class="form-group" style="margin-bottom:14px">
+            <label><i class="fas fa-pen" style="color:#10b981;margin-left:4px"></i> النبذة التعريفية</label>
+            <textarea id="fp_summary" rows="3" 
+                style="width:100%;padding:10px;background:var(--input-bg);border:1.5px solid var(--border);border-radius:12px;font-family:'Cairo',sans-serif;font-size:12px;color:var(--text);resize:vertical"
+                placeholder="اكتب ملخصاً يعبّر عن شخصيتك المهنية وطموحاتك..."></textarea>
+        </div>
+
+        <!-- الصورة الشخصية -->
+        <div class="cvb-photo-wrap" style="margin-bottom:16px">
             <div class="cvb-photo-circle" id="fpPhotoCircle">
                 <img id="fp_photo_preview" src="" style="width:100%;height:100%;object-fit:cover;display:none">
                 <span id="fpPhotoPlaceholder"><i class="fas fa-user"></i></span>
             </div>
-            <label style="cursor:pointer;background:var(--bg-card2);border:1.5px solid var(--border);padding:7px 14px;border-radius:20px;font-size:12px;font-weight:700;color:var(--text2)">
-                <i class="fas fa-upload"></i> رفع صورة
+            <label style="cursor:pointer;background:var(--bg-card2);border:1.5px solid var(--border);padding:8px 16px;border-radius:20px;font-size:12px;font-weight:700;color:var(--text2)">
+                <i class="fas fa-camera"></i> إضافة صورة
                 <input type="file" id="fp_photo" accept="image/*" onchange="onFpPhoto(this)" style="display:none">
             </label>
         </div>
+
+        <!-- أزرار الإجراء -->
         <div style="display:flex;gap:10px;flex-wrap:wrap">
-            <button class="cvb-btn cvb-btn-green" style="flex:1;justify-content:center" onclick="panelGeneratePDF()"><i class="fas fa-file-pdf"></i> تنزيل PDF</button>
-            <button class="cvb-btn cvb-btn-blue" style="flex:1;justify-content:center" onclick="panelPublishCV()"><i class="fas fa-cloud-upload-alt"></i> نشر</button>
+            <button class="cvb-btn cvb-btn-green" style="flex:1;justify-content:center;padding:13px" onclick="panelGeneratePDF()">
+                <i class="fas fa-file-pdf"></i> تنزيل PDF
+            </button>
+            ${currentUser.isLoggedIn ? `<button class="cvb-btn cvb-btn-blue" style="flex:1;justify-content:center;padding:13px" onclick="panelPublishCV()">
+                <i class="fas fa-cloud-upload-alt"></i> نشر السيرة
+            </button>` : `<button onclick="openLoginModal()" style="flex:1;padding:13px;background:rgba(99,102,241,0.1);border:1.5px solid #6366f1;border-radius:14px;color:#6366f1;font-family:'Cairo',sans-serif;font-weight:800;font-size:13px;cursor:pointer">
+                <i class="fas fa-user-plus"></i> سجّل لنشر سيرتك
+            </button>`}
         </div>
+        ${!currentUser.isLoggedIn ? '<div style="text-align:center;font-size:10px;color:var(--text2);margin-top:8px"><i class="fas fa-info-circle"></i> كزائر يمكنك تنزيل PDF مرة كل 12 ساعة</div>' : ''}
     </div>`;
+
+    // تهيئة قيم المهارات
+    window._selectedSkills = new Set();
+    window._selectedLangs  = {};
+    updateSkillsValue();
+    updateLangsValue();
 }
+
+// ── دوال مساعدة للنموذج ──
+function fpSelectRadio(groupId, hiddenId, btn, val) {
+    document.querySelectorAll(`#${groupId} .fp-radio-btn`).forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const h = document.getElementById(hiddenId);
+    if (h) h.value = val;
+}
+function fpSelectSalary(btn, val) {
+    document.querySelectorAll('.salary-chip').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('fp_salary').value = val;
+    document.getElementById('fp_salary_custom').value = '';
+}
+function toggleSkill(skill) {
+    const id = 'sc_' + skill.replace(/\s/g,'_');
+    const btn = document.getElementById(id);
+    if (!window._selectedSkills) window._selectedSkills = new Set();
+    if (window._selectedSkills.has(skill)) {
+        window._selectedSkills.delete(skill);
+        btn?.classList.remove('active');
+    } else {
+        window._selectedSkills.add(skill);
+        btn?.classList.add('active');
+    }
+    updateSkillsValue();
+}
+function updateSkillsValue() {
+    if (!window._selectedSkills) window._selectedSkills = new Set();
+    const extra = (document.getElementById('fp_skills_extra')?.value || '').split(',').map(s=>s.trim()).filter(Boolean);
+    const all = [...window._selectedSkills, ...extra];
+    const h = document.getElementById('fp_skills');
+    if (h) h.value = all.join(', ');
+}
+function toggleLang(lang, level, btn) {
+    if (!window._selectedLangs) window._selectedLangs = {};
+    // إلغاء تحديد مستويات أخرى لنفس اللغة
+    document.querySelectorAll(`[data-lang="${lang}"]`).forEach(b => b.classList.remove('active'));
+    if (window._selectedLangs[lang] === level) {
+        delete window._selectedLangs[lang];
+    } else {
+        window._selectedLangs[lang] = level;
+        btn.classList.add('active');
+    }
+    updateLangsValue();
+}
+function updateLangsValue() {
+    if (!window._selectedLangs) window._selectedLangs = {};
+    const val = Object.entries(window._selectedLangs).map(([l,v])=>`${l} - ${v}`).join(', ');
+    const h = document.getElementById('fp_languages');
+    if (h) h.value = val;
+}
+
 
 async function sendPanelAI() {
     const input = document.getElementById('panelAiInput');
     const text = input ? input.value.trim() : '';
     const words = text.split(/\s+/).filter(w => w.length > 1);
-    const hasAr = /[\u0600-\u06FF]/.test(text);
+    const hasAr = /[؀-ۿ]/.test(text);
     if (words.length < 8 || !hasAr) {
         showNotification('تنبيه','اكتب 8 كلمات عربية على الأقل تتضمن الخبرة والمهارات واللغات','warning');
         return;
     }
     const msgs = document.getElementById('panelAiMsgs');
     const btn  = document.getElementById('panelAiSend');
-    if(msgs) msgs.innerHTML += `<div class="cvb-ai-msg user">${text}</div><div class="cvb-ai-msg ai" id="panelTyping"><i class="fas fa-spinner fa-spin"></i> يحلل...</div>`;
+    if(msgs) {
+        msgs.innerHTML += `<div class="cvb-ai-msg user">${text}</div>`;
+        msgs.innerHTML += `<div class="cvb-ai-msg ai" id="panelTyping"><i class="fas fa-spinner fa-spin"></i> يحلل ويملأ البيانات...</div>`;
+        msgs.scrollTop = msgs.scrollHeight;
+    }
     if(btn)  { btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i>'; }
     try {
         const res = await fetch("https://api.anthropic.com/v1/messages",{
-            method:"POST",headers:{"Content-Type":"application/json"},
-            body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:800,
-                messages:[{role:"user",content:`أنت خبير موارد بشرية. استخرج من النص التالي البيانات المطلوبة وأرجع JSON فقط:\nالنص: "${text}"\n{"role":"المسمى الدقيق","skills":"مهارة1, مهارة2, مهارة3, مهارة4","summary":"ملخص احترافي 3 جمل","salary":"راتب رقمي بالدينار العراقي","aiMessage":"رسالة قصيرة"}`}]})
+            method:"POST", headers:{"Content-Type":"application/json","anthropic-dangerous-direct-browser-access":"true"},
+            body: JSON.stringify({
+                model:"claude-sonnet-4-20250514", max_tokens:1000,
+                messages:[{role:"user", content:
+                    `أنت خبير كتابة سير ذاتية. استخرج المعلومات من النص التالي وأرجع JSON صالح فقط (بدون أي نص إضافي):
+النص: "${text}"
+أرجع هذا الـ JSON تماماً:
+{
+  "role": "المسمى الوظيفي الدقيق استناداً للنص",
+  "exp_index": 3,
+  "edu_index": 2,
+  "skills": "مهارة1, مهارة2, مهارة3, مهارة4, مهارة5",
+  "languages": "العربية - ممتاز, الإنجليزية - جيد",
+  "summary": "ملخص شخصي احترافي 3 جمل متكاملة تبرز الخبرة والمهارات",
+  "salary": 800000,
+  "aiMessage": "رسالة تشجيع قصيرة 10 كلمات"
+}
+exp_index: 0=بدون خبرة, 1=أقل من سنة, 2=1-2 سنة, 3=3-5 سنوات, 4=5-10 سنوات, 5=أكثر من 10 سنوات
+edu_index: 0=إعدادية, 1=دبلوم, 2=بكالوريوس, 3=ماجستير, 4=دكتوراه, 5=شهادة مهنية`
+                }]
+            })
         });
         const data = await res.json();
         const raw = data.content?.map(i=>i.text||'').join('')||'{}';
-        const p = JSON.parse(raw.replace(/```json|```/g,'').trim());
-        if(p.role)    { const e=document.getElementById('fp_role');    if(e) e.value=p.role; }
-        if(p.skills)  { const e=document.getElementById('fp_skills');  if(e) e.value=p.skills; }
-        if(p.summary) { const e=document.getElementById('fp_summary'); if(e) e.value=p.summary; }
-        if(p.salary)  { const e=document.getElementById('fp_salary');  if(e) e.value=p.salary; }
-        const t=document.getElementById('panelTyping');
-        if(t) t.outerHTML=`<div class="cvb-ai-msg ai"><i class="fas fa-check-circle" style="color:#10b981"></i> ${p.aiMessage||'تم! راجع البيانات وعدّلها'}</div>`;
+        const cleanJson = raw.replace(/```json[\s\S]*?```/g, raw).replace(/```[\s\S]*?```/g, raw).trim();
+        const jsonMatch = cleanJson.match(/\{[\s\S]*\}/);
+        const p = JSON.parse(jsonMatch ? jsonMatch[0] : cleanJson);
+
+        // ملء الحقول
+        const setVal = (id, val) => { const e=document.getElementById(id); if(e && val!==undefined) e.value=val; };
+
+        if(p.role)    setVal('fp_role', p.role);
+        if(p.summary) setVal('fp_summary', p.summary);
+        if(p.salary) {
+            setVal('fp_salary', String(p.salary));
+            setVal('fp_salary_custom', Number(p.salary).toLocaleString());
+        }
+
+        // ملء الخبرة - radio buttons
+        if (p.exp_index !== undefined) {
+            const expBtns = document.querySelectorAll('#expGroup .fp-radio-btn');
+            const expVals = ['بدون خبرة','أقل من سنة','1-2 سنة','3-5 سنوات','5-10 سنوات','أكثر من 10 سنوات'];
+            expBtns.forEach(b => b.classList.remove('active'));
+            const idx = Math.min(5, Math.max(0, p.exp_index));
+            if (expBtns[idx]) { expBtns[idx].classList.add('active'); setVal('fp_exp', expVals[idx]); }
+        }
+
+        // ملء المؤهل - radio buttons
+        if (p.edu_index !== undefined) {
+            const eduBtns = document.querySelectorAll('#eduGroup .fp-radio-btn');
+            const eduVals = ['إعدادية','دبلوم','بكالوريوس','ماجستير','دكتوراه','شهادة مهنية'];
+            eduBtns.forEach(b => b.classList.remove('active'));
+            const idx = Math.min(5, Math.max(0, p.edu_index));
+            if (eduBtns[idx]) { eduBtns[idx].classList.add('active'); setVal('fp_edu', eduVals[idx]); }
+        }
+
+        // ملء المهارات - تفعيل الـ chips
+        if (p.skills) {
+            if (!window._selectedSkills) window._selectedSkills = new Set();
+            const skillList = p.skills.split(',').map(s=>s.trim()).filter(Boolean);
+            skillList.forEach(skill => {
+                const id = 'sc_' + skill.replace(/\s/g,'_');
+                const btn = document.getElementById(id);
+                if (btn) { btn.classList.add('active'); window._selectedSkills.add(skill); }
+                else {
+                    // مهارة غير موجودة في الـ chips — نضعها في الحقل النصي
+                    const extra = document.getElementById('fp_skills_extra');
+                    if (extra) extra.value = skillList.filter(s=>!document.getElementById('sc_'+s.replace(/\s/g,'_'))).join(', ');
+                }
+            });
+            updateSkillsValue();
+        }
+
+        // ملء اللغات - تفعيل الـ chips
+        if (p.languages) {
+            if (!window._selectedLangs) window._selectedLangs = {};
+            const langList = p.languages.split(',').map(s=>s.trim()).filter(Boolean);
+            langList.forEach(item => {
+                const parts = item.split('-').map(s=>s.trim());
+                if (parts.length >= 2) {
+                    const lang = parts[0], level = parts.slice(1).join('-').trim();
+                    document.querySelectorAll(`[data-lang="${lang}"]`).forEach(b => b.classList.remove('active'));
+                    const btn = document.querySelector(`[data-lang="${lang}"][data-lvl="${level}"]`);
+                    if (btn) { btn.classList.add('active'); window._selectedLangs[lang] = level; }
+                }
+            });
+            updateLangsValue();
+        }
+
+        const typing = document.getElementById('panelTyping');
+        if(typing) typing.outerHTML = `<div class="cvb-ai-msg ai"><i class="fas fa-check-circle" style="color:#10b981"></i> ${p.aiMessage||'تم ملء جميع البيانات!'} تحقق منها وعدّل ما يلزم.</div>`;
     } catch(e) {
-        const t=document.getElementById('panelTyping');
-        if(t) t.outerHTML='<div class="cvb-ai-msg ai">تم ملء البيانات الأساسية — راجعها ✅</div>';
+        console.error('AI error:', e);
+        const typing = document.getElementById('panelTyping');
+        if(typing) typing.outerHTML = '<div class="cvb-ai-msg ai" style="color:#ef4444"><i class="fas fa-exclamation-triangle"></i> حصل خطأ — تأكد من اتصال الإنترنت وحاول مجدداً.</div>';
     }
     if(btn) { btn.disabled=false; btn.innerHTML='<i class="fas fa-magic"></i>'; }
-    if(msgs) msgs.scrollTop=msgs.scrollHeight;
+    if(msgs) msgs.scrollTop = msgs.scrollHeight;
 }
 
 function onFpPhoto(input) {
@@ -2572,15 +2962,41 @@ function onFpPhoto(input) {
 }
 
 async function panelGeneratePDF() {
-    const name=document.getElementById('fp_name')?.value;
+    // قيود الزائر: مرة كل 12 ساعة
+    if (!currentUser.isLoggedIn) {
+        const lastTime = localStorage.getItem('guestCVTime');
+        if (lastTime && (Date.now() - Number(lastTime)) < 43200000) {
+            const remH = Math.ceil(12 - (Date.now()-Number(lastTime))/3600000);
+            showNotification('⏳',`يمكنك تنزيل PDF مرة كل 12 ساعة — باقي ${remH} ساعة`,'warning');
+            return;
+        }
+        localStorage.setItem('guestCVTime', Date.now());
+    }
+    const name = document.getElementById('fp_name')?.value;
     if(!name){showNotification('خطأ','أدخل الاسم الكامل','error');return;}
     showNotification('انتظر','جاري إنشاء PDF...','info');
-    const v=id=>document.getElementById(id)?.value||'';
-    const photoEl=document.getElementById('fp_photo_preview');
-    const photo=photoEl&&photoEl.style.display!=='none'&&photoEl.src&&!photoEl.src.startsWith('http')?photoEl.src:null;
-    const today=new Date().toLocaleDateString('ar-IQ');
-    document.getElementById('cvPdfTpl').innerHTML=`<div class="tpl-wrap"><div class="tpl-hdr tpl-hdr-person">${photo?`<img class="tpl-avatar" src="${photo}">`:`<div class="tpl-avatar-ph">👤</div>`}<div class="tpl-hdr-info"><div class="tpl-badge">السيرة الذاتية</div><div class="tpl-name">${v('fp_name')}</div>${v('fp_role')?`<div class="tpl-role">${v('fp_role')}</div>`:''}<div class="tpl-contacts">${v('fp_province')?`<span class="tpl-contact-chip">📍 ${v('fp_province')}</span>`:''} ${v('fp_phone')?`<span class="tpl-contact-chip">📞 ${v('fp_phone')}</span>`:''}</div></div></div><div class="tpl-hdr-stripe"></div><div class="tpl-body">${v('fp_summary')?`<div class="tpl-section"><div class="tpl-sec-hdr"><div class="tpl-sec-icon tpl-sec-icon-green">✍</div><div class="tpl-sec-title tpl-sec-title-green">الملخص</div></div><div class="tpl-summary-green">${v('fp_summary')}</div></div>`:''}<div class="tpl-section"><div class="tpl-sec-hdr"><div class="tpl-sec-icon tpl-sec-icon-green">👤</div><div class="tpl-sec-title tpl-sec-title-green">المعلومات</div></div><div class="tpl-grid">${v('fp_name')?`<div class="tpl-field"><div class="tpl-field-lbl">الاسم</div><div class="tpl-field-val">${v('fp_name')}</div></div>`:''} ${v('fp_edu')?`<div class="tpl-field"><div class="tpl-field-lbl">المؤهل</div><div class="tpl-field-val">${v('fp_edu')}</div></div>`:''} ${v('fp_exp')?`<div class="tpl-field"><div class="tpl-field-lbl">الخبرة</div><div class="tpl-field-val">${v('fp_exp')}</div></div>`:''} ${v('fp_salary')?`<div class="tpl-field"><div class="tpl-field-lbl">الراتب المتوقع</div><div class="tpl-field-val">${Number(v('fp_salary')).toLocaleString()} د.ع</div></div>`:''}</div></div>${v('fp_skills')?`<div class="tpl-section"><div class="tpl-sec-hdr"><div class="tpl-sec-icon tpl-sec-icon-green">⚡</div><div class="tpl-sec-title tpl-sec-title-green">المهارات</div></div><div class="tpl-skills">${v('fp_skills').split(',').filter(Boolean).map(s=>`<span class="tpl-skill-green">${s.trim()}</span>`).join('')}</div></div>`:''}</div><div class="tpl-footer tpl-footer-green"><div class="tpl-footer-brand">منصة كربلاء التجارية</div><div class="tpl-footer-txt">${today}</div></div></div>`;
-    await _html2pdf('cvPdfTpl',`CV_${v('fp_name')}_${Date.now()}.pdf`);
+    const v = id => document.getElementById(id)?.value || '';
+    const photoEl = document.getElementById('fp_photo_preview');
+    const photo = photoEl && photoEl.style.display!=='none' && photoEl.src && !photoEl.src.startsWith('http') ? photoEl.src : null;
+    const today = new Date().toLocaleDateString('ar-IQ');
+    // جلب درجة المقابلة من Firebase
+    let interviewScore = '', interviewSpec = '';
+    if (currentUser.isLoggedIn && currentUser.uid) {
+        try {
+            const d = (await db.collection('users').doc(currentUser.uid).get()).data();
+            if (d && d.interviewScore) { interviewScore = d.interviewScore; interviewSpec = d.interviewSpec || ''; }
+        } catch(e){}
+    }
+    const langs = v('fp_languages');
+    const buildPDFContent = () => {
+        const interviewBadge = interviewScore
+            ? `<div class="tpl-section"><div class="tpl-sec-hdr"><div class="tpl-sec-icon tpl-sec-icon-green">🎯</div><div class="tpl-sec-title tpl-sec-title-green">مقابلة الذكاء الاصطناعي</div></div><div style="background:#0d2e20;border-radius:10px;padding:12px;display:flex;align-items:center;gap:12px"><div style="background:#059669;color:white;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;flex-shrink:0">${interviewScore}</div><div style="color:#6ee7b7"><div style="font-weight:800;font-size:13px">اجتاز مقابلة الذكاء الاصطناعي بنجاح</div><div style="font-size:11px;margin-top:2px">درجة ${interviewScore}/10 — تخصص: ${interviewSpec||'عام'}</div></div></div></div>` : '';
+        const langsSection = langs
+            ? `<div class="tpl-section"><div class="tpl-sec-hdr"><div class="tpl-sec-icon tpl-sec-icon-green">🌐</div><div class="tpl-sec-title tpl-sec-title-green">اللغات</div></div><div class="tpl-skills">${langs.split(',').filter(Boolean).map(l=>`<span class="tpl-skill-green">${l.trim()}</span>`).join('')}</div></div>` : '';
+        return `<div class="tpl-wrap"><div class="tpl-hdr tpl-hdr-person">${photo?`<img class="tpl-avatar" src="${photo}">`:`<div class="tpl-avatar-ph">👤</div>`}<div class="tpl-hdr-info"><div class="tpl-badge">السيرة الذاتية — Curriculum Vitae</div><div class="tpl-name">${v('fp_name')}</div>${v('fp_role')?`<div class="tpl-role">${v('fp_role')}</div>`:''}<div class="tpl-contacts">${v('fp_province')?`<span class="tpl-contact-chip">📍 ${v('fp_province')}</span>`:''} ${v('fp_phone')?`<span class="tpl-contact-chip">📞 ${v('fp_phone')}</span>`:''}</div></div></div><div class="tpl-hdr-stripe"></div><div class="tpl-body">${v('fp_summary')?`<div class="tpl-section"><div class="tpl-sec-hdr"><div class="tpl-sec-icon tpl-sec-icon-green">✍</div><div class="tpl-sec-title tpl-sec-title-green">الملخص الشخصي</div></div><div class="tpl-summary-green">${v('fp_summary')}</div></div>`:''}<div class="tpl-section"><div class="tpl-sec-hdr"><div class="tpl-sec-icon tpl-sec-icon-green">👤</div><div class="tpl-sec-title tpl-sec-title-green">المعلومات الشخصية</div></div><div class="tpl-grid">${v('fp_name')?`<div class="tpl-field"><div class="tpl-field-lbl">الاسم</div><div class="tpl-field-val">${v('fp_name')}</div></div>`:''} ${v('fp_province')?`<div class="tpl-field"><div class="tpl-field-lbl">المحافظة</div><div class="tpl-field-val">${v('fp_province')}</div></div>`:''} ${v('fp_phone')?`<div class="tpl-field"><div class="tpl-field-lbl">الهاتف</div><div class="tpl-field-val">${v('fp_phone')}</div></div>`:''}</div></div><div class="tpl-section"><div class="tpl-sec-hdr"><div class="tpl-sec-icon tpl-sec-icon-green">🎓</div><div class="tpl-sec-title tpl-sec-title-green">المؤهلات والخبرة</div></div><div class="tpl-grid">${v('fp_edu')?`<div class="tpl-field"><div class="tpl-field-lbl">المؤهل</div><div class="tpl-field-val">${v('fp_edu')}</div></div>`:''} ${v('fp_exp')?`<div class="tpl-field"><div class="tpl-field-lbl">الخبرة</div><div class="tpl-field-val">${v('fp_exp')}</div></div>`:''} ${v('fp_role')?`<div class="tpl-field"><div class="tpl-field-lbl">المسمى</div><div class="tpl-field-val">${v('fp_role')}</div></div>`:''} ${v('fp_salary')?`<div class="tpl-field"><div class="tpl-field-lbl">الراتب المتوقع</div><div class="tpl-field-val">${Number(v('fp_salary')).toLocaleString()} د.ع</div></div>`:''}</div></div>${v('fp_skills')?`<div class="tpl-section"><div class="tpl-sec-hdr"><div class="tpl-sec-icon tpl-sec-icon-green">⚡</div><div class="tpl-sec-title tpl-sec-title-green">المهارات</div></div><div class="tpl-skills">${v('fp_skills').split(',').filter(Boolean).map(s=>`<span class="tpl-skill-green">${s.trim()}</span>`).join('')}</div></div>`:''}${langsSection}${interviewBadge}</div><div class="tpl-footer tpl-footer-green"><div class="tpl-footer-brand">منصة كربلاء التجارية</div><div class="tpl-footer-txt">Karbala Commercial Platform</div><div class="tpl-footer-txt">${today}</div></div></div>`;
+    };
+    document.getElementById('cvPdfTpl').innerHTML = buildPDFContent();
+    await _html2pdf('cvPdfTpl', `CV_${v('fp_name')}_${Date.now()}.pdf`);
 }
 
 async function panelPublishCV() {
@@ -2682,111 +3098,175 @@ async function startInterview() {
 
 function addInterviewMsg(type, html, score=null) {
     const msgs = document.getElementById('iMessages');
-    if (!msgs) return;
+    if (!msgs) return null;
+    const div = document.createElement('div');
+    div.className = `interview-msg ${type==='feedback'?'ai':type}`;
     const scoreHtml = score !== null ? `<div class="interview-score"><i class="fas fa-star"></i> التقييم: ${score}/10</div>` : '';
-    msgs.innerHTML += `<div class="interview-msg ${type}">${html}${scoreHtml}</div>`;
+    div.innerHTML = html + scoreHtml;
+    msgs.appendChild(div);
     msgs.scrollTop = msgs.scrollHeight;
+    return div;
 }
 
 async function fetchInterviewQuestion(isFirst=false) {
+    const spec = interviewState.spec?.name || 'عام';
     const qNum = interviewState.currentQ + 1;
-    if (qNum > 5) { showInterviewResult(); return; }
+    const loadingDiv = addInterviewMsg('ai', `<i class="fas fa-spinner fa-spin"></i> يُعدّ السؤال ${qNum} من 5...`);
 
-    const bar = document.getElementById('iProgressBar');
-    if (bar) bar.style.width = ((qNum-1)/5*100) + '%';
-
-    const btn = document.getElementById('iSendBtn');
-    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
-
-    const prevQA = interviewState.questions.map((q,i) => `س${i+1}: ${q}\nج: ${interviewState.answers[i]||'—'}`).join('\n');
+    // بناء سياق المحادثة بأسلوب محترف
+    const prevQA = interviewState.questions.map((q,i) => `س${i+1}: ${q}\nج${i+1}: ${interviewState.answers[i]||'لم يُجب'}`).join('\n\n');
 
     try {
         const res = await fetch("https://api.anthropic.com/v1/messages", {
-            method:"POST", headers:{"Content-Type":"application/json"},
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "anthropic-dangerous-direct-browser-access": "true"
+            },
             body: JSON.stringify({
-                model:"claude-sonnet-4-20250514", max_tokens:600,
-                messages:[{ role:"user", content:
-                    `أنت محاور وظيفي خبير. التخصص: ${interviewState.spec.name}.
-السؤال رقم ${qNum} من 5.
-${prevQA ? 'الأسئلة والأجوبة السابقة:\n' + prevQA : ''}
-أرجع JSON فقط:
-{"question":"سؤال مقابلة وظيفية واقعي ومناسب للتخصص","tip":"تلميح قصير للإجابة الجيدة"}`
-                }]
+                model: "claude-sonnet-4-20250514",
+                max_tokens: 250,
+                system: `أنت مدير موارد بشرية عراقي خبير في مجال ${spec}. تُجري مقابلات توظيف احترافية حقيقية. أسئلتك مباشرة ومهنية وتختبر المعرفة الفعلية. لا تُطوّل ولا تُضيف تعليقات — فقط السؤال.`,
+                messages: [
+                    { role: "user", content: `أنت تُجري مقابلة لوظيفة في مجال "${spec}".
+${prevQA ? `الأسئلة والأجوبة السابقة:\n${prevQA}\n\n` : ''}اطرح السؤال رقم ${qNum} من أصل 5. القواعد:
+- إذا كان السؤال 1-2: أسئلة تعريفية وخلفية (من أنت؟ ما خبرتك؟)
+- إذا كان السؤال 3: سؤال تقني أو مهني محدد يختبر المعرفة
+- إذا كان السؤال 4: موقف واقعي (كيف تتعامل مع...؟)
+- إذا كان السؤال 5: سؤال عن الطموح والتطوير
+لا تكرر أسئلة سابقة. السؤال فقط بدون مقدمات.` }
+                ]
             })
         });
         const data = await res.json();
-        const raw = data.content?.map(i=>i.text||'').join('') || '{}';
-        const parsed = JSON.parse(raw.replace(/\`\`\`json|\`\`\`/g,'').trim());
-        interviewState.questions.push(parsed.question);
-        addInterviewMsg('ai', `<strong>السؤال ${qNum}/5:</strong> ${parsed.question}<br><small style="color:var(--text2);margin-top:6px;display:block"><i class="fas fa-lightbulb" style="color:#f59e0b"></i> ${parsed.tip||''}</small>`);
+        const question = data.content?.map(i=>i.text||'').join('').trim();
+        if (!question || data.error) throw new Error('API error');
+        interviewState.questions.push(question);
+        if (loadingDiv) loadingDiv.innerHTML = `<div style="border-right:3px solid #6366f1;padding:8px 12px;border-radius:8px;background:rgba(99,102,241,0.06)"><strong style="color:#6366f1;font-size:11px">سؤال ${qNum}/5</strong><br><br>${question}</div>`;
     } catch(e) {
         const fallbacks = {
-            tech:['اشرح الفرق بين var و let و const في JavaScript','ما هي مبادئ OOP؟','كيف تتعامل مع خطأ في الكود تحت ضغط الوقت؟','اشرح مفهوم REST API','ما أكبر تحدٍّ برمجي واجهته وكيف حللته؟'],
-            biz:['كيف تتعامل مع عميل غاضب؟','صف أكبر صفقة أنجزتها','ما استراتيجيتك في إيجاد عملاء جدد؟','كيف تحدد أولوياتك اليومية؟','ما نقاط قوتك وضعفك في المبيعات؟'],
-            eng:['اشرح مبدأ عملك الهندسي الأساسي','كيف تضمن جودة عملك؟','صف مشروعاً معقداً أشرفت عليه','كيف تتعامل مع تغيير المتطلبات؟','ما أحدث تقنية تعلمتها في مجالك؟'],
+            'تقنية معلومات': ['ما هي لغات البرمجة التي تتقنها؟','كيف تتعامل مع bug معقد في الكود؟','ما الفرق بين REST API و GraphQL؟','كيف تضمن جودة الكود الذي تكتبه؟','أين ترى نفسك في مجال التقنية بعد 3 سنوات؟'],
+            'هندسة': ['حدّثني عن أكبر مشروع هندسي عملت عليه.','كيف تتعامل مع تغيير متطلبات المشروع في منتصفه؟','ما أهم المعايير التي تراعيها في التصميم الهندسي؟','كيف تدير فريق عمل في ظل ضغط المواعيد؟','كيف تواكب التطورات في مجال تخصصك؟'],
         };
-        const list = fallbacks[interviewState.spec.id] || fallbacks.biz;
-        const q = list[interviewState.currentQ] || `ما خبرتك في ${interviewState.spec.name}؟`;
-        interviewState.questions.push(q);
-        addInterviewMsg('ai', `<strong>السؤال ${qNum}/5:</strong> ${q}`);
+        const defQ = ['حدّثني عن نفسك وخبرتك المهنية.','ما أكبر تحدٍّ واجهته في عملك وكيف تغلبت عليه؟','كيف تصف أسلوبك في العمل ضمن فريق؟','صف موقفاً اضطررت فيه لاتخاذ قرار صعب.','لماذا تعتقد أنك الأنسب لهذه الوظيفة؟'];
+        const qList = fallbacks[spec] || defQ;
+        const question = qList[Math.min(interviewState.currentQ, qList.length-1)];
+        interviewState.questions.push(question);
+        if (loadingDiv) loadingDiv.innerHTML = `<div style="border-right:3px solid #6366f1;padding:8px 12px;border-radius:8px;background:rgba(99,102,241,0.06)"><strong style="color:#6366f1;font-size:11px">سؤال ${qNum}/5</strong><br><br>${question}</div>`;
     }
 
-    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane"></i> إرسال'; }
+    const bar = document.getElementById('iProgressBar');
+    if (bar) bar.style.width = `${((interviewState.currentQ + 1) / 5) * 100}%`;
+    const msgs = document.getElementById('iMessages');
+    if (msgs) msgs.scrollTop = msgs.scrollHeight;
 }
+
+function getFallbackQuestion(spec, idx) {
+    return ['حدّثني عن نفسك.','ما أكبر تحدٍّ واجهته؟','كيف تعمل تحت الضغط؟','صف موقفاً صعباً.','لماذا أنت الأنسب؟'][idx % 5];
+}
+
 
 async function sendInterviewAnswer() {
     const input = document.getElementById('iInput');
-    const answer = input?.value?.trim();
-    if (!answer) return;
-    input.value = '';
+    const sendBtn = document.getElementById('iSendBtn');
+    if (!input) return;
+    const answer = input.value.trim();
+    if (!answer) { showNotification('تنبيه','اكتب إجابتك أولاً','warning'); return; }
 
+    const currentQ = interviewState.questions[interviewState.currentQ] || '';
     addInterviewMsg('user', answer);
-    const btn = document.getElementById('iSendBtn');
-    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> يقيّم...'; }
+    input.value = '';
+    if (sendBtn) { sendBtn.disabled=true; sendBtn.innerHTML='<i class="fas fa-spinner fa-spin"></i>'; }
 
-    const q = interviewState.questions[interviewState.currentQ];
-    interviewState.answers.push(answer);
+    const evalDiv = addInterviewMsg('ai', '<i class="fas fa-spinner fa-spin"></i> يحلّل إجابتك بدقة...');
 
     try {
         const res = await fetch("https://api.anthropic.com/v1/messages", {
-            method:"POST", headers:{"Content-Type":"application/json"},
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "anthropic-dangerous-direct-browser-access": "true"
+            },
             body: JSON.stringify({
-                model:"claude-sonnet-4-20250514", max_tokens:400,
-                messages:[{ role:"user", content:
-                    `أنت محاور خبير. التخصص: ${interviewState.spec.name}.
-السؤال: ${q}
-إجابة المتقدم: ${answer}
-قيّم الإجابة وأرجع JSON فقط:
-{"score":رقم_من_1_لـ10,"feedback":"تغذية راجعة قصيرة 2-3 جمل باللغة العربية","improvement":"اقتراح تحسين واحد"}`
+                model: "claude-sonnet-4-20250514",
+                max_tokens: 400,
+                system: `أنت محكّم محترف في مقابلات التوظيف لمجال ${interviewState.spec?.name||'عام'}. تقيّم الإجابات بموضوعية ودقة بناءً على مدى صلتها بالسؤال وعمقها ووضوحها. لا تُجامل ولا تعطي درجات وهمية.`,
+                messages: [{
+                    role: "user",
+                    content: `السؤال: "${currentQ}"
+إجابة المتقدم: "${answer}"
+
+قيّم هذه الإجابة بموضوعية وأرجع JSON فقط (بدون أي نص آخر):
+{
+  "score": رقم_صحيح_من_1_لـ10,
+  "verdict": "كلمة واحدة: ممتاز|جيد_جداً|جيد|مقبول|ضعيف",
+  "relevance": "هل أجاب على السؤال مباشرةً؟ نعم أم لا؟",
+  "strengths": "نقطة قوة واحدة محددة في الإجابة أو لا شيء",
+  "weakness": "نقطة ضعف واحدة محددة أو لا شيء",
+  "tip": "نصيحة عملية واحدة لتحسين الإجابة"
+}
+معايير التقييم:
+- 1-3: إجابة لا علاقة لها بالسؤال أو فارغة المعنى
+- 4-5: إجابة سطحية أو عامة جداً
+- 6-7: إجابة معقولة مع نقص في التفاصيل
+- 8-9: إجابة جيدة مع أمثلة أو تفاصيل واضحة
+- 10: إجابة استثنائية ومتكاملة`
                 }]
             })
         });
         const data = await res.json();
         const raw = data.content?.map(i=>i.text||'').join('') || '{}';
-        const ev = JSON.parse(raw.replace(/\`\`\`json|\`\`\`/g,'').trim());
-        interviewState.scores.push(ev.score||5);
-        addInterviewMsg('feedback',
-            `<strong><i class="fas fa-comment-dots" style="color:#f59e0b"></i> التقييم:</strong> ${ev.feedback||'إجابة جيدة'}<br>
-            <small style="color:#10b981"><i class="fas fa-arrow-up"></i> ${ev.improvement||''}</small>`,
-            ev.score||5
-        );
+        const jsonM = raw.match(/\{[\s\S]*\}/);
+        const p = JSON.parse(jsonM ? jsonM[0] : '{}');
+
+        const score = Math.min(10, Math.max(1, Math.round(Number(p.score)||5)));
+        const color = score>=8?'#10b981':score>=6?'#f59e0b':score>=4?'#f97316':'#ef4444';
+        const emoji = score>=8?'🌟':score>=6?'👍':score>=4?'⚠️':'❌';
+        const verdict = p.verdict?.replace(/_/g,' ') || (score>=8?'ممتاز':score>=6?'جيد جداً':score>=4?'مقبول':'يحتاج تطوير');
+
+        interviewState.scores.push(score);
+        interviewState.answers.push(answer);
+
+        if (evalDiv) evalDiv.innerHTML = `<div style="border-right:3px solid ${color};border-radius:10px;padding:12px;background:rgba(0,0,0,0.03)">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                <span style="font-weight:900;font-size:13px">${emoji} ${verdict}</span>
+                <span style="background:${color};color:white;padding:3px 12px;border-radius:20px;font-weight:900;font-size:14px">${score}/10</span>
+            </div>
+            ${p.relevance?`<div style="font-size:11px;color:var(--text2);margin-bottom:6px"><i class="fas fa-crosshairs" style="color:#6366f1"></i> <strong>صلة بالسؤال:</strong> ${p.relevance}</div>`:''}
+            ${p.strengths && p.strengths!=='لا شيء'?`<div style="font-size:11px;color:#10b981;margin-bottom:4px"><i class="fas fa-check-circle"></i> ${p.strengths}</div>`:''}
+            ${p.weakness && p.weakness!=='لا شيء'?`<div style="font-size:11px;color:#f97316;margin-bottom:4px"><i class="fas fa-exclamation-circle"></i> ${p.weakness}</div>`:''}
+            ${p.tip?`<div style="font-size:11px;color:#6366f1;border-top:1px solid rgba(99,102,241,0.2);padding-top:6px;margin-top:6px"><i class="fas fa-lightbulb"></i> <strong>نصيحة:</strong> ${p.tip}</div>`:''}
+        </div>`;
+
     } catch(e) {
-        // درجة عشوائية واقعية بدلاً من ثابتة
-        const fallbackScore = Math.floor(Math.random() * 4) + 5; // 5-8
-        const fallbackFeedback = [
-            'إجابة جيدة! حاول دعمها بأمثلة عملية من خبرتك.',
-            'وضّحت الفكرة بشكل معقول — التوسع أكثر سيرفع مستواك.',
-            'إجابة منطقية، لكن ركّز أكثر على النتائج والإنجازات.',
-        ];
-        interviewState.scores.push(fallbackScore);
-        addInterviewMsg('feedback', fallbackFeedback[Math.floor(Math.random()*3)], fallbackScore);
+        // تقييم محلي احتياطي — ليس وهمياً بل يعتمد على طول الإجابة ومحتواها
+        const wordCount = answer.split(/\s+/).filter(Boolean).length;
+        const hasArabic = /[\u0600-\u06FF]/.test(answer);
+        let score = 4; // افتراضي
+        if (wordCount >= 30 && hasArabic) score = 7;
+        else if (wordCount >= 15) score = 6;
+        else if (wordCount <= 3) score = 2;
+        interviewState.scores.push(score);
+        interviewState.answers.push(answer);
+        if (evalDiv) evalDiv.innerHTML = `<div style="border-right:3px solid #f59e0b;padding:8px 12px;border-radius:8px">
+            <strong>${score}/10</strong> — ${wordCount>=15?'إجابة معقولة. أضف أمثلة من تجربتك الفعلية.':'إجابتك قصيرة — الإجابات المفصّلة تحصل على درجات أعلى.'}
+        </div>`;
     }
 
     interviewState.currentQ++;
-    await new Promise(r => setTimeout(r, 800));
-    await fetchInterviewQuestion();
-    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane"></i> إرسال'; }
+    if (sendBtn) { sendBtn.disabled=false; sendBtn.innerHTML='<i class="fas fa-paper-plane"></i> إرسال'; }
+
+    if (interviewState.currentQ >= 5) {
+        await new Promise(r=>setTimeout(r,1000));
+        await showInterviewResult();
+    } else {
+        await new Promise(r=>setTimeout(r,600));
+        await fetchInterviewQuestion(false);
+    }
+    const msgs = document.getElementById('iMessages');
+    if (msgs) msgs.scrollTop = msgs.scrollHeight;
 }
+
 
 async function showInterviewResult() {
     const bar = document.getElementById('iProgressBar');
@@ -2797,20 +3277,20 @@ async function showInterviewResult() {
     const avg = interviewState.scores.length
         ? Math.round(interviewState.scores.reduce((a,b)=>a+b,0) / interviewState.scores.length * 10) / 10
         : 0;
-    const grade = avg >= 8 ? {t:'ممتاز 🏆', c:'#10b981'} : avg >= 6 ? {t:'جيد جداً 👍', c:'#f59e0b'} : {t:'يحتاج تطوير 📈', c:'#ef4444'};
+    const grade = avg>=8?{t:'ممتاز 🏆',c:'#10b981'}:avg>=6?{t:'جيد جداً 👍',c:'#f59e0b'}:{t:'يحتاج تطوير 📈',c:'#ef4444'};
 
-    // حفظ النتيجة في Firebase مع حساب المستخدم
+    // حفظ في Firebase
     if (currentUser.isLoggedIn && currentUser.uid) {
         try {
             await db.collection('users').doc(currentUser.uid).update({
-                interviewScore     : avg,
-                interviewSpec      : interviewState.spec?.name || '',
-                interviewDate      : firebase.firestore.FieldValue.serverTimestamp(),
+                interviewScore: avg,
+                interviewSpec : interviewState.spec?.name || '',
+                interviewDate : firebase.firestore.FieldValue.serverTimestamp(),
             });
-            // تحديث نتيجة السيرة الذاتية المنشورة إن وجدت
+            // تحديث السيرة المنشورة إن وجدت
             const cvSnap = await db.collection('jobs')
                 .where('type','==','cv')
-                .where('addedBy','==', currentUser.email)
+                .where('addedBy','==',currentUser.email)
                 .limit(1).get();
             if (!cvSnap.empty) {
                 await cvSnap.docs[0].ref.update({
@@ -2818,21 +3298,24 @@ async function showInterviewResult() {
                     interviewSpec : interviewState.spec?.name || '',
                 });
             }
-        } catch(e) { console.log('interview save:', e); }
+            // تحديث بيانات الصفحة
+            loadAllData();
+        } catch(e) { console.log('save interview:', e); }
     }
 
     addInterviewMsg('ai', `
-    <div style="text-align:center;padding:10px 0">
-        <div style="font-size:32px;margin-bottom:8px">${grade.t}</div>
-        <div style="font-size:28px;font-weight:900;color:${grade.c};margin-bottom:4px">${avg}/10</div>
-        <div style="font-size:13px;color:var(--text2);margin-bottom:4px">متوسط تقييمك في ${interviewState.questions.length} أسئلة</div>
-        ${currentUser.isLoggedIn ? `<div style="font-size:11px;color:#10b981;margin-bottom:14px"><i class="fas fa-check-circle"></i> تم حفظ نتيجتك في ملفك الشخصي</div>` : ''}
+    <div style="text-align:center;padding:16px 8px">
+        <div style="font-size:36px;margin-bottom:8px">${avg>=8?'🏆':avg>=6?'🎉':'💪'}</div>
+        <div style="font-size:22px;font-weight:900;color:${grade.c};margin-bottom:4px">${avg}/10</div>
+        <div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:6px">${grade.t}</div>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:16px">متوسط ${interviewState.questions.length} أسئلة — تخصص: ${interviewState.spec?.name||'عام'}</div>
+        ${currentUser.isLoggedIn?`<div style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:10px;padding:8px;font-size:11px;color:#10b981;margin-bottom:14px"><i class="fas fa-check-circle"></i> تم حفظ نتيجتك في ملفك الشخصي وستظهر على سيرتك الذاتية</div>`:''}
         <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
-            <button class="interview-send-btn" onclick="renderSpecPicker();document.getElementById('interviewBody').innerHTML='';renderSpecPicker()">
+            <button class="interview-send-btn" style="font-size:12px" onclick="renderPanelSpecPicker()">
                 <i class="fas fa-redo"></i> مقابلة جديدة
             </button>
-            <button class="interview-send-btn" style="background:linear-gradient(135deg,#059669,#10b981)" onclick="toggleFloatPanel('interviewPanel');toggleFloatPanel('cvBuilderPanel')">
-                <i class="fas fa-file-alt"></i> أنشئ سيرتك الذاتية
+            <button class="interview-send-btn" style="background:linear-gradient(135deg,#059669,#10b981);font-size:12px" onclick="toggleFloatPanel('interviewPanel');toggleFloatPanel('cvBuilderPanel')">
+                <i class="fas fa-file-alt"></i> أنشئ سيرتك
             </button>
         </div>
     </div>`);
@@ -2967,7 +3450,7 @@ async function startLesson(idx) {
 
     try {
         const res = await fetch("https://api.anthropic.com/v1/messages", {
-            method:"POST", headers:{"Content-Type":"application/json"},
+            method:"POST", headers:{"Content-Type":"application/json","anthropic-dangerous-direct-browser-access":"true"},
             body: JSON.stringify({
                 model:"claude-sonnet-4-20250514", max_tokens:1000,
                 messages:[{ role:"user", content:
@@ -3112,7 +3595,10 @@ function showJobTab(tab, btn) {
         return;
     }
 
-    if(jobsEl) jobsEl.style.display = 'block';
+    if(jobsEl) {
+        jobsEl.style.display    = 'block';
+        jobsEl.style.visibility = 'visible';
+    }
     if(filterBar && (tab === 'all' || tab === 'jobs')) filterBar.style.display = 'flex';
     displayJobs();
 }
