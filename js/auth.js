@@ -146,6 +146,13 @@ async function doGoogleLogin() {
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         status: 'active',
       });
+    } else {
+      // ترحيل المستخدمين القدامى
+      const d = doc.data();
+      const upd = {};
+      if (!d.role)   upd.role   = SEL_ROLE || 'seeker';
+      if (!d.status) upd.status = 'active';
+      if (Object.keys(upd).length) await window.db.collection('users').doc(uid).update(upd);
     }
   } catch (e) { notify('خطأ', 'فشل تسجيل الدخول بـ Google', 'error'); }
 }
@@ -208,6 +215,13 @@ if (!DEMO && typeof firebase !== 'undefined') {
         const doc = await window.db.collection('users').doc(user.uid).get();
         P    = doc.exists ? doc.data() : { name: user.displayName || 'مستخدم', role: 'seeker', email: user.email };
         ROLE = P.role || 'seeker';
+        // ترحيل المستخدمين القدامى الذين ليس لديهم role أو status
+        if (doc.exists && (!P.role || !P.status)) {
+          const upd = {};
+          if (!P.role)   upd.role   = 'seeker';
+          if (!P.status) upd.status = 'active';
+          try { await window.db.collection('users').doc(user.uid).update(upd); P = { ...P, ...upd }; ROLE = P.role; } catch(_) {}
+        }
         const snap = await window.db.collection('jobs').where('status', '==', 'active').orderBy('postedAt', 'desc').limit(50).get();
         JOBS = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         if (ROLE === 'seeker') {
