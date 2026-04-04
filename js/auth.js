@@ -1,7 +1,63 @@
 // ╔══════════════════════════════════════════════════════╗
 // ║  الفانوس للتوظيف — auth.js                          ║
-// ║  تسجيل الدخول / إنشاء حساب / الخروج                ║
+// ║  تسجيل الدخول / إنشاء حساب / الخروج + Onboarding   ║
 // ╚══════════════════════════════════════════════════════╝
+
+// ═══════════════════════════════════════════════
+// Onboarding — يظهر مرة واحدة للمستخدم الجديد
+// ═══════════════════════════════════════════════
+let obCurrent = 0;
+const OB_TOTAL = 3;
+
+function initApp() {
+  const seen = localStorage.getItem('fanoos_onboarded');
+  if (!seen) {
+    document.getElementById('onboarding').style.display = 'flex';
+  } else {
+    document.getElementById('authScreen').style.display = 'flex';
+  }
+}
+
+function obNext() {
+  obCurrent++;
+  for (let i = 0; i < OB_TOTAL; i++) {
+    document.getElementById('obs' + i).style.display = i === obCurrent ? 'block' : 'none';
+    const dot = document.getElementById('od' + i);
+    if (dot) {
+      dot.style.width   = i === obCurrent ? '22px' : '6px';
+      dot.style.background = i === obCurrent ? '#fff' : 'rgba(255,255,255,.3)';
+    }
+  }
+  if (obCurrent >= OB_TOTAL - 1) {
+    document.getElementById('obNextBtn').style.display  = 'none';
+    document.getElementById('obStartBtn').style.display = 'block';
+  }
+}
+
+function skipOnboarding() {
+  localStorage.setItem('fanoos_onboarded', '1');
+  document.getElementById('onboarding').style.display  = 'none';
+  document.getElementById('authScreen').style.display  = 'flex';
+}
+
+// ═══════════════════════════════════════════════
+// اختيار الدور قبل التسجيل/الدخول
+// ═══════════════════════════════════════════════
+function chooseRole(role) {
+  SEL_ROLE = role;
+  document.getElementById('screenWho').style.display  = 'none';
+  document.getElementById('screenAuth').style.display = 'block';
+  // عرض نموذج التسجيل مباشرة للمستخدم الجديد
+  pickRole(role);
+}
+
+function backToWho() {
+  document.getElementById('screenAuth').style.display = 'none';
+  document.getElementById('screenWho').style.display  = 'block';
+}
+
+// تشغيل عند تحميل الصفحة
+document.addEventListener('DOMContentLoaded', initApp);
 
 function switchAuth(m) {
   const show = m === 'login' ? 'formLogin' : 'formReg';
@@ -109,6 +165,8 @@ async function doLogout() {
     U = null; P = null; ROLE = null;
     document.getElementById('app').style.display        = 'none';
     document.getElementById('authScreen').style.display = 'flex';
+    document.getElementById('screenWho').style.display  = 'block';
+    document.getElementById('screenAuth').style.display = 'none';
     SEL_ROLE = 'seeker';
     notify('وداعاً!', 'تم تسجيل الخروج بنجاح', 'info');
   });
