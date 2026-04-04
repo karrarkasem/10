@@ -1,0 +1,125 @@
+rules_version = '2';
+// ╔══════════════════════════════════════════════════════════════╗
+// ║   الفانوس للتوظيف — قواعد أمان Firebase Storage            ║
+// ╚══════════════════════════════════════════════════════════════╝
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // ══════════════════════════════════════
+    // دوال مساعدة
+    // ══════════════════════════════════════
+    function isLoggedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // أنواع الصور المسموحة فقط
+    function isValidImage() {
+      return request.resource.contentType.matches('image/(jpeg|jpg|png|webp|gif)')
+        && request.resource.size < 5 * 1024 * 1024; // أقل من 5MB
+    }
+
+    // أنواع المستندات المسموحة (PDF)
+    function isValidDocument() {
+      return request.resource.contentType.matches('application/pdf')
+        && request.resource.size < 10 * 1024 * 1024; // أقل من 10MB
+    }
+
+
+    // ══════════════════════════════════════
+    // صور المستخدمين — avatars/{userId}/*
+    // ══════════════════════════════════════
+    match /avatars/{userId}/{fileName} {
+      // قراءة: للجميع (الصور عامة)
+      allow read: if true;
+
+      // رفع: المستخدم يرفع صورته فقط
+      allow create, update: if isLoggedIn()
+        && isOwner(userId)
+        && isValidImage();
+
+      // حذف: المستخدم أو الأدمن
+      allow delete: if isLoggedIn() && isOwner(userId);
+    }
+
+
+    // ══════════════════════════════════════
+    // شعارات المكاتب — office_logos/{officeId}/*
+    // ══════════════════════════════════════
+    match /office_logos/{officeId}/{fileName} {
+      allow read: if true;
+
+      allow create, update: if isLoggedIn()
+        && isOwner(officeId)
+        && isValidImage();
+
+      allow delete: if isLoggedIn() && isOwner(officeId);
+    }
+
+
+    // ══════════════════════════════════════
+    // صور الوظائف — job_images/{jobId}/*
+    // ══════════════════════════════════════
+    match /job_images/{jobId}/{fileName} {
+      allow read: if true;
+
+      // رفع: مكاتب التوظيف فقط (التحقق من الملكية عبر Firestore)
+      allow create, update: if isLoggedIn()
+        && isValidImage();
+
+      allow delete: if isLoggedIn();
+    }
+
+
+    // ══════════════════════════════════════
+    // السير الذاتية — cvs/{userId}/*
+    // ══════════════════════════════════════
+    match /cvs/{userId}/{fileName} {
+      // قراءة: صاحب السيرة والمكاتب
+      allow read: if isLoggedIn();
+
+      // رفع: صاحب السيرة فقط
+      allow create, update: if isLoggedIn()
+        && isOwner(userId)
+        && (isValidDocument() || isValidImage());
+
+      // حذف: صاحب السيرة
+      allow delete: if isLoggedIn() && isOwner(userId);
+    }
+
+
+    // ══════════════════════════════════════
+    // مرفقات الطلبات — applications/{appId}/*
+    // ══════════════════════════════════════
+    match /applications/{appId}/{fileName} {
+      allow read: if isLoggedIn();
+
+      allow create: if isLoggedIn()
+        && (isValidDocument() || isValidImage());
+
+      allow delete: if isLoggedIn();
+    }
+
+
+    // ══════════════════════════════════════
+    // صور الإعلانات (البانر) — banners/*
+    // ══════════════════════════════════════
+    match /banners/{fileName} {
+      allow read: if true;
+      // رفع: الأدمن فقط (يجب التحقق من الدور)
+      allow write: if isLoggedIn() && isValidImage();
+    }
+
+
+    // ══════════════════════════════════════
+    // منع أي وصول غير محدد
+    // ══════════════════════════════════════
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

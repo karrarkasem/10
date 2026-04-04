@@ -1,0 +1,143 @@
+/* ═══════════════════════════════════════════════
+   الفانوس للتوظيف — أنماط الصفحات
+═══════════════════════════════════════════════ */
+
+/* ── Auth Screen ── */
+.auth-bg         { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(145deg, #060d1a 0%, #0f1f35 60%, #060d1a 100%); padding: 18px; position: relative; }
+.auth-bg::before { content: ''; position: fixed; inset: 0; background: radial-gradient(ellipse 80% 55% at 50% -15%, rgba(13,148,136,.28) 0%, transparent 65%); pointer-events: none; }
+.auth-card       { background: rgba(255,255,255,.035); backdrop-filter: blur(22px); border: 1px solid rgba(255,255,255,.1); border-radius: 28px; padding: 36px 32px; width: 100%; max-width: 430px; box-shadow: 0 24px 60px rgba(0,0,0,.45); position: relative; z-index: 1; }
+.auth-logo       { text-align: center; margin-bottom: 24px; }
+.auth-logo-ico   { width: 60px; height: 60px; border-radius: 18px; background: linear-gradient(135deg, var(--p), var(--pl)); display: inline-flex; align-items: center; justify-content: center; font-size: 26px; box-shadow: 0 8px 24px rgba(13,148,136,.45); margin-bottom: 10px; }
+.auth-logo h1    { font-size: 20px; font-weight: 900; color: #f1f5f9; }
+.auth-logo p     { font-size: 12px; color: rgba(255,255,255,.38); margin-top: 3px; }
+.auth-card .fl   { color: rgba(255,255,255,.55); }
+.auth-card .fc   { background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.12); color: #f1f5f9; }
+.auth-card .fc:focus     { background: rgba(255,255,255,.1); border-color: var(--p); }
+.auth-card .fc::placeholder { color: rgba(255,255,255,.22); }
+.auth-card .fc option    { background: #1a2235; color: #f1f5f9; }
+.rp   { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-bottom: 18px; }
+.rc   { padding: 14px 10px; border: 2px solid rgba(255,255,255,.1); border-radius: 13px; cursor: pointer; text-align: center; transition: all .25s; background: rgba(255,255,255,.04); }
+.rc:hover { border-color: rgba(13,148,136,.5); background: rgba(13,148,136,.08); }
+.rc.on    { border-color: var(--p); background: rgba(13,148,136,.15); }
+.rc-ico   { font-size: 26px; margin-bottom: 6px; }
+.rc-tit   { font-size: 12px; font-weight: 800; color: #f1f5f9; }
+.rc-sub   { font-size: 10px; color: rgba(255,255,255,.32); margin-top: 1px; }
+.adiv     { display: flex; align-items: center; gap: 10px; margin: 16px 0; }
+.adiv::before, .adiv::after { content: ''; flex: 1; height: 1px; background: rgba(255,255,255,.1); }
+.adiv span { font-size: 11px; color: rgba(255,255,255,.28); }
+.gbtn  { width: 100%; padding: 11px; border-radius: 11px; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12); color: #f1f5f9; font-family: 'Cairo', sans-serif; font-size: 13px; font-weight: 700; cursor: pointer; transition: all .2s; display: flex; align-items: center; justify-content: center; gap: 9px; }
+.gbtn:hover { background: rgba(255,255,255,.13); }
+.aswitch   { text-align: center; margin-top: 16px; font-size: 12px; color: rgba(255,255,255,.38); }
+.aswitch a { color: var(--pl); font-weight: 700; cursor: pointer; }
+
+/* ── Job Cards ── */
+.jg         { display: flex; flex-direction: column; gap: 12px; }
+.jc         { background: var(--bgc); border: 1px solid var(--br); border-radius: var(--r); padding: 18px; transition: all .25s; cursor: pointer; position: relative; overflow: hidden; }
+.jc::before { content: ''; position: absolute; right: 0; top: 0; bottom: 0; width: 3px; background: linear-gradient(180deg, var(--p), var(--pl)); border-radius: 0 3px 3px 0; }
+.jc:hover   { transform: translateY(-2px); box-shadow: var(--shl); border-color: var(--p); }
+.jct        { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 10px; }
+.jlo        { width: 50px; height: 50px; border-radius: 13px; flex-shrink: 0; background: linear-gradient(135deg, var(--p), var(--pl)); display: flex; align-items: center; justify-content: center; font-size: 20px; color: #fff; overflow: hidden; }
+.jlo img    { width: 100%; height: 100%; object-fit: cover; }
+.ji         { flex: 1; min-width: 0; }
+.jtit       { font-size: 15px; font-weight: 800; color: var(--tx); margin-bottom: 2px; }
+.jco        { font-size: 12px; color: var(--tx2); font-weight: 600; }
+.jbs        { display: flex; flex-wrap: wrap; gap: 5px; margin: 8px 0; }
+.jft        { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--br); }
+.jsal       { font-size: 14px; font-weight: 800; color: var(--p); }
+.jmeta      { display: flex; gap: 10px; flex-wrap: wrap; }
+.jmeta span { font-size: 11px; color: var(--tx3); display: flex; align-items: center; gap: 3px; }
+
+/* ── Office Hero Banner ── */
+.ohero         { background: linear-gradient(135deg, var(--pd), var(--p)); border-radius: var(--r); padding: 22px; color: #fff; display: flex; align-items: center; gap: 14px; margin-bottom: 18px; position: relative; overflow: hidden; }
+.ohero::before { content: '🪔'; position: absolute; left: -10px; top: -10px; font-size: 90px; opacity: .07; pointer-events: none; }
+
+/* ── CV Preview ── */
+.cvp      { background: #fff; border-radius: var(--r); padding: 28px; font-family: 'Cairo', sans-serif; color: #0f172a; box-shadow: var(--shl); direction: rtl; line-height: 1.5; font-size: 12px; }
+.cvph     { display: flex; align-items: flex-start; gap: 16px; padding-bottom: 16px; border-bottom: 3px solid var(--p); margin-bottom: 16px; }
+.cvav     { width: 72px; height: 72px; border-radius: 50%; background: linear-gradient(135deg, var(--p), var(--pl)); display: flex; align-items: center; justify-content: center; font-size: 26px; color: #fff; font-weight: 900; flex-shrink: 0; overflow: hidden; }
+.cvav img { width: 100%; height: 100%; object-fit: cover; }
+.cvname   { font-size: 20px; font-weight: 900; color: var(--pd); }
+.cvtitle  { font-size: 13px; color: #475569; margin: 3px 0; }
+.cvct     { display: flex; gap: 12px; flex-wrap: wrap; font-size: 11px; color: #475569; margin-top: 6px; }
+.cvst     { font-size: 13px; font-weight: 800; color: var(--pd); border-bottom: 2px solid var(--br); padding-bottom: 5px; margin: 14px 0 8px; display: flex; align-items: center; gap: 5px; }
+.cvst i   { color: var(--p); }
+.cvei     { margin-bottom: 10px; }
+.cvetit   { font-size: 12px; font-weight: 800; color: #0f172a; }
+.cveco    { font-size: 11px; color: var(--pd); font-weight: 600; }
+.cvedt    { font-size: 10px; color: #94a3b8; }
+.cvdesc   { font-size: 11px; color: #475569; margin-top: 3px; }
+.cvskills { display: flex; flex-wrap: wrap; gap: 5px; }
+.cvsk     { padding: 3px 10px; background: rgba(13,148,136,.08); color: var(--pd); border-radius: 20px; font-size: 10px; font-weight: 700; }
+
+/* ── Interview Chat ── */
+.iv-bubble      { max-width: 78%; padding: 9px 13px; border-radius: 13px 4px 13px 13px; font-size: 12px; line-height: 1.65; }
+.iv-bubble.bot  { border-radius: 4px 13px 13px 13px; background: var(--bgc2); color: var(--tx); border: 1px solid var(--br); }
+.iv-bubble.user { background: linear-gradient(135deg, var(--p), var(--pl)); color: #fff; }
+.iv-score       { margin-top: 5px; font-size: 10px; opacity: .75; }
+
+/* ═══════════════════════════════════════════════
+   تحسينات متقدمة — بطاقات الوظائف
+═══════════════════════════════════════════════ */
+
+/* ── Enhanced Job Cards ── */
+.jc         { background: var(--bgc); border: 1px solid var(--br); border-radius: var(--r); padding: 18px; transition: all .25s; cursor: pointer; position: relative; overflow: hidden; }
+.jc::before { content: ''; position: absolute; right: 0; top: 0; bottom: 0; width: 4px; background: var(--grad-p); border-radius: 0 4px 4px 0; opacity: 0; transition: opacity .25s; }
+.jc:hover::before { opacity: 1; }
+.jc:hover   { transform: translateY(-3px); box-shadow: var(--shxl); border-color: rgba(13,148,136,.3); }
+.jc-top    { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 10px; }
+.jc-meta   { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--br); }
+.jc-actions { display: flex; align-items: center; gap: 7px; }
+
+/* ── Enhanced Logo ── */
+.jlo        { width: 50px; height: 50px; border-radius: 13px; flex-shrink: 0; background: var(--grad-p); display: flex; align-items: center; justify-content: center; font-size: 20px; color: #fff; overflow: hidden; box-shadow: 0 4px 12px rgba(13,148,136,.2); }
+
+/* ── Apply Button (in card) ── */
+.jc-apply-btn { white-space: nowrap; }
+
+/* ── Days Remaining ── */
+.days-badge { font-size: 10px; color: var(--tx3); display: flex; align-items: center; gap: 3px; }
+.days-badge.urgent { color: var(--danger); font-weight: 700; }
+
+/* ── Filter Bar Enhanced ── */
+.fb-row2   { display: flex; gap: 7px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+.results-count { font-size: 12px; color: var(--tx3); margin-right: auto; }
+
+/* ── Auth Screen Enhanced ── */
+.auth-bg::after { content: ''; position: fixed; bottom: 0; left: 0; right: 0; height: 200px; background: radial-gradient(ellipse 60% 50% at 50% 100%, rgba(245,158,11,.1) 0%, transparent 70%); pointer-events: none; }
+
+/* ── Office Profile Banner ── */
+.prof-banner { height: 110px; background: linear-gradient(135deg, var(--pd), var(--p)); position: relative; border-radius: var(--r) var(--r) 0 0; overflow: hidden; }
+.prof-banner::before { content: '🪔'; position: absolute; left: -8px; top: -8px; font-size: 80px; opacity: .08; }
+
+/* ── Stats Clickable ── */
+.sc-link { cursor: pointer; }
+.sc-link:active { transform: scale(.97); }
+
+/* ── Application Timeline Enhanced ── */
+.app-card { background: var(--bgc); border: 1px solid var(--br); border-radius: var(--r); margin-bottom: 12px; overflow: hidden; transition: box-shadow .2s; }
+.app-card:hover { box-shadow: var(--shl); }
+.app-card-header { padding: 16px 18px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--br); }
+.app-card-body   { padding: 16px 18px; }
+.app-card-logo   { width: 42px; height: 42px; border-radius: 11px; background: var(--bgc2); border: 1px solid var(--br); display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
+
+/* ── Pipeline Enhanced ── */
+.kb     { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; min-width: 0; overflow-x: auto; }
+@media (max-width: 900px) { .kb { grid-template-columns: repeat(3, minmax(160px,1fr)); } }
+@media (max-width: 600px) { .kb { grid-template-columns: repeat(2, minmax(150px,1fr)); } }
+
+/* ── Office Job Cards ── */
+.oj-card { background: var(--bgc); border: 1px solid var(--br); border-radius: var(--r); margin-bottom: 12px; overflow: hidden; transition: box-shadow .2s; }
+.oj-card:hover { box-shadow: var(--shl); }
+.oj-header { padding: 16px 18px; display: flex; align-items: center; gap: 12px; }
+.oj-body   { padding: 0 18px 16px; display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ── Candidates Enhanced ── */
+.cand-avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--grad-p); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 14px; font-weight: 800; flex-shrink: 0; }
+
+/* ── Job Detail Modal ── */
+.jd-meta-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 18px; }
+@media (max-width: 480px) { .jd-meta-grid { grid-template-columns: repeat(2,1fr); } }
+.jd-meta-item { background: var(--bgc2); border: 1px solid var(--br); border-radius: 11px; padding: 12px; text-align: center; }
+.jd-meta-ico  { font-size: 17px; margin-bottom: 5px; display: block; }
+.jd-meta-lbl  { font-size: 10px; color: var(--tx3); margin-bottom: 3px; }
+.jd-meta-val  { font-size: 12px; font-weight: 800; color: var(--tx); }

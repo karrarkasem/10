@@ -1,0 +1,589 @@
+// ╔══════════════════════════════════════════════════════╗
+// ║  الفانوس للتوظيف — office.js                        ║
+// ║  لوحة مكتب التوظيف + إدارة الوظائف + المتقدمون     ║
+// ╚══════════════════════════════════════════════════════╝
+
+// ── لوحة التحكم الرئيسية ──
+function pgOfficeHome(el) {
+  const nm   = P?.officeName || P?.name || 'المكتب';
+  const apps = DEMO_APPS;
+  const hired     = apps.filter(a => a.status === 'hired').length;
+  const interview = apps.filter(a => a.status === 'interview').length;
+  const pending   = apps.filter(a => a.status === 'pending').length;
+  const hireRate  = apps.length ? Math.round((hired / apps.length) * 100) : 0;
+  const pct       = getCompletion(P, 'office');
+  const greet     = new Date().getHours() < 12 ? 'صباح الخير' : new Date().getHours() < 18 ? 'مساء الخير' : 'مساء النور';
+
+  el.innerHTML = `
+    <!-- البانر الرئيسي -->
+    <div class="hero-banner fade-up">
+      <div class="hero-lamp">🪔</div>
+      <div class="hero-content">
+        <p class="hero-label">${greet}،</p>
+        <h2 class="hero-name">${nm}</h2>
+        <p class="hero-sub">
+          <i class="fas fa-map-marker-alt" style="opacity:.7"></i> ${P?.province || '—'}
+          • معدل التوظيف: <strong>${hireRate}%</strong>
+        </p>
+        <div class="hero-actions">
+          <button class="btn ba" onclick="openAddJob()"><i class="fas fa-plus-circle"></i>نشر وظيفة جديدة</button>
+          <button class="btn" style="border:1px solid rgba(255,255,255,.25);color:#fff;background:rgba(255,255,255,.08);gap:6px;padding:9px 16px;border-radius:9px;font-size:13px;font-weight:700;display:inline-flex;align-items:center"
+            onclick="goTo('candidates')"><i class="fas fa-users"></i>المتقدمون</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- اكتمال الملف -->
+    ${pct < 90 ? `
+    <div class="comp-card fade-up del1">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:140px">
+          <div class="comp-label"><i class="fas fa-building"></i>اكتمال ملف المكتب</div>
+          <div class="comp-val" style="color:${completionColor(pct)}">${pct}%</div>
+          <div class="comp-hint">ملف مكتمل يجذب مزيداً من المتقدمين</div>
+        </div>
+        <button class="btn bp bsm" onclick="goTo('profile')"><i class="fas fa-pencil-alt"></i>أكمل الملف</button>
+      </div>
+      <div class="comp-bar-wrap"><div class="comp-bar" style="--w:${pct}%;background:${completionColor(pct)}"></div></div>
+    </div>` : ''}
+
+    <!-- الإحصائيات -->
+    <div class="sg fade-up del2">
+      <div class="sc"><div class="si tl"><i class="fas fa-briefcase"></i></div><div>
+        <div class="sl">وظائف نشطة</div><div class="sv">3</div>
+        <div class="sc-trend up"><i class="fas fa-arrow-up"></i>+1 هذا الشهر</div>
+      </div></div>
+      <div class="sc"><div class="si am"><i class="fas fa-users"></i></div><div>
+        <div class="sl">إجمالي المتقدمين</div><div class="sv">${apps.length}</div>
+        <div class="sc-trend up"><i class="fas fa-arrow-up"></i>جديد</div>
+      </div></div>
+      <div class="sc"><div class="si pu"><i class="fas fa-comments"></i></div><div>
+        <div class="sl">مدعوون للمقابلة</div><div class="sv">${interview}</div>
+        <div class="sc-trend ${interview?'up':'neu'}"><i class="fas fa-${interview?'star':'minus'}"></i>${interview?'نشاط عال':'لا يوجد'}</div>
+      </div></div>
+      <div class="sc"><div class="si gr"><i class="fas fa-check-circle"></i></div><div>
+        <div class="sl">تم التوظيف</div><div class="sv">${hired}</div>
+        <div class="sc-trend up"><i class="fas fa-trophy"></i>معدل ${hireRate}%</div>
+      </div></div>
+    </div>
+
+    <!-- قسمان: مسار التوظيف + الإجراءات -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px" class="fade-up del3">
+      <!-- مسار التوظيف -->
+      <div class="card">
+        <div class="ch"><div class="cht"><i class="fas fa-filter" style="color:var(--p)"></i> مسار التوظيف</div></div>
+        <div class="funnel">
+          ${[
+            { l:'استلمنا',   v:apps.length,                                      c:'var(--info)',    p:100 },
+            { l:'مراجعة',   v:apps.filter(a=>a.status!=='pending').length,        c:'var(--acc)',     p:Math.round((apps.filter(a=>a.status!=='pending').length/Math.max(apps.length,1))*100) },
+            { l:'مقابلة',   v:interview,                                           c:'var(--purple)', p:Math.round((interview/Math.max(apps.length,1))*100) },
+            { l:'وُظّفوا',  v:hired,                                               c:'var(--success)', p:Math.round((hired/Math.max(apps.length,1))*100) },
+          ].map(r => `<div class="fn-row">
+            <span class="fn-label">${r.l}</span>
+            <div class="fn-bar-wrap">
+              <div class="fn-bar" style="width:${r.p}%;background:${r.c}"></div>
+            </div>
+            <span class="fn-count">${r.v}</span>
+          </div>`).join('')}
+        </div>
+        <div style="padding:0 16px 14px;display:flex;align-items:center;gap:7px">
+          <span class="rate-badge ${hireRate>=50?'rate-high':hireRate>=25?'rate-mid':'rate-low'}">
+            <i class="fas fa-chart-line"></i> معدل التوظيف: ${hireRate}%
+          </span>
+        </div>
+      </div>
+
+      <!-- إجراءات سريعة -->
+      <div class="card cp">
+        <div class="cht" style="margin-bottom:13px"><i class="fas fa-bolt" style="color:var(--acc)"></i> إجراءات سريعة</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          ${[
+            { ico:'fa-plus-circle', l:'نشر وظيفة جديدة',  c:'var(--p)',      a:"openAddJob()" },
+            { ico:'fa-users',       l:'عرض المتقدمين',     c:'var(--purple)', a:"goTo('candidates')" },
+            { ico:'fa-columns',     l:'خط التوظيف Kanban', c:'var(--acc)',    a:"goTo('pipeline')" },
+            { ico:'fa-building',    l:'ملف المكتب',        c:'var(--info)',   a:"goTo('profile')" },
+          ].map(a => `<button class="btn bo" style="justify-content:flex-start;gap:10px;text-align:right" onclick="${a.a}">
+            <div style="width:30px;height:30px;border-radius:8px;background:${a.c}18;color:${a.c};display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <i class="fas ${a.ico}"></i>
+            </div>
+            ${a.l}
+            <i class="fas fa-arrow-left" style="margin-right:auto;color:var(--tx3);font-size:11px"></i>
+          </button>`).join('')}
+        </div>
+      </div>
+    </div>
+
+    <!-- آخر الطلبات -->
+    <div class="sh fade-up del4">
+      <div class="st"><div class="st-ico"><i class="fas fa-bell"></i></div>آخر الطلبات</div>
+      <button class="btn bg bsm" onclick="goTo('candidates')">عرض الكل <i class="fas fa-arrow-left"></i></button>
+    </div>
+    <div class="card fade-up del4"><div class="tw"><table class="dt">
+      <thead><tr>
+        <th>المتقدم</th><th>الوظيفة</th><th>الخبرة</th><th>التاريخ</th><th>الحالة</th><th></th>
+      </tr></thead>
+      <tbody>${apps.slice(0, 5).map(a => {
+        const s = STAT[a.status] || STAT.pending;
+        return `<tr>
+          <td><div style="display:flex;align-items:center;gap:8px">
+            <div class="cand-avatar">${a.name.charAt(0)}</div>
+            <div><div style="font-size:12px;font-weight:700">${a.name}</div><div style="font-size:10px;color:var(--tx3)">${a.phone}</div></div>
+          </div></td>
+          <td style="font-size:12px;font-weight:600">${a.jobTitle}</td>
+          <td style="font-size:11px;color:var(--tx2)">${a.exp}</td>
+          <td style="font-size:11px;color:var(--tx3)">${a.appliedAt?.slice(0,10)||'—'}</td>
+          <td><span class="b ${s.c}"><i class="fas ${s.ico}"></i>${s.l}</span></td>
+          <td><button class="btn bp bsm" onclick="openCand(${JSON.stringify(a).replace(/"/g,'&quot;')})"><i class="fas fa-eye"></i>عرض</button></td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table></div></div>`;
+}
+
+// ── وظائفي ──
+function pgOfficeJobs(el) {
+  const jobs = DEMO_JOBS.slice(0, 3);
+  el.innerHTML = `
+    <div class="sh">
+      <div class="st"><div class="st-ico"><i class="fas fa-briefcase"></i></div>وظائفي</div>
+      <button class="btn bp bsm" onclick="openAddJob()"><i class="fas fa-plus"></i>نشر وظيفة</button>
+    </div>
+    ${jobs.map(j => `
+      <div class="oj-card">
+        <div class="oj-header">
+          <div class="jlo" style="width:48px;height:48px;border-radius:13px;font-size:20px;flex-shrink:0">${j.logo || '🏢'}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:14px;font-weight:800;color:var(--tx);margin-bottom:3px">${j.title}</div>
+            <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
+              <span class="b ${j.type==='full'?'b-tl':'b-am'}">${j.type==='full'?'دوام كامل':'دوام جزئي'}</span>
+              <span style="font-size:11px;color:var(--tx3)"><i class="fas fa-users"></i> ${j.applicants} متقدم</span>
+              <span style="font-size:11px;color:var(--tx3)"><i class="fas fa-map-marker-alt"></i> ${j.province}</span>
+            </div>
+          </div>
+          <div style="text-align:left;flex-shrink:0">
+            <span class="b b-gr" style="display:inline-flex;margin-bottom:4px"><i class="fas fa-circle" style="font-size:6px"></i>نشطة</span>
+            ${daysLeftBadge(j.deadline)}
+          </div>
+        </div>
+        <div class="oj-body">
+          <button class="btn bp bsm" onclick="goTo('candidates')"><i class="fas fa-users"></i>المتقدمون (${j.applicants})</button>
+          <button class="btn bg bsm" onclick="notify('قريباً','تعديل الوظائف','info')"><i class="fas fa-edit"></i>تعديل</button>
+          <button class="btn bda bsm" onclick="confirm2('إيقاف الوظيفة','هل تريد إيقاف هذه الوظيفة مؤقتاً؟',()=>notify('تم','تم إيقاف الوظيفة','warning'))"><i class="fas fa-pause"></i>إيقاف</button>
+        </div>
+      </div>`).join('')}
+
+    <div class="al al-i"><i class="fas fa-lightbulb"></i>
+      <span>تصل إليك التنبيهات تلقائياً عند تقديم طلبات جديدة على وظائفك.</span>
+    </div>`;
+}
+
+// ── المتقدمون ──
+function pgCandidates(el) {
+  const apps = DEMO_APPS;
+  el.innerHTML = `
+    <div class="sh">
+      <div class="st"><div class="st-ico"><i class="fas fa-users"></i></div>المتقدمون</div>
+      <span class="b b-tl">${apps.length} متقدم</span>
+    </div>
+
+    <!-- الفلاتر -->
+    <div class="fb" style="margin-bottom:14px">
+      <div class="sb" style="min-width:180px">
+        <i class="fas fa-search"></i>
+        <input type="text" placeholder="ابحث بالاسم أو الوظيفة..." oninput="filterCands(this.value)">
+      </div>
+      ${['الكل','قيد المراجعة','مدعو للمقابلة','تم القبول','مرفوض'].map((l, i) =>
+        `<button class="fc2 ${i===0?'on':''}"
+          onclick="this.closest('.fb').querySelectorAll('.fc2').forEach(b=>b.classList.remove('on'));this.classList.add('on');filterCandsByStatus(['','pending','interview','hired','rejected'][${i}])">${l}
+        </button>`
+      ).join('')}
+    </div>
+
+    <!-- الجدول -->
+    <div class="card"><div class="tw"><table class="dt">
+      <thead><tr>
+        <th>المتقدم</th><th>الوظيفة</th><th>الخبرة</th><th>التاريخ</th><th>الحالة</th><th>إجراءات</th>
+      </tr></thead>
+      <tbody id="candBody">${renderCandRows(apps)}</tbody>
+    </table></div></div>`;
+}
+
+function renderCandRows(apps) {
+  if (!apps.length) return `<tr><td colspan="6" style="text-align:center;padding:28px;color:var(--tx3)">لا توجد نتائج</td></tr>`;
+  return apps.map(a => {
+    const s = STAT[a.status] || STAT.pending;
+    return `<tr>
+      <td><div style="display:flex;align-items:center;gap:9px">
+        <div class="cand-avatar">${a.name.charAt(0)}</div>
+        <div>
+          <div style="font-size:12px;font-weight:700">${a.name}</div>
+          <div style="font-size:10px;color:var(--tx3)">${a.email}</div>
+        </div>
+      </div></td>
+      <td style="font-size:12px;font-weight:600">${a.jobTitle}</td>
+      <td style="font-size:11px;color:var(--tx2)">${a.exp}</td>
+      <td style="font-size:11px;color:var(--tx3)">${a.appliedAt?.slice(0,10)||'—'}</td>
+      <td><span class="b ${s.c}"><i class="fas ${s.ico}"></i>${s.l}</span></td>
+      <td><div style="display:flex;gap:5px;flex-wrap:wrap">
+        <button class="btn bp bsm" onclick="openCand(${JSON.stringify(a).replace(/"/g,'&quot;')})"><i class="fas fa-eye"></i></button>
+        <button class="btn bsu bsm" onclick="quickUpdateStatus(this,'hired',event)"   title="قبول"><i class="fas fa-check"></i></button>
+        <button class="btn bda bsm" onclick="quickUpdateStatus(this,'rejected',event)" title="رفض"><i class="fas fa-times"></i></button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+function filterCands(q) {
+  document.querySelectorAll('#candBody tr').forEach(r => {
+    r.style.display = r.textContent.toLowerCase().includes(q.toLowerCase()) ? '' : 'none';
+  });
+}
+
+function filterCandsByStatus(status) {
+  const apps  = status ? DEMO_APPS.filter(a => a.status === status) : DEMO_APPS;
+  const tbody = document.getElementById('candBody');
+  if (tbody) tbody.innerHTML = renderCandRows(apps);
+}
+
+function quickUpdateStatus(btn, status, e) {
+  if (e) e.stopPropagation();
+  const s    = STAT[status];
+  const cell = btn.closest('tr')?.querySelector('td:nth-child(5)');
+  if (cell && s) cell.innerHTML = `<span class="b ${s.c}"><i class="fas ${s.ico}"></i>${s.l}</span>`;
+  notify('تم التحديث ✅', `تم تغيير الحالة إلى: ${s?.l || status}`, 'success');
+}
+
+// ── تفاصيل المتقدم ──
+function openCand(a) {
+  const s = STAT[a.status] || STAT.pending;
+  document.getElementById('moCandB').innerHTML = `
+    <!-- رأس المتقدم -->
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px">
+      <div class="av avl" style="background:var(--grad-p);color:#fff;font-size:22px;font-weight:900">${a.name.charAt(0)}</div>
+      <div style="flex:1">
+        <div style="font-size:18px;font-weight:900;color:var(--tx);margin-bottom:3px">${a.name}</div>
+        <div class="info-row">
+          <div class="info-item"><i class="fas fa-envelope"></i>${a.email}</div>
+          <div class="info-item"><i class="fas fa-phone"></i>${a.phone}</div>
+        </div>
+        <span class="b ${s.c}" style="margin-top:6px;display:inline-flex"><i class="fas ${s.ico}"></i>${s.l}</span>
+      </div>
+    </div>
+
+    <!-- معلومات الوظيفة -->
+    <div class="card cp" style="background:var(--bgc2);margin-bottom:12px">
+      <div style="font-size:10px;font-weight:700;color:var(--tx3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">الوظيفة المتقدم إليها</div>
+      <div style="font-size:14px;font-weight:800;color:var(--tx)">${a.jobTitle}</div>
+      <div style="font-size:11px;color:var(--tx2);margin-top:3px">
+        <i class="fas fa-briefcase" style="color:var(--tx3)"></i> خبرة: ${a.exp}
+        &nbsp;•&nbsp;
+        <i class="fas fa-calendar" style="color:var(--tx3)"></i> ${a.appliedAt?.slice(0,10)||'—'}
+      </div>
+    </div>
+
+    <!-- رسالة التغطية -->
+    <div class="card cp" style="margin-bottom:16px">
+      <div style="font-size:11px;font-weight:700;color:var(--tx3);margin-bottom:7px;display:flex;align-items:center;gap:5px">
+        <i class="fas fa-align-left" style="color:var(--p)"></i> رسالة التغطية
+      </div>
+      <p style="font-size:12px;color:var(--tx2);line-height:1.9">${a.cover}</p>
+    </div>
+
+    ${a.cvUrl ? `<div style="margin-bottom:16px">
+      <a href="${a.cvUrl}" target="_blank" class="btn bo">
+        <i class="fas fa-external-link-alt"></i>عرض السيرة الذاتية
+      </a>
+    </div>` : ''}
+
+    <!-- الإجراءات -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px">
+      <button class="btn bo bsm" onclick="notify('تم','تم إرسال دعوة المقابلة للمتقدم','success')">
+        <i class="fas fa-calendar-check"></i>دعوة مقابلة
+      </button>
+      <button class="btn bsu bsm" onclick="notify('تم القبول 🎉','تم قبول المتقدم وإبلاغه','success')">
+        <i class="fas fa-check"></i>قبول
+      </button>
+      <button class="btn bda bsm" onclick="notify('تم','تم رفض الطلب وإبلاغ المتقدم','warning')">
+        <i class="fas fa-times"></i>رفض
+      </button>
+    </div>`;
+  oMo('moCand');
+}
+
+// ── خط التوظيف (Kanban) ──
+function pgPipeline(el) {
+  const stages = [
+    { id:'pending',   l:'جديد',         c:'var(--acc)',     ico:'fa-inbox' },
+    { id:'reviewed',  l:'مراجعة',       c:'var(--info)',    ico:'fa-eye' },
+    { id:'interview', l:'مقابلة',        c:'var(--purple)',  ico:'fa-comments' },
+    { id:'hired',     l:'وُظّف',         c:'var(--success)', ico:'fa-check-circle' },
+    { id:'rejected',  l:'مرفوض',        c:'var(--danger)',  ico:'fa-times-circle' },
+  ];
+  el.innerHTML = `
+    <div class="sh"><div class="st"><div class="st-ico"><i class="fas fa-columns"></i></div>خط التوظيف</div>
+      <span class="b b-tl">${DEMO_APPS.length} متقدم</span>
+    </div>
+    <div class="kb">
+      ${stages.map(s => {
+        const apps = DEMO_APPS.filter(a => a.status === s.id);
+        return `<div class="kcol">
+          <div class="kch">
+            <span style="display:flex;align-items:center;gap:5px;color:${s.c};font-size:12px">
+              <i class="fas ${s.ico}" style="font-size:11px"></i>${s.l}
+            </span>
+            <span class="b" style="background:${s.c}18;color:${s.c}">${apps.length}</span>
+          </div>
+          <div class="kcb">
+            ${apps.map(a => `
+              <div class="kcard" onclick="openCand(${JSON.stringify(a).replace(/"/g,'&quot;')})">
+                <div style="display:flex;align-items:center;gap:7px;margin-bottom:6px">
+                  <div class="cand-avatar" style="width:30px;height:30px;font-size:12px">${a.name.charAt(0)}</div>
+                  <div>
+                    <div class="kn">${a.name}</div>
+                    <div class="kj">${a.jobTitle}</div>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between">
+                  <span style="font-size:10px;color:var(--tx3)">${a.exp}</span>
+                  <i class="fas fa-chevron-left" style="font-size:9px;color:var(--tx3)"></i>
+                </div>
+              </div>`).join('') || `
+              <div style="text-align:center;padding:20px 12px;color:var(--tx3)">
+                <i class="fas fa-inbox" style="font-size:18px;opacity:.3;display:block;margin-bottom:5px"></i>
+                <span style="font-size:10px">لا يوجد</span>
+              </div>`}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+// ── ملف المكتب ──
+function pgOfficeProfile(el) {
+  const p  = P;
+  const nm = p?.officeName || p?.name || 'المكتب';
+  el.innerHTML = `
+    <div class="sh"><div class="st"><div class="st-ico"><i class="fas fa-building"></i></div>ملف المكتب</div></div>
+
+    <div class="card" style="margin-bottom:14px">
+      <!-- البانر -->
+      <div class="prof-banner">
+        <div style="position:absolute;bottom:-20px;right:22px;z-index:2">
+          <div class="av avxl" style="background:var(--bgc);color:var(--pd);font-size:28px;font-weight:900;border:3px solid var(--bgc);box-shadow:var(--shxl)">${nm.charAt(0)}</div>
+        </div>
+      </div>
+
+      <div class="cp" style="padding-top:30px">
+        <!-- الإحصائيات -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px">
+          ${[
+            { v:3,               l:'وظائف نشطة',  c:'var(--p)' },
+            { v:DEMO_APPS.length, l:'المتقدمون',   c:'var(--acc)' },
+            { v:DEMO_APPS.filter(a=>a.status==='hired').length, l:'تم توظيفهم', c:'var(--success)' },
+          ].map(x => `<div style="text-align:center;padding:12px 10px;background:var(--bgc2);border-radius:11px;border:1px solid var(--br)">
+            <div style="font-size:20px;font-weight:900;color:${x.c}">${x.v}</div>
+            <div style="font-size:10px;color:var(--tx3);margin-top:2px">${x.l}</div>
+          </div>`).join('')}
+        </div>
+
+        <!-- نموذج التعديل -->
+        <div style="font-size:13px;font-weight:800;color:var(--tx);margin-bottom:14px;display:flex;align-items:center;gap:6px">
+          <i class="fas fa-pencil-alt" style="color:var(--p)"></i>تعديل معلومات المكتب
+        </div>
+        <div class="fg"><label class="fl req">اسم المكتب / الشركة</label>
+          <input type="text" class="fc" value="${nm}" id="eon">
+        </div>
+        <div class="fr">
+          <div class="fg"><label class="fl req">المحافظة</label>
+            <select id="eprov2" class="fc">${PROVS.map(v => `<option ${p?.province===v?'selected':''}>${v}</option>`).join('')}</select>
+          </div>
+          <div class="fg"><label class="fl">هاتف المكتب</label>
+            <input type="tel" id="eoph" class="fc" value="${p?.phone||''}" placeholder="07X XXXX XXXX">
+          </div>
+        </div>
+        <div class="fg"><label class="fl">وصف المكتب</label>
+          <textarea id="eobio" class="fc" rows="3" placeholder="نبذة عن مكتبك وخدماتك...">${p?.bio||''}</textarea>
+        </div>
+        <button class="btn bp" onclick="saveOfficeProfile()"><i class="fas fa-save"></i>حفظ التغييرات</button>
+      </div>
+    </div>
+
+    <!-- خطط الاشتراك -->
+    <div class="card cp" style="margin-bottom:14px">
+      <div style="font-size:13px;font-weight:800;color:var(--tx);margin-bottom:4px;display:flex;align-items:center;gap:6px">
+        <i class="fas fa-crown" style="color:var(--acc)"></i> خطة الاشتراك
+        <span class="b b-gr" style="font-size:10px">الخطة الحالية: مجانية</span>
+      </div>
+      <p style="font-size:11px;color:var(--tx3);margin-bottom:14px">ارفع مستوى اشتراكك للوصول إلى ميزات متقدمة وزيادة ظهور وظائفك</p>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+        ${[
+          {
+            name:'مجاني', price:'0', cur:'IQD', period:'دائماً',
+            color:'var(--tx2)', bg:'var(--bgc2)', badge:'',
+            features:['3 وظائف نشطة','50 مشاهدة/شهر','دعم بالبريد','تقارير أساسية'],
+            btn:'الخطة الحالية', btnClass:'bo', disabled:true
+          },
+          {
+            name:'برو', price:'50,000', cur:'IQD', period:'شهرياً',
+            color:'var(--p)', bg:'rgba(13,148,136,.06)', badge:'الأكثر طلباً',
+            features:['20 وظيفة نشطة','وظائف مميزة (Boost)','1000 مشاهدة/شهر','تقارير متقدمة','دعم أولوية'],
+            btn:'ترقية للبرو', btnClass:'bp', disabled:false
+          },
+          {
+            name:'مؤسسة', price:'150,000', cur:'IQD', period:'شهرياً',
+            color:'var(--acc)', bg:'rgba(245,158,11,.06)', badge:'للشركات الكبيرة',
+            features:['وظائف غير محدودة','ظهور مميز #1','تقارير AI متقدمة','مدير حساب مخصص','API للتكامل'],
+            btn:'تواصل معنا', btnClass:'ba', disabled:false
+          },
+        ].map(plan => `
+          <div style="border:2px solid ${plan.disabled ? 'var(--br)' : plan.color};border-radius:14px;padding:14px;background:${plan.bg};position:relative;transition:all .2s"
+            ${!plan.disabled ? `onmouseenter="this.style.transform='translateY(-3px)';this.style.boxShadow='0 8px 24px rgba(0,0,0,.1)'" onmouseleave="this.style.transform='';this.style.boxShadow=''"` : ''}>
+            ${plan.badge ? `<div style="position:absolute;top:-10px;right:50%;transform:translateX(50%);background:${plan.color};color:#fff;font-size:9px;font-weight:800;padding:3px 10px;border-radius:20px;white-space:nowrap">${plan.badge}</div>` : ''}
+            <div style="font-size:13px;font-weight:900;color:${plan.color};margin-bottom:4px">${plan.name}</div>
+            <div style="font-size:18px;font-weight:900;color:var(--tx)">${plan.price} <span style="font-size:10px;font-weight:400;color:var(--tx3)">${plan.cur} / ${plan.period}</span></div>
+            <div style="margin:10px 0;display:flex;flex-direction:column;gap:5px">
+              ${plan.features.map(f => `<div style="font-size:10px;color:var(--tx2);display:flex;align-items:center;gap:5px">
+                <i class="fas fa-check-circle" style="color:${plan.color};font-size:9px;flex-shrink:0"></i>${f}
+              </div>`).join('')}
+            </div>
+            <button class="btn ${plan.btnClass} bsm bfu" ${plan.disabled ? 'disabled' : `onclick="notify('${plan.name === 'مؤسسة' ? 'تواصل معنا' : 'الترقية'}','${plan.name === 'مؤسسة' ? 'سيتواصل معك فريقنا قريباً' : 'سيتم تفعيل الدفع الإلكتروني قريباً'}','${plan.name === 'مؤسسة' ? 'info' : 'success'}')"`}>
+              ${plan.btn}
+            </button>
+          </div>`).join('')}
+      </div>
+      <div class="al al-i" style="margin-top:12px">
+        <i class="fas fa-shield-alt"></i>
+        <span>جميع الخطط تشمل ضمان استرجاع المبلغ خلال 7 أيام. الدفع بواسطة ZainCash أو بطاقة مصرفية.</span>
+      </div>
+    </div>
+
+    <!-- الأمان -->
+    <div class="card cp">
+      <div style="font-size:13px;font-weight:800;color:var(--tx);margin-bottom:12px">
+        <i class="fas fa-shield-alt" style="color:var(--danger)"></i> الأمان والحساب
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn bo bsm" onclick="notify('قريباً','ميزة تغيير كلمة المرور','info')">
+          <i class="fas fa-key"></i>تغيير كلمة المرور
+        </button>
+        <button class="btn bda bsm" onclick="doLogout()">
+          <i class="fas fa-sign-out-alt"></i>تسجيل الخروج
+        </button>
+      </div>
+    </div>`;
+}
+
+async function saveOfficeProfile() {
+  const d = {
+    officeName: document.getElementById('eon')?.value    || '',
+    province:   document.getElementById('eprov2')?.value || '',
+    phone:      document.getElementById('eoph')?.value   || '',
+    bio:        document.getElementById('eobio')?.value  || '',
+  };
+  P = { ...P, ...d };
+  if (!DEMO && window.db && U) { try { await window.db.collection('users').doc(U.uid).update(d); } catch(e) {} }
+  updateUserUI();
+  notify('تم الحفظ ✅', 'تم تحديث ملف المكتب', 'success');
+}
+
+// ── نشر وظيفة جديدة ──
+function openAddJob() {
+  document.getElementById('moAddJobB').innerHTML = `
+    <div class="al al-i" style="margin-bottom:16px">
+      <i class="fas fa-lightbulb"></i>
+      <span>الوظائف ذات الأوصاف الواضحة تجذب متقدمين أفضل. أضف التفاصيل كاملةً.</span>
+    </div>
+
+    <div class="fr">
+      <div class="fg"><label class="fl req">المسمى الوظيفي</label><input type="text" id="jt" class="fc" placeholder="مثال: مبرمج ويب React.js"></div>
+      <div class="fg"><label class="fl req">الشركة / المكتب</label><input type="text" id="jco2" class="fc" value="${P?.officeName||P?.name||''}"></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label class="fl req">نوع الدوام</label>
+        <select id="jty" class="fc">
+          <option value="full">دوام كامل</option>
+          <option value="part">دوام جزئي</option>
+          <option value="freelance">مستقل / مشروع</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl req">التخصص</label>
+        <select id="jca" class="fc">
+          <option value="tech">تقنية</option><option value="biz">أعمال</option>
+          <option value="med">طب</option><option value="edu">تعليم</option>
+          <option value="eng">هندسة</option><option value="other">أخرى</option>
+        </select>
+      </div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label class="fl">الراتب الأدنى (IQD)</label><input type="number" id="js" class="fc" placeholder="500000"></div>
+      <div class="fg"><label class="fl">الراتب الأعلى (IQD)</label><input type="number" id="jsm" class="fc" placeholder="800000"></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label class="fl req">المحافظة</label>
+        <select id="jp" class="fc">${PROVS.map(p=>`<option>${p}</option>`).join('')}</select>
+      </div>
+      <div class="fg"><label class="fl">الخبرة المطلوبة</label>
+        <select id="je" class="fc">
+          <option>بدون خبرة</option><option>أقل من سنة</option><option>1-2 سنة</option>
+          <option>2-4 سنوات</option><option>4+ سنوات</option>
+        </select>
+      </div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label class="fl">الجنس</label>
+        <select id="jge" class="fc"><option>الجنسين</option><option>ذكور</option><option>إناث</option></select>
+      </div>
+      <div class="fg"><label class="fl">ساعات العمل</label><input type="text" id="jhr" class="fc" placeholder="8 ساعات يومياً"></div>
+    </div>
+    <div class="fg"><label class="fl req">وصف الوظيفة والمهام</label>
+      <textarea id="jd" class="fc" rows="4" placeholder="صف الوظيفة والمهام اليومية والبيئة العملية..."></textarea>
+    </div>
+    <div class="fg"><label class="fl">المتطلبات <span class="fh" style="display:inline">(افصل بفاصلة)</span></label>
+      <input type="text" id="jr" class="fc" placeholder="React.js, Node.js, MongoDB, Git">
+    </div>
+    <div class="fg"><label class="fl">المزايا والفوائد <span class="fh" style="display:inline">(افصل بفاصلة)</span></label>
+      <input type="text" id="jb" class="fc" placeholder="تأمين صحي, أجازة 30 يوم, عمل هجين">
+    </div>
+    <div class="fg"><label class="fl">آخر موعد للتقديم</label><input type="date" id="jdl" class="fc"></div>
+
+    <div class="mf" style="padding:0;border:none;margin-top:12px">
+      <button class="btn bo" onclick="cmo('moAddJob')"><i class="fas fa-times"></i>إلغاء</button>
+      <button class="btn bp blg" id="addJobBtn" onclick="submitJob()"><i class="fas fa-bullhorn"></i>نشر الوظيفة</button>
+    </div>`;
+  oMo('moAddJob');
+}
+
+async function submitJob() {
+  const title = document.getElementById('jt')?.value.trim();
+  const co    = document.getElementById('jco2')?.value.trim();
+  const desc  = document.getElementById('jd')?.value.trim();
+  if (!title || !co || !desc) { notify('خطأ', 'أكمل الحقول المطلوبة: الاسم، الشركة، والوصف', 'error'); return; }
+  const job = {
+    title, company: co,
+    type:      document.getElementById('jty')?.value,
+    cat:       document.getElementById('jca')?.value,
+    salary:    +document.getElementById('js')?.value  || null,
+    salaryMax: +document.getElementById('jsm')?.value || null,
+    province:  document.getElementById('jp')?.value,
+    exp:       document.getElementById('je')?.value,
+    gender:    document.getElementById('jge')?.value,
+    hours:     document.getElementById('jhr')?.value,
+    desc,
+    reqs: document.getElementById('jr')?.value.split(',').map(s=>s.trim()).filter(Boolean),
+    bens: document.getElementById('jb')?.value.split(',').map(s=>s.trim()).filter(Boolean),
+    deadline:  document.getElementById('jdl')?.value,
+    currency: 'IQD', logo: co.charAt(0), applicants: 0, status: 'active',
+    postedBy: U?.uid || 'demo', postedAt: new Date().toISOString(),
+  };
+  loading('addJobBtn', true);
+  if (!DEMO && window.db) {
+    try {
+      const ref = await window.db.collection('jobs').add({ ...job, postedAt: firebase.firestore.FieldValue.serverTimestamp() });
+      job.id = ref.id;
+    } catch(e) { job.id = 'j_' + Date.now(); }
+  } else { job.id = 'j_' + Date.now(); }
+  JOBS.unshift(job);
+  cmo('moAddJob');
+  notify('تم النشر ✅', `وظيفة "${title}" نُشرت بنجاح!`, 'success');
+  await notifyAdmin(`وظيفة جديدة — ${title}`, `<b>الشركة:</b> ${co}`, `📢 وظيفة جديدة\n${title}\n${co}`);
+  goTo('myjobs');
+}

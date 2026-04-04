@@ -1,0 +1,32 @@
+# أسرار وإعدادات محلية
+.env
+.env.local
+.env.production
+secrets.js
+config.local.js
+
+# Firebase
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+# نظام التشغيل
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# المحررات
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Node (إن استُخدم لاحقاً)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# بناء
+dist/
+build/

@@ -1,0 +1,333 @@
+rules_version = '2';
+// ╔══════════════════════════════════════════════════════════════╗
+// ║   الفانوس للتوظيف — قواعد أمان Firestore الكاملة           ║
+// ║   Fanoos Employment Platform — Firestore Security Rules      ║
+// ╚══════════════════════════════════════════════════════════════╝
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ══════════════════════════════════════
+    // دوال مساعدة — Helper Functions
+    // ══════════════════════════════════════
+
+    // هل المستخدم مسجل دخول؟
+    function isLoggedIn() {
+      return request.auth != null;
+    }
+
+    // هل المستخدم هو صاحب المستند؟
+    function isOwner(userId) {
+      return isLoggedIn() && request.auth.uid == userId;
+    }
+
+    // جلب بيانات المستخدم من Firestore
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    // هل المستخدم أدمن؟
+    function isAdmin() {
+      return isLoggedIn() && getUserData().role == 'admin';
+    }
+
+    // هل المستخدم مكتب توظيف؟
+    function isOffice() {
+      return isLoggedIn() && getUserData().role == 'office';
+    }
+
+    // هل المستخدم باحث عن عمل؟
+    function isSeeker() {
+      return isLoggedIn() && getUserData().role == 'seeker';
+    }
+
+    // هل المستخدم أدمن أو صاحب مكتب؟
+    function isAdminOrOffice() {
+      return isAdmin() || isOffice();
+    }
+
+    // هل الحساب نشط؟
+    function isActiveUser() {
+      return isLoggedIn() && getUserData().status == 'active';
+    }
+
+    // التحقق من حجم البيانات (منع الإدخالات الضخمة)
+    function isValidSize(data) {
+      return data.keys().size() <= 30;
+    }
+
+    // التحقق من صحة النص (لا يكون فارغاً ولا أكبر من 500 حرف)
+    function isValidText(text, maxLen) {
+      return text is string && text.size() > 0 && text.size() <= maxLen;
+    }
+
+
+    // ══════════════════════════════════════
+    // ║  USERS — المستخدمون               ║
+    // ══════════════════════════════════════
+    match /users/{userId} {
+
+      // قراءة: المستخدم يقرأ ملفه، أو الأدمن يقرأ الكل
+      allow read: if isOwner(userId) || isAdmin();
+
+      // إنشاء: المستخدم ينشئ ملفه عند التسجيل
+      allow create: if isOwner(userId)
+        && isValidText(request.resource.data.name, 100)
+        && request.resource.data.role in ['seeker', 'office']
+        && isValidSize(request.resource.data);
+
+      // تعديل: المستخدم يعدل ملفه فقط (لا يستطيع تغيير الـ role)
+      allow update: if isOwner(userId)
+        && request.resource.data.role == resource.data.role
+        && isValidSize(request.resource.data);
+
+      // حذف: الأدمن فقط
+      allow delete: if isAdmin();
+    }
+
+    // قراءة عامة للمكاتب (للبحث عن مكاتب)
+    match /users/{userId} {
+      allow read: if isLoggedIn()
+        && resource.data.role == 'office'
+        && resource.data.status == 'active';
+    }
+
+
+    // ══════════════════════════════════════
+    // ║  JOBS — الوظائف                   ║
+    // ══════════════════════════════════════
+    match /jobs/{jobId} {
+
+      // قراءة: الوظائف النشطة للجميع، الأدمن يرى الكل
+      allow read: if resource.data.status == 'active'
+        || isAdmin()
+        || (isOffice() && resource.data.postedBy == request.auth.uid);
+
+      // نشر وظيفة: مكاتب التوظيف النشطة فقط
+      allow create: if isOffice()
+        && isActiveUser()
+        && isValidText(request.resource.data.title, 100)
+        && isValidText(request.resource.data.desc, 2000)
+        && isValidText(request.resource.data.company, 100)
+        && request.resource.data.postedBy == request.auth.uid
+        && request.resource.data.status in ['active', 'draft']
+        && request.resource.data.type in ['full', 'part', 'freelance']
+        && isValidSize(request.resource.data);
+
+      // تعديل: صاحب الوظيفة أو الأدمن
+      allow update: if isAdmin()
+        || (isOffice() && resource.data.postedBy == request.auth.uid
+            && isValidText(request.resource.data.title, 100)
+            && isValidSize(request.resource.data));
+
+      // حذف: صاحب الوظيفة أو الأدمن
+      allow delete: if isAdmin()
+        || (isOffice() && resource.data.postedBy == request.auth.uid);
+    }
+
+
+    // ══════════════════════════════════════
+    // ║  APPLICATIONS — طلبات التوظيف    ║
+    // ══════════════════════════════════════
+    match /applications/{appId} {
+
+      // قراءة: صاحب الطلب، أو صاحب الوظيفة، أو الأدمن
+      allow read: if isAdmin()
+        || (isLoggedIn() && resource.data.applicantId == request.auth.uid)
+        || (isOffice() && isJobOwner(resource.data.jobId));
+
+      // إنشاء طلب: الباحثون النشطون فقط، مرة واحدة لكل وظيفة
+      allow create: if isLoggedIn()
+        && isActiveUser()
+        && request.resource.data.applicantId == request.auth.uid
+        && isValidText(request.resource.data.name, 100)
+        && isValidText(request.resource.data.cover, 1000)
+        && request.resource.data.status == 'pending'
+        && isValidSize(request.resource.data)
+        && !existingApplication(request.resource.data.jobId);
+
+      // تعديل الحالة: صاحب الوظيفة أو الأدمن فقط
+      allow update: if isAdmin()
+        || (isOffice() && isJobOwner(resource.data.jobId)
+            && request.resource.data.status in ['pending','reviewed','interview','hired','rejected']
+            && request.resource.data.applicantId == resource.data.applicantId
+            && request.resource.data.jobId == resource.data.jobId);
+
+      // حذف: الأدمن فقط
+      allow delete: if isAdmin();
+    }
+
+    // دالة مساعدة: هل المستخدم صاحب الوظيفة؟
+    function isJobOwner(jobId) {
+      return get(/databases/$(database)/documents/jobs/$(jobId)).data.postedBy == request.auth.uid;
+    }
+
+    // دالة مساعدة: هل تقدّم مسبقاً؟
+    function existingApplication(jobId) {
+      return exists(/databases/$(database)/documents/applications/$(request.auth.uid + '_' + jobId));
+    }
+
+
+    // ══════════════════════════════════════
+    // ║  CVS — السير الذاتية              ║
+    // ══════════════════════════════════════
+    match /cvs/{cvId} {
+
+      // قراءة: صاحب السيرة، المكاتب (للبحث)، الأدمن
+      allow read: if isAdmin()
+        || (isLoggedIn() && resource.data.userId == request.auth.uid)
+        || isOffice();
+
+      // إنشاء: المستخدم النشط ينشئ سيرته
+      allow create: if isLoggedIn()
+        && isActiveUser()
+        && request.resource.data.userId == request.auth.uid
+        && isValidText(request.resource.data.name, 100)
+        && isValidSize(request.resource.data);
+
+      // تعديل: صاحب السيرة فقط
+      allow update: if isLoggedIn()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == request.auth.uid
+        && isValidSize(request.resource.data);
+
+      // حذف: صاحب السيرة أو الأدمن
+      allow delete: if isAdmin()
+        || (isLoggedIn() && resource.data.userId == request.auth.uid);
+    }
+
+
+    // ══════════════════════════════════════
+    // ║  CONFIG — إعدادات التطبيق        ║
+    // ══════════════════════════════════════
+    match /config/{docId} {
+      // قراءة للجميع (البانرات، الإعدادات العامة)
+      allow read: if true;
+      // كتابة: الأدمن فقط
+      allow write: if isAdmin();
+    }
+
+
+    // ══════════════════════════════════════
+    // ║  NOTIFICATIONS — الإشعارات       ║
+    // ══════════════════════════════════════
+    match /notifications/{notifId} {
+      // قراءة: صاحب الإشعار
+      allow read: if isLoggedIn()
+        && resource.data.userId == request.auth.uid;
+
+      // إنشاء: النظام فقط (Cloud Functions)
+      allow create: if isAdmin();
+
+      // تحديث (تحديد كمقروء): صاحب الإشعار
+      allow update: if isLoggedIn()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == resource.data.userId;
+
+      // حذف: صاحب الإشعار أو الأدمن
+      allow delete: if isAdmin()
+        || (isLoggedIn() && resource.data.userId == request.auth.uid);
+    }
+
+
+    // ══════════════════════════════════════
+    // ║  REPORTS — التقارير              ║
+    // ══════════════════════════════════════
+    match /reports/{reportId} {
+      // إرسال بلاغ: أي مستخدم مسجل
+      allow create: if isLoggedIn()
+        && request.resource.data.reportedBy == request.auth.uid
+        && isValidText(request.resource.data.reason, 500);
+
+      // قراءة: الأدمن فقط
+      allow read, update, delete: if isAdmin();
+    }
+
+
+    // ══════════════════════════════════════
+    // ║  ANALYTICS — الإحصائيات         ║
+    // ══════════════════════════════════════
+    match /analytics/{docId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+
+    // ══════════════════════════════════════
+    // ║  SUBSCRIPTIONS — الاشتراكات      ║
+    // ══════════════════════════════════════
+    match /subscriptions/{subId} {
+      // القراءة: صاحب الاشتراك أو الأدمن
+      allow read: if isAdmin()
+        || (isLoggedIn() && resource.data.userId == request.auth.uid);
+
+      // الإنشاء: النظام فقط (عبر Cloud Functions بعد الدفع)
+      allow create: if isAdmin();
+
+      // التعديل: الأدمن فقط
+      allow update, delete: if isAdmin();
+    }
+
+
+    // ══════════════════════════════════════
+    // ║  SAVED JOBS — الوظائف المحفوظة  ║
+    // ══════════════════════════════════════
+    match /savedJobs/{saveId} {
+      allow read, write: if isLoggedIn()
+        && request.auth.uid == saveId.split('_')[0];
+    }
+
+
+    // ══════════════════════════════════════
+    // ║  INVITES — دعوات الإحالة         ║
+    // ══════════════════════════════════════
+    match /invites/{inviteId} {
+      allow read: if isLoggedIn();
+      allow create: if isLoggedIn()
+        && request.resource.data.invitedBy == request.auth.uid;
+      allow update: if isLoggedIn();
+      allow delete: if isAdmin();
+    }
+
+
+    // ══════════════════════════════════════
+    // ║  INTERVIEWS — المقابلات الذكية   ║
+    // ══════════════════════════════════════
+    match /interviews/{intId} {
+      allow read: if isAdmin()
+        || (isLoggedIn() && resource.data.userId == request.auth.uid);
+      allow create: if isLoggedIn()
+        && request.resource.data.userId == request.auth.uid;
+      allow update: if isLoggedIn()
+        && resource.data.userId == request.auth.uid;
+      allow delete: if isAdmin()
+        || (isLoggedIn() && resource.data.userId == request.auth.uid);
+    }
+
+
+    // ══════════════════════════════════════
+    // ║  MESSAGES — رسائل المكتب         ║
+    // ══════════════════════════════════════
+    match /messages/{msgId} {
+      allow read: if isLoggedIn()
+        && (resource.data.from == request.auth.uid
+            || resource.data.to == request.auth.uid
+            || isAdmin());
+      allow create: if isLoggedIn()
+        && request.resource.data.from == request.auth.uid
+        && isValidText(request.resource.data.text, 1000);
+      allow update: if isLoggedIn()
+        && (resource.data.from == request.auth.uid || resource.data.to == request.auth.uid);
+      allow delete: if isAdmin();
+    }
+
+
+    // ══════════════════════════════════════
+    // منع أي وصول غير محدد
+    // ══════════════════════════════════════
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+  }
+}

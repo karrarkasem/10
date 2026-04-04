@@ -1,0 +1,1 @@
+{"indexes":[{"collectionGroup":"jobs","queryScope":"COLLECTION","fields":[{"fieldPath":"status","order":"ASCENDING"},{"fieldPath":"postedAt","order":"DESCENDING"}]},{"collectionGroup":"applications","queryScope":"COLLECTION","fields":[{"fieldPath":"applicantId","order":"ASCENDING"},{"fieldPath":"appliedAt","order":"DESCENDING"}]}],"fieldOverrides":[]}

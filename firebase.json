@@ -1,0 +1,12 @@
+{
+  "hosting": {
+    "public": ".",
+    "ignore": ["firebase.json",".firebaserc","rules/**","README.md"],
+    "rewrites": [{"source":"**","destination":"/index.html"}]
+  },
+  "firestore": {
+    "rules": "rules/firestore.rules",
+    "indexes": "rules/firestore.indexes.json"
+  },
+  "storage": { "rules": "rules/storage.rules" }
+}
