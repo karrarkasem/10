@@ -59,28 +59,28 @@ const STAT  = {
 };
 
 // ═══════════════════════════════════════════════
-// إعدادات الذكاء الاصطناعي (Gemini API)
+// الذكاء الاصطناعي — عبر Firebase Function (المفتاح محمي على السيرفر)
 // ═══════════════════════════════════════════════
-const AI_CFG = {
-  geminiKey: 'YOUR_GEMINI_API_KEY', // احصل عليه من: https://aistudio.google.com/app/apikey
-  model: 'gemini-2.0-flash',
-};
+
+// عنوان الـ Function — يُحدَّث بعد firebase deploy
+// مثال: https://gemini-abc12345-uc.a.run.app
+const AI_FUNCTION_URL = window.AI_FUNCTION_URL || '';
 
 async function callGemini(prompt) {
-  if (!AI_CFG.geminiKey || AI_CFG.geminiKey.startsWith('YOUR')) return null;
+  if (!AI_FUNCTION_URL) return null;
   try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${AI_CFG.model}:generateContent?key=${AI_CFG.geminiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-      }
-    );
+    const res = await fetch(AI_FUNCTION_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt }),
+    });
+    if (!res.ok) return null;
     const data = await res.json();
-    return data?.candidates?.[0]?.content?.parts?.[0]?.text || null;
-  } catch (e) { console.warn('Gemini error:', e); return null; }
+    return data?.text || null;
+  } catch (e) { console.warn('AI Function error:', e); return null; }
 }
+
+function isAIReady() { return !!AI_FUNCTION_URL; }
 
 // ═══════════════════════════════════════════════
 // دوال مساعدة عامة

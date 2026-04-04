@@ -187,7 +187,7 @@ async function aiOptimizeCV() {
   const textEl = document.getElementById('aiCvText');
   if (!btn || !resEl || !textEl) return;
 
-  if (!AI_CFG.geminiKey || AI_CFG.geminiKey.startsWith('YOUR')) {
+  if (!isAIReady()) {
     notify('تنبيه', 'أضف مفتاح Gemini API في js/app.js لتفعيل هذه الميزة', 'warning');
     return;
   }

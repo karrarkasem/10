@@ -1,7 +1,9 @@
-# أسرار وإعدادات محلية
+# أسرار وإعدادات محلية — لا تُرفع أبداً
 .env
 .env.local
 .env.production
+functions/.env
+functions/.env.local
 secrets.js
 config.local.js
 

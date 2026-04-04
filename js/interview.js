@@ -70,7 +70,7 @@ function buildIVModal() {
         <div style="width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,var(--purple),#a78bfa);display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 10px;box-shadow:0 6px 20px rgba(139,92,246,.3)">🤖</div>
         <div style="font-size:15px;font-weight:800;color:var(--tx);margin-bottom:4px">المقابلة الذكية بالـ AI</div>
         <div style="font-size:12px;color:var(--tx2)">اختر تخصصك — 5 أسئلة مع تقييم حقيقي بالذكاء الاصطناعي</div>
-        ${(!AI_CFG.geminiKey || AI_CFG.geminiKey.startsWith('YOUR')) ? `
+        ${!isAIReady() ? `
         <div style="margin-top:10px;padding:8px 14px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:8px;font-size:11px;color:var(--acc)">
           <i class="fas fa-info-circle"></i> وضع تجريبي — أضف مفتاح Gemini API لتقييم AI حقيقي
           <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--p);font-weight:700;margin-right:5px">احصل عليه مجاناً</a>
@@ -221,7 +221,7 @@ async function sendIVAns() {
 
 async function showIVResult() {
   const total = Math.round((ivScore / (ivCount * 5)) * 100);
-  const hasAI = !(!AI_CFG.geminiKey || AI_CFG.geminiKey.startsWith('YOUR'));
+  const hasAI = isAIReady();
 
   // ملخص AI للمقابلة كاملة
   let aiSummary = '';
