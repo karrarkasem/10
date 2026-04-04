@@ -1,19 +1,12 @@
 {
   "hosting": {
     "public": ".",
-    "ignore": ["firebase.json",".firebaserc","rules/**","functions/**","README.md"],
+    "ignore": ["firebase.json",".firebaserc","rules/**","worker/**","README.md"],
     "rewrites": [{"source":"**","destination":"/index.html"}]
   },
   "firestore": {
     "rules": "rules/firestore.rules",
     "indexes": "rules/firestore.indexes.json"
   },
-  "storage": { "rules": "rules/storage.rules" },
-  "functions": [
-    {
-      "source": "functions",
-      "codebase": "default",
-      "ignore": ["node_modules",".git","firebase-debug.log",".env"]
-    }
-  ]
+  "storage": { "rules": "rules/storage.rules" }
 }

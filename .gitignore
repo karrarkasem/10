@@ -2,8 +2,6 @@
 .env
 .env.local
 .env.production
-functions/.env
-functions/.env.local
 secrets.js
 config.local.js
 
