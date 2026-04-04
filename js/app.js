@@ -293,7 +293,7 @@ function closeSidebar() { document.getElementById('sidebar').classList.remove('o
 // ═══════════════════════════════════════════════
 function updateUserUI() {
   const name  = P?.name || 'مستخدم';
-  const photo = P?.photoURL || U?.photoURL;
+  const photo = P?.photoURL || P?.avatar || U?.photoURL;
   const init  = name.charAt(0);
   ['sav', 'tbav'].forEach(id => {
     const el = document.getElementById(id);

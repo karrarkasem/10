@@ -150,8 +150,10 @@ async function doGoogleLogin() {
       // ترحيل المستخدمين القدامى
       const d = doc.data();
       const upd = {};
-      if (!d.role)   upd.role   = SEL_ROLE || 'seeker';
-      if (!d.status) upd.status = 'active';
+      if (!d.role)     upd.role     = SEL_ROLE || 'seeker';
+      if (!d.status)   upd.status   = 'active';
+      // توحيد حقل الصورة: avatar → photoURL
+      if (d.avatar && !d.photoURL) upd.photoURL = d.avatar;
       if (Object.keys(upd).length) await window.db.collection('users').doc(uid).update(upd);
     }
   } catch (e) { notify('خطأ', 'فشل تسجيل الدخول بـ Google', 'error'); }
