@@ -70,9 +70,12 @@ function switchAuth(m) {
 
 function pickRole(r) {
   SEL_ROLE = r;
-  document.getElementById('r_seeker').classList.toggle('on', r === 'seeker');
-  document.getElementById('r_office').classList.toggle('on', r === 'office');
-  document.getElementById('officeF').style.display = r === 'office' ? 'block' : 'none';
+  const rs = document.getElementById('r_seeker');
+  const ro = document.getElementById('r_office');
+  if (rs) rs.classList.toggle('on', r === 'seeker');
+  if (ro) ro.classList.toggle('on', r === 'office');
+  const offF = document.getElementById('officeF');
+  if (offF) offF.style.display = r === 'office' ? 'block' : 'none';
 }
 
 function togglePw(id, btn) {
