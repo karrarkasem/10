@@ -17,9 +17,9 @@ try {
   window.db      = firebase.firestore();
   window.storage = firebase.storage();
 
-  db.settings({ cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED });
+  db.settings({ cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED, merge: true });
   db.enablePersistence({ synchronizeTabs: true })
-    .catch(err => console.warn('Firestore offline:', err.code));
+    .catch(err => { if (err.code !== 'failed-precondition' && err.code !== 'unimplemented') console.warn('Firestore offline:', err.code); });
 
   console.log('✅ Firebase initialized — الفانوس للتوظيف');
 } catch (e) {
