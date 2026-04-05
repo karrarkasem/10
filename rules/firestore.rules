@@ -183,6 +183,18 @@ service cloud.firestore {
     // ══════════════════════════════════════
     // QUIZ RESULTS — نتائج الاختبارات الذكية
     // ══════════════════════════════════════
+    // ══════════════════════════════════════
+    // RATINGS — تقييمات المكاتب
+    // ══════════════════════════════════════
+    match /ratings/{ratingId} {
+      allow read: if true;
+      allow create: if isLoggedIn()
+        && request.resource.data.userId == request.auth.uid
+        && validSize(request.resource.data);
+      allow update, delete: if isAdmin();
+    }
+
+
     match /quizResults/{resultId} {
       allow read: if isAdmin()
         || (isLoggedIn() && resource.data.applicantId == request.auth.uid)

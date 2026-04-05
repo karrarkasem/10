@@ -23,6 +23,7 @@ function jCard(j) {
   const d = daysLeft(j.deadline);
   const isHot = d !== null && d >= 0 && d <= 3;
   const match = jobMatchScore(j);
+  const isOfficeView = ROLE === 'office';
 
   return `<div class="jc" onclick="openJob('${j.id}')">
     <div class="jc-top">
@@ -46,9 +47,15 @@ function jCard(j) {
             onclick="toggleBookmark('${j.id}',event)" title="حفظ الوظيفة">
             <i class="fas fa-bookmark" style="font-size:12px"></i>
           </button>
-          <button class="btn bp bsm jc-apply-btn" onclick="event.stopPropagation();openQuiz('${j.id}')">
-            <i class="fas fa-paper-plane"></i>تقدّم
-          </button>
+          ${isOfficeView
+            ? `<button class="btn bsm" style="background:rgba(139,92,246,.12);color:var(--purple);border:1px solid rgba(139,92,246,.3);gap:5px"
+                onclick="event.stopPropagation();referCandidate('${j.id}')">
+                <i class="fas fa-user-plus"></i>لديّ موظف
+              </button>`
+            : `<button class="btn bp bsm jc-apply-btn" onclick="event.stopPropagation();openQuiz('${j.id}')">
+                <i class="fas fa-paper-plane"></i>تقدّم
+              </button>`
+          }
         </div>
         <span style="font-size:10px;color:var(--tx3)">${ago(j.postedAt)}</span>
       </div>
@@ -259,9 +266,15 @@ function openJob(id) {
 
     <!-- أزرار الإجراءات -->
     <div style="display:flex;gap:9px;flex-wrap:wrap">
-      <button class="btn bp blg" style="flex:1" onclick="cmo('moJob');openQuiz('${j.id}')">
-        <i class="fas fa-paper-plane"></i>تقدّم الآن
-      </button>
+      ${ROLE === 'office'
+        ? `<button class="btn blg bfu" style="flex:1;background:linear-gradient(135deg,var(--purple),#a78bfa);color:#fff;border:none"
+              onclick="cmo('moJob');referCandidate('${j.id}')">
+            <i class="fas fa-user-plus"></i>لديّ موظف مناسب لهذه الوظيفة
+          </button>`
+        : `<button class="btn bp blg" style="flex:1" onclick="cmo('moJob');openQuiz('${j.id}')">
+            <i class="fas fa-paper-plane"></i>تقدّم الآن
+          </button>`
+      }
       <button class="bkm-btn ${saved?'on':''}" data-bkm="${j.id}" onclick="toggleBookmark('${j.id}',event)"
         style="width:46px;height:46px;border-radius:11px" title="حفظ الوظيفة">
         <i class="fas fa-bookmark" style="font-size:15px"></i>
@@ -270,6 +283,11 @@ function openJob(id) {
         style="width:46px;height:46px;border-radius:11px;background:#25D366;color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0"
         title="مشاركة عبر WhatsApp">
         <i class="fab fa-whatsapp"></i>
+      </button>
+      <button onclick="shareJobGeneral('${j.id}')"
+        style="width:46px;height:46px;border-radius:11px;background:linear-gradient(135deg,#0ea5e9,#6366f1);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0"
+        title="مشاركة على منصات التواصل">
+        <i class="fas fa-share-alt"></i>
       </button>
     </div>`;
   oMo('moJob');
@@ -375,16 +393,108 @@ async function submitApply(quizScore = null, quizFeedback = '') {
 function shareJobWhatsApp(id) {
   const j = JOBS.find(x => x.id === id);
   if (!j) return;
-  const sal = j.salary ? `${fmt(j.salary)}${j.salaryMax ? '–' + fmt(j.salaryMax) : ''} ${j.currency || 'IQD'}` : 'قابل للتفاوض';
-  const type = j.type === 'full' ? 'دوام كامل' : j.type === 'part' ? 'دوام جزئي' : 'مستقل';
+  const sal  = j.salary ? `${fmt(j.salary)}${j.salaryMax ? '–' + fmt(j.salaryMax) : ''} ${j.currency || 'IQD'}` : 'قابل للتفاوض';
+  const type = jobTypeLabel(j.type);
   const text = `🔔 *فرصة عمل — فانوس للتوظيف*\n\n` +
-    `💼 *${j.title}*\n` +
-    `🏢 ${j.company}\n` +
-    `📍 ${j.province || '—'} | ${type}\n` +
-    `💰 ${sal}\n` +
-    `⏳ آخر موعد: ${j.deadline || '—'}\n\n` +
-    `${j.desc ? j.desc.slice(0, 120) + '...' : ''}\n\n` +
-    `👆 تقدّم الآن عبر منصة الفانوس للتوظيف`;
-  const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
-  window.open(url, '_blank');
+    `💼 *${j.title}*\n🏢 ${j.company}\n📍 ${j.province || '—'} | ${type}\n💰 ${sal}\n⏳ آخر موعد: ${j.deadline || '—'}\n\n` +
+    `${j.desc ? j.desc.slice(0, 120) + '...' : ''}\n\n👆 تقدّم الآن عبر منصة الفانوس للتوظيف`;
+  window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+}
+
+// ── مشاركة على منصات متعددة ──
+function shareJobGeneral(id) {
+  const j = JOBS.find(x => x.id === id);
+  if (!j) return;
+  const text = `فرصة عمل: ${j.title} — ${j.company} | ${j.province || ''} | ${jobTypeLabel(j.type)} — منصة الفانوس للتوظيف`;
+  const el = document.createElement('div');
+  el.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;gap:10px;background:var(--bgc);border:1px solid var(--br);border-radius:16px;padding:14px 18px;box-shadow:var(--shxl)';
+  el.innerHTML = `
+    <a href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(location.href)}&quote=${encodeURIComponent(text)}" target="_blank"
+      style="width:44px;height:44px;border-radius:12px;background:#1877f2;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;text-decoration:none">
+      <i class="fab fa-facebook-f"></i></a>
+    <a href="https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}" target="_blank"
+      style="width:44px;height:44px;border-radius:12px;background:#000;color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;text-decoration:none">
+      <i class="fab fa-x-twitter"></i></a>
+    <a href="https://t.me/share/url?url=${encodeURIComponent(location.href)}&text=${encodeURIComponent(text)}" target="_blank"
+      style="width:44px;height:44px;border-radius:12px;background:#229ed9;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;text-decoration:none">
+      <i class="fab fa-telegram-plane"></i></a>
+    <a href="https://wa.me/?text=${encodeURIComponent(text)}" target="_blank"
+      style="width:44px;height:44px;border-radius:12px;background:#25d366;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;text-decoration:none">
+      <i class="fab fa-whatsapp"></i></a>
+    <button onclick="this.closest('div').remove()"
+      style="width:44px;height:44px;border-radius:12px;background:var(--bgc2);color:var(--tx3);border:1px solid var(--br);cursor:pointer;font-size:16px">✕</button>`;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 8000);
+}
+
+// ── ترشيح موظف من مكتب التوظيف ──
+function referCandidate(jobId) {
+  const j = JOBS.find(x => x.id === jobId);
+  if (!j) return;
+  const el = document.getElementById('moApplyB');
+  if (!el) return;
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--bgc2);border-radius:12px;margin-bottom:20px;border:1px solid var(--br)">
+      <div class="jlo" style="width:46px;height:46px;border-radius:12px;font-size:19px;flex-shrink:0">${j.logo || '🏢'}</div>
+      <div>
+        <div style="font-size:14px;font-weight:800;color:var(--tx)">${san(j.title)}</div>
+        <div style="font-size:11px;color:var(--tx2)">${san(j.company)} • ${san(j.province || '')}</div>
+      </div>
+    </div>
+    <div class="al al-i" style="margin-bottom:16px">
+      <i class="fas fa-user-plus"></i>
+      <span>أدخل بيانات الموظف المرشّح — سيتم إرسال ملفه لصاحب الوظيفة باسم مكتبك</span>
+    </div>
+    <div class="fr">
+      <div class="fg"><label class="fl req">اسم المرشّح</label><input type="text" id="ref_n" class="fc" placeholder="الاسم الكامل"></div>
+      <div class="fg"><label class="fl req">رقم الهاتف</label><input type="tel" id="ref_ph" class="fc" placeholder="07X XXXX XXXX"></div>
+    </div>
+    <div class="fg"><label class="fl req">البريد الإلكتروني</label><input type="email" id="ref_e" class="fc"></div>
+    <div class="fg">
+      <label class="fl">سنوات الخبرة</label>
+      <select id="ref_exp" class="fc">
+        <option>بدون خبرة</option><option>أقل من سنة</option><option>1-2 سنة</option>
+        <option>2-4 سنوات</option><option>4-6 سنوات</option><option>أكثر من 6 سنوات</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label class="fl req">ملاحظات المكتب</label>
+      <textarea id="ref_note" class="fc" rows="3" placeholder="وصف مختصر للمرشّح ومؤهلاته..."></textarea>
+    </div>
+    <div class="mf" style="padding:0;border:none;margin-top:14px">
+      <button class="btn bo" onclick="cmo('moApply')"><i class="fas fa-times"></i>إلغاء</button>
+      <button class="btn blg bfu" id="refBtn" style="background:linear-gradient(135deg,var(--purple),#a78bfa);color:#fff;border:none"
+        onclick="submitReferral('${jobId}')">
+        <i class="fas fa-user-plus"></i>إرسال الترشيح
+      </button>
+    </div>`;
+  oMo('moApply');
+}
+
+async function submitReferral(jobId) {
+  const j    = JOBS.find(x => x.id === jobId);
+  const name = document.getElementById('ref_n')?.value.trim();
+  const ph   = document.getElementById('ref_ph')?.value.trim();
+  const em   = document.getElementById('ref_e')?.value.trim();
+  const exp  = document.getElementById('ref_exp')?.value;
+  const note = document.getElementById('ref_note')?.value.trim();
+  if (!name || !ph || !em) { notify('خطأ', 'أكمل بيانات المرشّح', 'error'); return; }
+  loading('refBtn', true);
+  const ref = {
+    jobId, jobTitle: j?.title, company: j?.company,
+    applicantId: 'ref_' + Date.now(),
+    name, phone: ph, email: em, exp,
+    cover: note || 'مرشّح من مكتب توظيف',
+    referredBy: U?.uid, officeName: P?.officeName || P?.name,
+    isReferral: true, status: 'pending',
+    appliedAt: new Date().toISOString(),
+  };
+  if (!DEMO && window.db) {
+    try {
+      await window.db.collection('applications').add({ ...ref, appliedAt: firebase.firestore.FieldValue.serverTimestamp() });
+      await window.db.collection('jobs').doc(jobId).update({ applicants: firebase.firestore.FieldValue.increment(1) });
+    } catch (e) { console.warn(e); }
+  }
+  cmo('moApply');
+  notify('تم الترشيح ✅', `تم ترشيح ${name} لوظيفة "${j?.title}"`, 'success');
 }

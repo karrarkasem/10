@@ -208,6 +208,7 @@ const NAV_SEEKER = [
   { id:'home',      icon:'fa-home',           label:'الرئيسية',         btm:true  },
   { id:'jobs',      icon:'fa-briefcase',       label:'الوظائف',           btm:true  },
   { id:'myapps',    icon:'fa-clipboard-list',  label:'طلباتي',            btm:true  },
+  { id:'offices',   icon:'fa-building',        label:'مكاتب التوظيف',   btm:false },
   { id:'cv',        icon:'fa-file-alt',        label:'سيرتي الذاتية',    btm:false },
   { id:'interview', icon:'fa-comments',        label:'مقابلة ذكية',      btm:false },
   { id:'profile',   icon:'fa-user-circle',     label:'حسابي',             btm:true  },
@@ -281,6 +282,7 @@ function renderPage(pg) {
   if (pg === 'home')      return pgSeekerHome(el);
   if (pg === 'jobs')      return pgJobs(el);
   if (pg === 'myapps')    return pgMyApps(el);
+  if (pg === 'offices')   return pgOfficesList(el);
   if (pg === 'cv')        { oMo('moCV'); buildCVModal(); return; }
   if (pg === 'interview') { oMo('moIV'); buildIVModal(); return; }
   if (pg === 'profile')   return pgSeekerProfile(el);

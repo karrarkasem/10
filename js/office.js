@@ -211,17 +211,29 @@ function renderCandRows(apps) {
   if (!apps.length) return `<tr><td colspan="6" style="text-align:center;padding:28px;color:var(--tx3)">لا توجد نتائج</td></tr>`;
   return apps.map(a => {
     const s = STAT[a.status] || STAT.pending;
+    // المكتب المرتبط: إما مكتب الترشيح أو مكتب فانوس (التقديم المباشر)
+    const affiliation = a.isReferral
+      ? `<span class="b b-pu" style="font-size:9px"><i class="fas fa-building"></i>${san(a.officeName || 'مكتب')}</span>`
+      : `<span class="b b-tl" style="font-size:9px"><i class="fas fa-user"></i>مباشر</span>`;
+
+    // نتيجة الاختبار إذا وُجدت
+    const quizBadge = a.quizScore != null
+      ? `<span class="b ${a.quizScore >= 70 ? 'b-gr' : a.quizScore >= 50 ? 'b-am' : 'b-rd'}" style="font-size:9px">
+          <i class="fas fa-robot"></i>${a.quizScore}
+        </span>`
+      : '';
+
     return `<tr>
       <td><div style="display:flex;align-items:center;gap:9px">
         <div class="cand-avatar">${a.name.charAt(0)}</div>
         <div>
-          <div style="font-size:12px;font-weight:700">${a.name}</div>
-          <div style="font-size:10px;color:var(--tx3)">${a.email}</div>
+          <div style="font-size:12px;font-weight:700">${san(a.name)}</div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:3px">${affiliation}${quizBadge}</div>
         </div>
       </div></td>
-      <td style="font-size:12px;font-weight:600">${a.jobTitle}</td>
-      <td style="font-size:11px;color:var(--tx2)">${a.exp}</td>
-      <td style="font-size:11px;color:var(--tx3)">${a.appliedAt?.slice(0,10)||'—'}</td>
+      <td style="font-size:12px;font-weight:600">${san(a.jobTitle)}</td>
+      <td style="font-size:11px;color:var(--tx2)">${san(a.exp || '—')}</td>
+      <td style="font-size:11px;color:var(--tx3)">${(a.appliedAt||'').slice(0,10)||'—'}</td>
       <td><span class="b ${s.c}"><i class="fas ${s.ico}"></i>${s.l}</span></td>
       <td><div style="display:flex;gap:5px;flex-wrap:wrap">
         <button class="btn bp bsm" onclick="openCand(${JSON.stringify(a).replace(/"/g,'&quot;')})"><i class="fas fa-eye"></i></button>
@@ -260,12 +272,32 @@ function openCand(a) {
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px">
       <div class="av avl" style="background:var(--grad-p);color:#fff;font-size:22px;font-weight:900">${a.name.charAt(0)}</div>
       <div style="flex:1">
-        <div style="font-size:18px;font-weight:900;color:var(--tx);margin-bottom:3px">${a.name}</div>
-        <div class="info-row">
-          <div class="info-item"><i class="fas fa-envelope"></i>${a.email}</div>
-          <div class="info-item"><i class="fas fa-phone"></i>${a.phone}</div>
+        <div style="font-size:18px;font-weight:900;color:var(--tx);margin-bottom:3px">${san(a.name)}</div>
+        <div class="info-row" style="margin-top:4px">
+          ${a.isReferral
+            ? `<span class="b b-pu"><i class="fas fa-building"></i>مرشّح من: ${san(a.officeName || 'مكتب')}</span>`
+            : `<span class="b b-tl"><i class="fas fa-user"></i>تقديم مباشر عبر المنصة</span>`
+          }
+          ${a.quizScore != null
+            ? `<span class="b ${a.quizScore >= 70 ? 'b-gr' : a.quizScore >= 50 ? 'b-am' : 'b-rd'}">
+                <i class="fas fa-robot"></i>اختبار: ${a.quizScore}/100
+              </span>`
+            : ''}
         </div>
-        <span class="b ${s.c}" style="margin-top:6px;display:inline-flex"><i class="fas ${s.ico}"></i>${s.l}</span>
+        <div style="font-size:11px;color:var(--tx3);margin-top:6px">
+          <!-- وسائل التواصل تظهر فقط عند قبول المتقدم -->
+          ${a.status === 'hired'
+            ? `<div class="info-row" style="margin-top:4px">
+                <div class="info-item"><i class="fas fa-envelope" style="color:var(--p)"></i>${san(a.email)}</div>
+                <div class="info-item"><i class="fas fa-phone" style="color:var(--success)"></i>${san(a.phone)}</div>
+               </div>`
+            : `<div class="al al-i" style="margin-top:6px;font-size:10px;padding:6px 10px">
+                <i class="fas fa-lock"></i>
+                <span>وسائل التواصل تظهر بعد قبول المتقدم</span>
+               </div>`
+          }
+        </div>
+        <span class="b ${s.c}" style="margin-top:8px;display:inline-flex"><i class="fas ${s.ico}"></i>${s.l}</span>
       </div>
     </div>
 
@@ -582,6 +614,196 @@ function openAddJob() {
       <button class="btn bp blg" id="addJobBtn" onclick="submitJob()"><i class="fas fa-bullhorn"></i>نشر الوظيفة</button>
     </div>`;
   oMo('moAddJob');
+}
+
+// ══════════════════════════════════════════════════════
+// صفحة مكاتب التوظيف — للباحث عن عمل
+// ══════════════════════════════════════════════════════
+async function pgOfficesList(el) {
+  el.innerHTML = `<div style="text-align:center;padding:30px"><div class="spin2"></div></div>`;
+
+  let offices = [];
+  if (!DEMO && window.db) {
+    try {
+      const snap = await window.db.collection('users')
+        .where('role', '==', 'office')
+        .where('status', '==', 'active')
+        .limit(30).get();
+      offices = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    } catch (e) {}
+  }
+
+  // بيانات تجريبية
+  if (!offices.length) {
+    offices = [
+      { id:'o1', officeName:'مكتب الأمل للتوظيف',    name:'مكتب الأمل',    province:'بغداد',  bio:'متخصصون في التوظيف التقني والإداري', rating:4.7, ratingCount:23, jobsCount:8  },
+      { id:'o2', officeName:'مكتب الراشدي',           name:'مكتب الراشدي', province:'كربلاء', bio:'خبرة 10 سنوات في سوق العمل العراقي',  rating:4.5, ratingCount:17, jobsCount:5  },
+      { id:'o3', officeName:'مكتب التعليم المتقدم',   name:'مكتب التعليم', province:'أربيل',  bio:'توظيف في القطاع التعليمي والصحي',     rating:4.8, ratingCount:31, jobsCount:6  },
+      { id:'o4', officeName:'مكتب الصحة المهنية',     name:'مكتب الصحة',   province:'البصرة', bio:'متخصصون في الكوادر الطبية',            rating:4.3, ratingCount:12, jobsCount:3  },
+    ];
+  }
+
+  el.innerHTML = `
+    <div class="sh fade-up">
+      <div class="st"><div class="st-ico" style="background:linear-gradient(135deg,var(--purple),#a78bfa)"><i class="fas fa-building"></i></div>مكاتب التوظيف</div>
+      <span class="b b-tl">${offices.length} مكتب</span>
+    </div>
+
+    <div class="sb fade-up" style="margin-bottom:14px">
+      <i class="fas fa-search"></i>
+      <input type="text" placeholder="ابحث عن مكتب..." oninput="filterOfficesList(this.value)">
+    </div>
+
+    <div id="officesList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px">
+      ${offices.map(o => officeCard(o)).join('')}
+    </div>`;
+
+  window._officesData = offices;
+}
+
+function officeCard(o) {
+  const rating = o.rating || 0;
+  const stars  = Math.round(rating);
+  const jobsCount = o.jobsCount || JOBS.filter(j => j.postedBy === o.id).length;
+
+  // هل قدّم الباحث على وظيفة من هذا المكتب؟
+  const canRate = MY_APPS.some(a => a.postedBy === o.id || a.company === (o.officeName || o.name));
+
+  return `<div class="card cp fade-up">
+    <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px">
+      <div class="av avl" style="background:var(--grad-p);color:#fff;font-size:18px;font-weight:900;flex-shrink:0">
+        ${(o.officeName || o.name || '؟').charAt(0)}
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:14px;font-weight:900;color:var(--tx)">${san(o.officeName || o.name)}</div>
+        <div style="font-size:11px;color:var(--tx2);margin-top:2px">
+          <i class="fas fa-map-marker-alt" style="color:var(--tx3)"></i> ${san(o.province || '—')}
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;margin-top:5px">
+          ${[1,2,3,4,5].map(i =>
+            `<i class="fas fa-star" style="font-size:11px;color:${i <= stars ? '#f59e0b' : 'var(--br)'}"></i>`
+          ).join('')}
+          <span style="font-size:10px;color:var(--tx3);margin-right:4px">${rating ? rating.toFixed(1) : '—'} (${o.ratingCount || 0})</span>
+        </div>
+      </div>
+    </div>
+
+    ${o.bio ? `<div style="font-size:12px;color:var(--tx2);line-height:1.6;margin-bottom:12px">${san(o.bio)}</div>` : ''}
+
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <div style="flex:1;background:var(--bgc2);border-radius:9px;padding:8px;text-align:center">
+        <div style="font-size:16px;font-weight:900;color:var(--p)">${jobsCount}</div>
+        <div style="font-size:9px;color:var(--tx3)">وظيفة</div>
+      </div>
+      <div style="flex:1;background:var(--bgc2);border-radius:9px;padding:8px;text-align:center">
+        <div style="font-size:16px;font-weight:900;color:${rating >= 4.5 ? 'var(--success)' : 'var(--acc)'}">⭐${rating ? rating.toFixed(1) : '—'}</div>
+        <div style="font-size:9px;color:var(--tx3)">تقييم</div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px">
+      <button class="btn bp bsm" style="flex:1" onclick="viewOfficeJobs('${o.id}','${san(o.officeName || o.name)}')">
+        <i class="fas fa-briefcase"></i>عرض الوظائف
+      </button>
+      ${canRate ? `<button class="btn bsm" style="background:rgba(245,158,11,.12);color:var(--acc);border:1px solid rgba(245,158,11,.3)"
+          onclick="openRating('${o.id}','${san(o.officeName || o.name)}')">
+          <i class="fas fa-star"></i>قيّم
+        </button>` : ''}
+    </div>
+  </div>`;
+}
+
+function filterOfficesList(q) {
+  const list = window._officesData || [];
+  const filtered = q ? list.filter(o =>
+    (o.officeName || o.name || '').includes(q) ||
+    (o.province || '').includes(q) ||
+    (o.bio || '').includes(q)
+  ) : list;
+  const el = document.getElementById('officesList');
+  if (el) el.innerHTML = filtered.length ? filtered.map(o => officeCard(o)).join('') : emptyState('🔍', 'لا توجد نتائج', '');
+}
+
+function viewOfficeJobs(officeId, officeName) {
+  const jobs = JOBS.filter(j => j.postedBy === officeId || j.company === officeName);
+  const el   = document.getElementById('pcon');
+  el.innerHTML = `
+    <div class="sh">
+      <button class="btn bo bsm" onclick="goTo('offices')"><i class="fas fa-arrow-right"></i>رجوع</button>
+      <div class="st"><div class="st-ico"><i class="fas fa-briefcase"></i></div>وظائف ${san(officeName)}</div>
+    </div>
+    ${jobs.length
+      ? `<div class="jg">${jobs.map(j => jCard(j)).join('')}</div>`
+      : emptyState('📋', 'لا توجد وظائف نشطة', 'هذا المكتب لا يملك وظائف متاحة حالياً')}`;
+}
+
+// ── نظام التقييم ──
+function openRating(officeId, officeName) {
+  let selectedStars = 0;
+  const el = document.getElementById('moApplyB');
+  el.innerHTML = `
+    <div style="text-align:center;padding:10px 0 20px">
+      <div style="font-size:18px;font-weight:900;color:var(--tx);margin-bottom:4px">${san(officeName)}</div>
+      <div style="font-size:12px;color:var(--tx2);margin-bottom:20px">قيّم تجربتك مع هذا المكتب</div>
+      <div style="display:flex;justify-content:center;gap:10px;margin-bottom:6px" id="starsRow">
+        ${[1,2,3,4,5].map(i =>
+          `<i class="fas fa-star" id="star_${i}" data-val="${i}"
+            style="font-size:36px;color:var(--br);cursor:pointer;transition:color .15s"
+            onmouseover="hoverStars(${i})" onmouseout="hoverStars(selectedStars||0)"
+            onclick="selectStar(${i},'${officeId}')"></i>`
+        ).join('')}
+      </div>
+      <div id="starLabel" style="font-size:12px;color:var(--tx3);margin-bottom:16px;height:18px"></div>
+      <div class="fg" style="text-align:right">
+        <label class="fl">تعليق (اختياري)</label>
+        <textarea id="ratingNote" class="fc" rows="3" placeholder="شاركنا تجربتك مع هذا المكتب..."></textarea>
+      </div>
+      <button class="btn bp bfu" id="ratingBtn" style="margin-top:12px" onclick="submitRating('${officeId}','${san(officeName)}')">
+        <i class="fas fa-paper-plane"></i>إرسال التقييم
+      </button>
+    </div>`;
+  oMo('moApply');
+}
+
+function hoverStars(n) {
+  [1,2,3,4,5].forEach(i => {
+    const s = document.getElementById(`star_${i}`);
+    if (s) s.style.color = i <= n ? '#f59e0b' : 'var(--br)';
+  });
+  const labels = ['','ضعيف','مقبول','جيد','جيد جداً','ممتاز'];
+  const lbl = document.getElementById('starLabel');
+  if (lbl) lbl.textContent = labels[n] || '';
+}
+
+function selectStar(n, officeId) {
+  window.selectedStars = n;
+  hoverStars(n);
+}
+
+async function submitRating(officeId, officeName) {
+  const stars = window.selectedStars || 0;
+  if (!stars) { notify('تنبيه', 'اختر عدد النجوم أولاً', 'warning'); return; }
+  const note = document.getElementById('ratingNote')?.value.trim();
+  loading('ratingBtn', true);
+  if (!DEMO && window.db && U) {
+    try {
+      await window.db.collection('ratings').add({
+        officeId, officeName, rating: stars, note: note || null,
+        userId: U.uid, userName: P?.name || 'مستخدم',
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      });
+      // تحديث متوسط التقييم
+      const snap = await window.db.collection('ratings').where('officeId','==',officeId).get();
+      const ratings = snap.docs.map(d => d.data().rating);
+      const avg = ratings.reduce((a,b) => a + b, 0) / ratings.length;
+      await window.db.collection('users').doc(officeId).update({
+        rating: +avg.toFixed(1), ratingCount: ratings.length
+      });
+    } catch(e) { console.warn(e); }
+  }
+  cmo('moApply');
+  window.selectedStars = 0;
+  notify('شكراً لتقييمك ✅', `تم إرسال تقييمك لـ ${officeName}`, 'success');
 }
 
 async function submitJob() {
