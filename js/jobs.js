@@ -486,6 +486,7 @@ async function submitReferral(jobId) {
     name, phone: ph, email: em, exp,
     cover: note || 'مرشّح من مكتب توظيف',
     referredBy: U?.uid, officeName: P?.officeName || P?.name,
+    applicantId: U?.uid, // المكتب هو من يقدّم الترشيح
     isReferral: true, status: 'pending',
     appliedAt: new Date().toISOString(),
   };

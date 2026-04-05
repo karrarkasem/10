@@ -739,7 +739,7 @@ function viewOfficeJobs(officeId, officeName) {
 
 // ── نظام التقييم ──
 function openRating(officeId, officeName) {
-  let selectedStars = 0;
+  window.selectedStars = 0;
   const el = document.getElementById('moApplyB');
   el.innerHTML = `
     <div style="text-align:center;padding:10px 0 20px">
@@ -749,7 +749,7 @@ function openRating(officeId, officeName) {
         ${[1,2,3,4,5].map(i =>
           `<i class="fas fa-star" id="star_${i}" data-val="${i}"
             style="font-size:36px;color:var(--br);cursor:pointer;transition:color .15s"
-            onmouseover="hoverStars(${i})" onmouseout="hoverStars(selectedStars||0)"
+            onmouseover="hoverStars(${i})" onmouseout="hoverStars(window.selectedStars||0)"
             onclick="selectStar(${i},'${officeId}')"></i>`
         ).join('')}
       </div>
