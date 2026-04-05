@@ -294,19 +294,51 @@ function openCand(a) {
       </a>
     </div>` : ''}
 
+    ${a.quizScore !== null && a.quizScore !== undefined ? `
+    <div class="card cp" style="margin-bottom:16px;background:linear-gradient(135deg,rgba(13,148,136,.07),rgba(13,148,136,.02));border-color:rgba(13,148,136,.2)">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="font-size:28px;font-weight:900;color:${a.quizScore >= 80 ? 'var(--success)' : a.quizScore >= 55 ? 'var(--acc)' : 'var(--danger)'}">${a.quizScore}</div>
+        <div>
+          <div style="font-size:11px;color:var(--tx3)"><i class="fas fa-robot"></i> نتيجة الاختبار الذكي</div>
+          <div style="font-size:12px;color:var(--tx);font-weight:600">${san(a.quizFeedback || '—')}</div>
+        </div>
+        <div style="margin-right:auto">
+          <span class="b ${a.quizScore >= 80 ? 'b-gr' : a.quizScore >= 55 ? 'b-am' : 'b-rd'}">${a.quizScore >= 80 ? 'ممتاز' : a.quizScore >= 55 ? 'جيد' : 'مقبول'}</span>
+        </div>
+      </div>
+    </div>` : ''}
+
     <!-- الإجراءات -->
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px">
-      <button class="btn bo bsm" onclick="notify('تم','تم إرسال دعوة المقابلة للمتقدم','success')">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:9px">
+      <button class="btn bo bsm" onclick="updateCandStatus('${a.id}','interview')">
         <i class="fas fa-calendar-check"></i>دعوة مقابلة
       </button>
-      <button class="btn bsu bsm" onclick="notify('تم القبول 🎉','تم قبول المتقدم وإبلاغه','success')">
+      <button class="btn" style="background:rgba(245,158,11,.12);color:var(--acc);border:1px solid rgba(245,158,11,.3)" onclick="bookCandidate('${a.applicantId}','${san(a.name)}','${a.jobId}')">
+        <i class="fas fa-lock"></i>حجز حصري
+      </button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
+      <button class="btn bsu bsm" onclick="updateCandStatus('${a.id}','hired')">
         <i class="fas fa-check"></i>قبول
       </button>
-      <button class="btn bda bsm" onclick="notify('تم','تم رفض الطلب وإبلاغ المتقدم','warning')">
+      <button class="btn bda bsm" onclick="updateCandStatus('${a.id}','rejected')">
         <i class="fas fa-times"></i>رفض
       </button>
     </div>`;
   oMo('moCand');
+}
+
+async function updateCandStatus(appId, status) {
+  const s = STAT[status];
+  if (!DEMO && window.db && appId && !appId.startsWith('a')) {
+    try { await window.db.collection('applications').doc(appId).update({ status }); } catch(e) {}
+  }
+  // تحديث محلي
+  const app = MY_APPS.find(a => a.id === appId) || DEMO_APPS.find(a => a.id === appId);
+  if (app) app.status = status;
+  notify('تم التحديث ✅', `تم تغيير الحالة إلى: ${s?.l}`, 'success');
+  cmo('moCand');
+  goTo('candidates');
 }
 
 // ── خط التوظيف (Kanban) ──

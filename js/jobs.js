@@ -6,10 +6,18 @@
 let JF = { type: '', cat: '', prov: '', q: '' };
 let JSORT = 'newest'; // newest | salary_high | salary_low | applicants
 
+// ── تحديد نوع الوظيفة ──
+function jobTypeLabel(type) {
+  return { full:'دوام كامل', part:'دوام جزئي', remote:'عن بُعد', gig:'مهمة/مستقل' }[type] || 'مستقل';
+}
+function jobTypeClass(type) {
+  return { full:'b-tl', part:'b-am', remote:'b-bl', gig:'b-pu' }[type] || 'b-pu';
+}
+
 // ── بطاقة وظيفة محسّنة ──
 function jCard(j) {
-  const tl  = j.type === 'full' ? 'دوام كامل' : j.type === 'part' ? 'دوام جزئي' : 'مستقل';
-  const tc  = j.type === 'full' ? 'b-tl' : j.type === 'part' ? 'b-am' : 'b-pu';
+  const tl  = jobTypeLabel(j.type);
+  const tc  = jobTypeClass(j.type);
   const sal = j.salary ? `${fmt(j.salary)}${j.salaryMax ? '–' + fmt(j.salaryMax) : ''}` : 'قابل للتفاوض';
   const saved = isBookmarked(j.id);
   const d = daysLeft(j.deadline);
@@ -38,7 +46,7 @@ function jCard(j) {
             onclick="toggleBookmark('${j.id}',event)" title="حفظ الوظيفة">
             <i class="fas fa-bookmark" style="font-size:12px"></i>
           </button>
-          <button class="btn bp bsm jc-apply-btn" onclick="event.stopPropagation();openApply('${j.id}')">
+          <button class="btn bp bsm jc-apply-btn" onclick="event.stopPropagation();openQuiz('${j.id}')">
             <i class="fas fa-paper-plane"></i>تقدّم
           </button>
         </div>
@@ -88,7 +96,8 @@ function pgJobs(el) {
         <button class="tb2 on"  onclick="JF.type='';setTab(this);rJobs()"><i class="fas fa-th"></i>الكل</button>
         <button class="tb2"     onclick="JF.type='full';setTab(this);rJobs()"><i class="fas fa-briefcase"></i>كامل</button>
         <button class="tb2"     onclick="JF.type='part';setTab(this);rJobs()"><i class="fas fa-clock"></i>جزئي</button>
-        <button class="tb2"     onclick="JF.type='freelance';setTab(this);rJobs()"><i class="fas fa-tasks"></i>مستقل</button>
+        <button class="tb2"     onclick="JF.type='remote';setTab(this);rJobs()"><i class="fas fa-laptop-house"></i>عن بُعد</button>
+        <button class="tb2"     onclick="JF.type='gig';setTab(this);rJobs()"><i class="fas fa-tasks"></i>مهام</button>
       </div>
       <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center">
         ${[
@@ -250,7 +259,7 @@ function openJob(id) {
 
     <!-- أزرار الإجراءات -->
     <div style="display:flex;gap:9px;flex-wrap:wrap">
-      <button class="btn bp blg" style="flex:1" onclick="cmo('moJob');openApply('${j.id}')">
+      <button class="btn bp blg" style="flex:1" onclick="cmo('moJob');openQuiz('${j.id}')">
         <i class="fas fa-paper-plane"></i>تقدّم الآن
       </button>
       <button class="bkm-btn ${saved?'on':''}" data-bkm="${j.id}" onclick="toggleBookmark('${j.id}',event)"
@@ -266,8 +275,8 @@ function openJob(id) {
   oMo('moJob');
 }
 
-// ── نموذج التقديم ──
-function openApply(id) {
+// ── نموذج التقديم (يستقبل نتيجة الاختبار إذا وُجدت) ──
+function openApply(id, quizScore = null, quizFeedback = '') {
   const j = JOBS.find(x => x.id === id);
   if (!j) return;
   SEL_JOB = j;
@@ -308,14 +317,25 @@ function openApply(id) {
       <input type="url" id="ap_url" class="fc" placeholder="https://drive.google.com/...">
     </div>
 
+    ${quizScore !== null ? `
+    <div style="background:linear-gradient(135deg,rgba(13,148,136,.08),rgba(13,148,136,.03));border:1px solid rgba(13,148,136,.2);border-radius:12px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:12px">
+      <div style="font-size:24px;font-weight:900;color:${quizScore >= 80 ? 'var(--success)' : quizScore >= 55 ? 'var(--acc)' : 'var(--danger)'}">${quizScore}</div>
+      <div>
+        <div style="font-size:11px;color:var(--tx3)"><i class="fas fa-robot"></i> نتيجة الاختبار الذكي</div>
+        <div style="font-size:12px;color:var(--tx);font-weight:600">${san(quizFeedback)}</div>
+      </div>
+    </div>` : ''}
+
     <div class="mf" style="padding:0;border:none;margin-top:14px">
       <button class="btn bo" onclick="cmo('moApply')"><i class="fas fa-times"></i>إلغاء</button>
-      <button class="btn bp blg" id="applyBtn" onclick="submitApply()"><i class="fas fa-paper-plane"></i>إرسال الطلب</button>
+      <button class="btn bp blg" id="applyBtn" onclick="submitApply(${quizScore !== null ? quizScore : 'null'},'${san(quizFeedback).replace(/'/g,"\\'")}')">
+        <i class="fas fa-paper-plane"></i>إرسال الطلب
+      </button>
     </div>`;
   oMo('moApply');
 }
 
-async function submitApply() {
+async function submitApply(quizScore = null, quizFeedback = '') {
   const j    = SEL_JOB;
   const name = document.getElementById('ap_n')?.value.trim();
   const ph   = document.getElementById('ap_ph')?.value.trim();
@@ -328,6 +348,8 @@ async function submitApply() {
     jobId: j.id, jobTitle: j.title, company: j.company,
     applicantId: U?.uid || 'demo', name, phone: ph, email: em,
     cover: cv, exp, cvUrl: url || null,
+    quizScore: quizScore !== null ? quizScore : null,
+    quizFeedback: quizFeedback || null,
     status: 'pending', appliedAt: new Date().toISOString()
   };
   loading('applyBtn', true);
