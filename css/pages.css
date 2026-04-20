@@ -158,3 +158,43 @@
   /* Job detail meta */
   .jd-meta-grid { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* ═══════════════════════════════════════════════
+   موبايل محسّن — صفحات (≤ 768px)
+═══════════════════════════════════════════════ */
+
+/* ── Job card footer: stack on tiny phones ── */
+@media (max-width: 380px) {
+  .jft        { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .jc-actions { width: 100%; justify-content: space-between; }
+  .jsal       { font-size: 13px; }
+  .jtit       { font-size: 14px; }
+}
+
+/* ── Auth screen: tighter padding on phones ── */
+@media (max-width: 480px) {
+  .auth-bg  { padding: 12px; }
+  .rc       { padding: 11px 8px; }
+  .rc-ico   { font-size: 22px; }
+  .rc-tit   { font-size: 11px; }
+}
+
+/* ── CV Preview: no huge padding on mobile ── */
+@media (max-width: 480px) {
+  .cvp  { padding: 18px; }
+  .cvph { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .cvname { font-size: 16px; }
+}
+
+/* ── Office hero: compact on mobile ── */
+@media (max-width: 480px) {
+  .ohero { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .prof-banner { height: 80px; }
+}
+
+/* ── App steps tracker: readable on tiny screens ── */
+@media (max-width: 380px) {
+  .app-card-header { padding: 12px 14px; gap: 9px; }
+  .app-card-body   { padding: 12px 14px; }
+  .app-card-logo   { width: 36px; height: 36px; font-size: 15px; }
+}

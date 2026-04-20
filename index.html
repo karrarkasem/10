@@ -59,7 +59,7 @@
           <h2 style="font-size:26px;font-weight:900;color:#fff;margin-bottom:10px">الفانوس للتوظيف</h2>
           <p style="font-size:15px;color:rgba(255,255,255,.7);line-height:1.7">منصة التوظيف الأولى في العراق<br>وظائف حقيقية في 18 محافظة</p>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:32px">
+        <div class="resp-g3" style="margin-bottom:32px">
           <div style="background:rgba(255,255,255,.08);border-radius:12px;padding:12px 8px;text-align:center;border:1px solid rgba(255,255,255,.1)"><div style="font-size:22px">🏙️</div><div style="font-size:11px;color:rgba(255,255,255,.7);margin-top:4px;font-weight:600">بغداد</div></div>
           <div style="background:rgba(255,255,255,.08);border-radius:12px;padding:12px 8px;text-align:center;border:1px solid rgba(255,255,255,.1)"><div style="font-size:22px">🕌</div><div style="font-size:11px;color:rgba(255,255,255,.7);margin-top:4px;font-weight:600">كربلاء</div></div>
           <div style="background:rgba(255,255,255,.08);border-radius:12px;padding:12px 8px;text-align:center;border:1px solid rgba(255,255,255,.1)"><div style="font-size:22px">🌿</div><div style="font-size:11px;color:rgba(255,255,255,.7);margin-top:4px;font-weight:600">النجف</div></div>
@@ -588,7 +588,7 @@ function pgAdminUsers(el) {
   el.innerHTML = `
     <div class="sh"><div class="st"><div class="st-ico"><i class="fas fa-users"></i></div>المستخدمون</div></div>
     <div class="al al-i" style="margin-bottom:18px"><i class="fas fa-info-circle"></i>وصّل Firebase لعرض المستخدمين الفعليين.</div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+    <div class="resp-g3" style="gap:12px">
       ${[{l:'الباحثون',v:98,ic:'fa-user-tie',c:'var(--p)'},{l:'المكاتب',v:8,ic:'fa-building',c:'var(--purple)'},{l:'المديرون',v:3,ic:'fa-shield-alt',c:'var(--acc)'}]
         .map(x => '<div class="card cp" style="text-align:center"><div class="si" style="width:44px;height:44px;border-radius:12px;background:' + x.c + '18;color:' + x.c + ';margin:0 auto 10px;font-size:18px;display:flex;align-items:center;justify-content:center"><i class="fas ' + x.ic + '"></i></div><div style="font-size:24px;font-weight:900;color:var(--tx)">' + x.v + '</div><div style="font-size:11px;color:var(--tx3)">' + x.l + '</div></div>').join('')}
     </div>`;
