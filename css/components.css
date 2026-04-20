@@ -6,6 +6,7 @@
 .shell   { display: flex; min-height: 100vh; }
 .main    { flex: 1; margin-right: 256px; min-height: 100vh; display: flex; flex-direction: column; }
 .pc      { padding: 22px; flex: 1; }
+@media (min-width: 769px) and (max-width: 1024px) { .main { margin-right: 210px; } .pc { padding: 16px; } }
 @media (max-width: 768px) { .main { margin-right: 0; } .pc { padding: 14px; padding-bottom: 74px; } }
 
 /* ── Sidebar ── */
@@ -16,6 +17,7 @@
   transition: transform .3s cubic-bezier(.4,0,.2,1);
 }
 .sidebar::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(13,148,136,.18) 0%, transparent 35%); pointer-events: none; }
+@media (min-width: 769px) and (max-width: 1024px) { .sidebar { width: 210px; } }
 @media (max-width: 768px) { .sidebar { transform: translateX(100%); } .sidebar.open { transform: translateX(0); } }
 .ov { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.65); z-index: 299; backdrop-filter: blur(3px); animation: fadeIn .2s ease; }
 
@@ -300,6 +302,7 @@
 
 /* ── Application Summary Header ── */
 .app-summary { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:18px; }
+@media (min-width:769px) and (max-width:920px) { .app-summary { grid-template-columns:repeat(2,1fr); } }
 @media (max-width:560px) { .app-summary { grid-template-columns:repeat(2,1fr); } }
 .app-sum-item { background:var(--bgc); border:1px solid var(--br); border-radius:var(--r); padding:14px; text-align:center; cursor:pointer; transition:all .2s; }
 .app-sum-item:hover { border-color:var(--p); background:var(--bgc2); }
@@ -351,3 +354,35 @@
 .info-row { display:flex; gap:14px; flex-wrap:wrap; margin:10px 0; }
 .info-item { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--tx2); }
 .info-item i { color:var(--tx3); font-size:10px; }
+
+/* ═══════════════════════════════════════════════
+   الأجهزة اللوحية (Tablet 769px – 1024px)
+═══════════════════════════════════════════════ */
+@media (min-width:769px) and (max-width:1024px) {
+  /* Sidebar nav text & items compact */
+  .ni       { padding: 8px 14px; font-size: 12px; }
+  .sbl      { padding: 16px 14px 14px; }
+  .sbl-name { font-size: 15px; }
+
+  /* Topbar */
+  .tb       { padding: 0 16px; height: 56px; }
+  .tb-title { font-size: 15px; }
+
+  /* Stats grid tighter minimum */
+  .sg       { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
+
+  /* Quick action cards — keep 2-col but with less padding */
+  .qact-card  { padding: 14px; }
+  .qact-ico   { width: 38px; height: 38px; font-size: 16px; margin-bottom: 8px; }
+
+  /* Category grid 2 cols on small tablets */
+  .cat-grid   { grid-template-columns: repeat(2, 1fr); }
+
+  /* Modal max-width fits tablet */
+  .md     { max-width: 96vw; }
+  .md-lg  { max-width: 96vw; }
+  .md-xl  { max-width: 98vw; }
+
+  /* Notification panel */
+  .notif-panel { width: 290px; }
+}
