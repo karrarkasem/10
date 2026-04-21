@@ -110,6 +110,7 @@ async function doRegister() {
   const email = document.getElementById('re').value.trim();
   const pass  = document.getElementById('rp2').value;
   if (!name || !phone || !prov || !email || !pass) { showErr('rerr', 'أكمل جميع الحقول المطلوبة'); return; }
+  if (!/^07[3-9]\d{8}$/.test(phone.replace(/\s/g,''))) { showErr('rerr', 'رقم الهاتف يجب أن يكون عراقياً صحيحاً (07XXXXXXXXX)'); return; }
   if (pass.length < 8) { showErr('rerr', 'كلمة المرور يجب أن تكون 8 أحرف على الأقل'); return; }
   if (DEMO) { enterDemo(); return; }
   loading('regBtn', true);
@@ -197,13 +198,17 @@ function enterDemo() {
 // ── ترجمة أخطاء Firebase ──
 function fbErr(c) {
   const m = {
-    'auth/user-not-found'      : 'البريد الإلكتروني غير مسجل',
-    'auth/wrong-password'      : 'كلمة المرور غير صحيحة',
-    'auth/email-already-in-use': 'البريد الإلكتروني مستخدم مسبقاً',
-    'auth/invalid-email'       : 'البريد الإلكتروني غير صالح',
-    'auth/weak-password'       : 'كلمة المرور ضعيفة جداً',
-    'auth/too-many-requests'   : 'طلبات كثيرة، حاول لاحقاً',
-    'auth/network-request-failed': 'خطأ في الشبكة',
+    'auth/user-not-found'        : 'البريد الإلكتروني غير مسجل في المنصة',
+    'auth/wrong-password'        : 'كلمة المرور غير صحيحة',
+    'auth/invalid-credential'    : 'البريد أو كلمة المرور غير صحيحة',
+    'auth/email-already-in-use'  : 'البريد الإلكتروني مستخدم مسبقاً',
+    'auth/invalid-email'         : 'البريد الإلكتروني غير صالح',
+    'auth/weak-password'         : 'كلمة المرور ضعيفة جداً — استخدم 8 أحرف على الأقل',
+    'auth/too-many-requests'     : 'محاولات كثيرة، حاول لاحقاً',
+    'auth/network-request-failed': 'خطأ في الشبكة، تحقق من اتصالك',
+    'auth/popup-closed-by-user'  : 'أُغلقت نافذة تسجيل الدخول، حاول مرة أخرى',
+    'auth/cancelled-popup-request': 'تم إلغاء تسجيل الدخول',
+    'auth/account-exists-with-different-credential': 'البريد مرتبط بطريقة تسجيل دخول أخرى',
   };
   return m[c] || 'حدث خطأ، يرجى المحاولة مرة أخرى';
 }

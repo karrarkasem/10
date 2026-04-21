@@ -186,7 +186,8 @@ async function notifyAdmin(subj, html, tg) {
 // الثيم
 // ═══════════════════════════════════════════════
 function initTheme() {
-  const t  = localStorage.getItem('fanoos_theme') || 'light';
+  let t = localStorage.getItem('fanoos_theme');
+  if (!t) t = window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   document.documentElement.setAttribute('data-theme', t);
   const ic = document.getElementById('thIco');
   if (ic) ic.className = t === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
@@ -250,6 +251,8 @@ function buildNav() {
 }
 
 function goTo(page) {
+  // تنظيف عداد الحجوزات عند مغادرة الصفحة
+  if (window._bookingTimer) { clearInterval(window._bookingTimer); window._bookingTimer = null; }
   closeSidebar();
   document.querySelectorAll('.ni').forEach(el  => el.classList.remove('on'));
   document.querySelectorAll('.bni').forEach(el => el.classList.remove('on'));
@@ -257,6 +260,8 @@ function goTo(page) {
   document.getElementById(`bni_${page}`)?.classList.add('on');
   const def = getNav().find(p => p.id === page);
   document.getElementById('tbTitle').textContent = def?.label || '';
+  // حفظ الصفحة في الـ hash لاستعادتها عند التحديث
+  history.replaceState(null, '', '#' + page);
   renderPage(page);
 }
 
@@ -317,7 +322,11 @@ function bootApp() {
   // إظهار شارة الإشعارات إذا كان هناك طلبات
   const ndot = document.getElementById('ndot');
   if (ndot && MY_APPS.length > 0) ndot.style.display = 'block';
-  goTo('home');
+  // استعادة آخر صفحة من URL hash
+  const hash = location.hash.replace('#', '');
+  const validPages = getNav().map(p => p.id);
+  const startPage = validPages.includes(hash) ? hash : 'home';
+  goTo(startPage);
 }
 
 // إغلاق المودالات بالنقر خارجها

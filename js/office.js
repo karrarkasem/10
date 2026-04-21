@@ -237,8 +237,8 @@ function renderCandRows(apps) {
       <td><span class="b ${s.c}"><i class="fas ${s.ico}"></i>${s.l}</span></td>
       <td><div style="display:flex;gap:5px;flex-wrap:wrap">
         <button class="btn bp bsm" onclick="openCand(${JSON.stringify(a).replace(/"/g,'&quot;')})"><i class="fas fa-eye"></i></button>
-        <button class="btn bsu bsm" onclick="quickUpdateStatus(this,'hired',event)"   title="قبول"><i class="fas fa-check"></i></button>
-        <button class="btn bda bsm" onclick="quickUpdateStatus(this,'rejected',event)" title="رفض"><i class="fas fa-times"></i></button>
+        <button class="btn bsu bsm" onclick="quickUpdateStatus(this,'hired','${a.id}',event)"   title="قبول"><i class="fas fa-check"></i></button>
+        <button class="btn bda bsm" onclick="quickUpdateStatus(this,'rejected','${a.id}',event)" title="رفض"><i class="fas fa-times"></i></button>
       </div></td>
     </tr>`;
   }).join('');
@@ -256,11 +256,18 @@ function filterCandsByStatus(status) {
   if (tbody) tbody.innerHTML = renderCandRows(apps);
 }
 
-function quickUpdateStatus(btn, status, e) {
+async function quickUpdateStatus(btn, status, appId, e) {
   if (e) e.stopPropagation();
   const s    = STAT[status];
   const cell = btn.closest('tr')?.querySelector('td:nth-child(5)');
   if (cell && s) cell.innerHTML = `<span class="b ${s.c}"><i class="fas ${s.ico}"></i>${s.l}</span>`;
+  // تحديث في Firestore
+  if (!DEMO && window.db && appId && !appId.startsWith('a')) {
+    try { await window.db.collection('applications').doc(appId).update({ status }); } catch(_) {}
+  }
+  // تحديث محلي
+  const app = DEMO_APPS.find(a => a.id === appId);
+  if (app) app.status = status;
   notify('تم التحديث ✅', `تم تغيير الحالة إلى: ${s?.l || status}`, 'success');
 }
 
@@ -286,14 +293,18 @@ function openCand(a) {
         </div>
         <div style="font-size:11px;color:var(--tx3);margin-top:6px">
           <!-- وسائل التواصل تظهر فقط عند قبول المتقدم -->
-          ${a.status === 'hired'
+          ${['interview','hired'].includes(a.status)
             ? `<div class="info-row" style="margin-top:4px">
                 <div class="info-item"><i class="fas fa-envelope" style="color:var(--p)"></i>${san(a.email)}</div>
                 <div class="info-item"><i class="fas fa-phone" style="color:var(--success)"></i>${san(a.phone)}</div>
+                <a href="https://wa.me/964${san(a.phone).replace(/^0/,'')}" target="_blank"
+                  style="display:inline-flex;align-items:center;gap:4px;background:#25D366;color:#fff;font-size:10px;font-weight:700;padding:4px 10px;border-radius:20px;text-decoration:none;margin-top:4px">
+                  <i class="fab fa-whatsapp"></i>واتساب
+                </a>
                </div>`
             : `<div class="al al-i" style="margin-top:6px;font-size:10px;padding:6px 10px">
                 <i class="fas fa-lock"></i>
-                <span>وسائل التواصل تظهر بعد قبول المتقدم</span>
+                <span>وسائل التواصل تظهر عند دعوته للمقابلة</span>
                </div>`
           }
         </div>
@@ -340,9 +351,25 @@ function openCand(a) {
       </div>
     </div>` : ''}
 
+    <!-- تفاصيل المقابلة إن وُجدت -->
+    ${a.status === 'interview' && a.interviewDate ? `
+    <div class="card cp" style="margin-bottom:16px;background:linear-gradient(135deg,rgba(139,92,246,.07),rgba(139,92,246,.02));border-color:rgba(139,92,246,.2)">
+      <div style="font-size:11px;color:var(--tx3);margin-bottom:6px;font-weight:700"><i class="fas fa-calendar-check" style="color:var(--purple)"></i> موعد المقابلة</div>
+      <div style="font-size:13px;font-weight:800;color:var(--tx)">${a.interviewType || 'حضوري'} — ${a.interviewDate} الساعة ${a.interviewTime || ''}</div>
+      ${a.interviewNote ? `<div style="font-size:11px;color:var(--tx2);margin-top:6px">${san(a.interviewNote)}</div>` : ''}
+    </div>` : ''}
+
+    <!-- سبب الرفض إن وُجد -->
+    ${a.status === 'rejected' && a.rejectionReason ? `
+    <div class="al al-d" style="margin-bottom:16px">
+      <i class="fas fa-info-circle"></i>
+      <div><div style="font-weight:700">سبب الرفض: ${san(a.rejectionReason)}</div>
+      ${a.rejectionNote ? `<div style="font-size:11px;margin-top:3px">${san(a.rejectionNote)}</div>` : ''}</div>
+    </div>` : ''}
+
     <!-- الإجراءات -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:9px">
-      <button class="btn bo bsm" onclick="updateCandStatus('${a.id}','interview')">
+      <button class="btn bo bsm" onclick="updateCandStatus('${a.id}','interview')" ${a.status === 'hired' ? 'disabled' : ''}>
         <i class="fas fa-calendar-check"></i>دعوة مقابلة
       </button>
       <button class="btn" style="background:rgba(245,158,11,.12);color:var(--acc);border:1px solid rgba(245,158,11,.3)" onclick="bookCandidate('${a.applicantId}','${san(a.name)}','${a.jobId}')">
@@ -350,10 +377,10 @@ function openCand(a) {
       </button>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
-      <button class="btn bsu bsm" onclick="updateCandStatus('${a.id}','hired')">
+      <button class="btn bsu bsm" onclick="updateCandStatus('${a.id}','hired')" ${a.status === 'hired' ? 'disabled style="opacity:.5"' : ''}>
         <i class="fas fa-check"></i>قبول
       </button>
-      <button class="btn bda bsm" onclick="updateCandStatus('${a.id}','rejected')">
+      <button class="btn bda bsm" onclick="updateCandStatus('${a.id}','rejected')" ${a.status === 'rejected' ? 'disabled style="opacity:.5"' : ''}>
         <i class="fas fa-times"></i>رفض
       </button>
     </div>`;
@@ -361,16 +388,113 @@ function openCand(a) {
 }
 
 async function updateCandStatus(appId, status) {
+  // عرض نافذة تحديد موعد المقابلة
+  if (status === 'interview') {
+    return openInterviewSchedule(appId);
+  }
+  // عرض نافذة سبب الرفض
+  if (status === 'rejected') {
+    return openRejectionDialog(appId);
+  }
+  await _doUpdateStatus(appId, status);
+}
+
+async function _doUpdateStatus(appId, status, extra = {}) {
   const s = STAT[status];
   if (!DEMO && window.db && appId && !appId.startsWith('a')) {
-    try { await window.db.collection('applications').doc(appId).update({ status }); } catch(e) {}
+    try { await window.db.collection('applications').doc(appId).update({ status, ...extra }); } catch(e) {}
   }
-  // تحديث محلي
   const app = MY_APPS.find(a => a.id === appId) || DEMO_APPS.find(a => a.id === appId);
-  if (app) app.status = status;
+  if (app) { app.status = status; Object.assign(app, extra); }
   notify('تم التحديث ✅', `تم تغيير الحالة إلى: ${s?.l}`, 'success');
   cmo('moCand');
   goTo('candidates');
+}
+
+function openInterviewSchedule(appId) {
+  document.getElementById('moApplyB').innerHTML = `
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="width:56px;height:56px;border-radius:50%;background:rgba(139,92,246,.12);color:var(--purple);font-size:22px;display:flex;align-items:center;justify-content:center;margin:0 auto 10px"><i class="fas fa-calendar-check"></i></div>
+      <div style="font-size:16px;font-weight:900;color:var(--tx)">دعوة لمقابلة عمل</div>
+      <div style="font-size:12px;color:var(--tx2);margin-top:4px">حدد موعد المقابلة وطريقتها</div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label class="fl req">تاريخ المقابلة</label>
+        <input type="date" id="iv_date" class="fc" min="${new Date().toISOString().split('T')[0]}">
+      </div>
+      <div class="fg"><label class="fl req">الوقت</label>
+        <input type="time" id="iv_time" class="fc">
+      </div>
+    </div>
+    <div class="fg"><label class="fl req">طريقة المقابلة</label>
+      <select id="iv_type" class="fc">
+        <option value="حضوري">حضوري في المكتب</option>
+        <option value="فيديو">مقابلة فيديو (Zoom / Teams)</option>
+        <option value="هاتفي">هاتفي</option>
+      </select>
+    </div>
+    <div class="fg"><label class="fl">ملاحظات للمتقدم (اختياري)</label>
+      <textarea id="iv_note" class="fc" rows="2" placeholder="مثال: احضر سيرتك الذاتية وشهاداتك الأصلية..."></textarea>
+    </div>
+    <div class="mf" style="padding:0;border:none;margin-top:14px">
+      <button class="btn bo" onclick="cmo('moApply')"><i class="fas fa-times"></i>إلغاء</button>
+      <button class="btn bsm bfu" id="ivSubmitBtn" style="background:var(--purple);color:#fff;border:none;flex:1"
+        onclick="submitInterview('${appId}')">
+        <i class="fas fa-paper-plane"></i>إرسال الدعوة
+      </button>
+    </div>`;
+  cmo('moCand');
+  oMo('moApply');
+}
+
+async function submitInterview(appId) {
+  const date = document.getElementById('iv_date')?.value;
+  const time = document.getElementById('iv_time')?.value;
+  const type = document.getElementById('iv_type')?.value;
+  const note = document.getElementById('iv_note')?.value.trim();
+  if (!date || !time) { notify('تنبيه', 'حدد تاريخ ووقت المقابلة', 'warning'); return; }
+  loading('ivSubmitBtn', true);
+  const interviewData = { interviewDate: date, interviewTime: time, interviewType: type, interviewNote: note || null };
+  cmo('moApply');
+  await _doUpdateStatus(appId, 'interview', interviewData);
+}
+
+function openRejectionDialog(appId) {
+  document.getElementById('moApplyB').innerHTML = `
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="width:56px;height:56px;border-radius:50%;background:rgba(239,68,68,.1);color:var(--danger);font-size:22px;display:flex;align-items:center;justify-content:center;margin:0 auto 10px"><i class="fas fa-times-circle"></i></div>
+      <div style="font-size:16px;font-weight:900;color:var(--tx)">رفض الطلب</div>
+      <div style="font-size:12px;color:var(--tx2);margin-top:4px">يساعد ذكر السبب المتقدم على تحسين نفسه</div>
+    </div>
+    <div class="fg"><label class="fl">سبب الرفض</label>
+      <select id="rej_reason" class="fc">
+        <option value="الخبرة لا تتطابق مع المتطلبات">الخبرة لا تتطابق مع المتطلبات</option>
+        <option value="المؤهلات غير كافية">المؤهلات غير كافية</option>
+        <option value="تم شغل الوظيفة">تم شغل الوظيفة</option>
+        <option value="لا يتناسب مع بيئة العمل">لا يتناسب مع بيئة العمل</option>
+        <option value="طلب راتب أعلى من الميزانية">طلب راتب أعلى من الميزانية</option>
+        <option value="أخرى">أخرى (أذكر في الملاحظات)</option>
+      </select>
+    </div>
+    <div class="fg"><label class="fl">ملاحظات إضافية (اختياري)</label>
+      <textarea id="rej_note" class="fc" rows="2" placeholder="نصيحة للمتقدم..."></textarea>
+    </div>
+    <div class="mf" style="padding:0;border:none;margin-top:14px">
+      <button class="btn bo" onclick="cmo('moApply')"><i class="fas fa-times"></i>إلغاء</button>
+      <button class="btn bda bfu" id="rejSubmitBtn" onclick="submitRejection('${appId}')">
+        <i class="fas fa-ban"></i>تأكيد الرفض
+      </button>
+    </div>`;
+  cmo('moCand');
+  oMo('moApply');
+}
+
+async function submitRejection(appId) {
+  const reason = document.getElementById('rej_reason')?.value;
+  const note   = document.getElementById('rej_note')?.value.trim();
+  loading('rejSubmitBtn', true);
+  cmo('moApply');
+  await _doUpdateStatus(appId, 'rejected', { rejectionReason: reason, rejectionNote: note || null });
 }
 
 // ── خط التوظيف (Kanban) ──
@@ -516,7 +640,7 @@ function pgOfficeProfile(el) {
       </div>
       <div class="al al-i" style="margin-top:12px">
         <i class="fas fa-shield-alt"></i>
-        <span>جميع الخطط تشمل ضمان استرجاع المبلغ خلال 7 أيام. الدفع بواسطة ZainCash أو بطاقة مصرفية.</span>
+        <span>ضمان استرجاع خلال 7 أيام. الدفع عبر: <strong>ZainCash</strong> • <strong>AsiaHawala</strong> • <strong>FIB</strong> • بطاقة مصرفية</span>
       </div>
     </div>
 

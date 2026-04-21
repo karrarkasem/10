@@ -365,6 +365,7 @@ async function submitApply(quizScore = null, quizFeedback = '') {
   const exp  = document.getElementById('ap_exp')?.value;
   const url  = document.getElementById('ap_url')?.value.trim();
   if (!name || !ph || !em || !cv) { notify('خطأ', 'أكمل الحقول المطلوبة', 'error'); return; }
+  if (!/^07[3-9]\d{8}$/.test(ph.replace(/\s/g,''))) { notify('خطأ', 'رقم الهاتف يجب أن يكون رقم عراقي صحيح (07XXXXXXXXX)', 'error'); return; }
   const app = {
     jobId: j.id, jobTitle: j.title, company: j.company,
     applicantId: U?.uid || 'demo', name, phone: ph, email: em,
@@ -540,6 +541,7 @@ async function submitReferral(jobId) {
   const exp  = document.getElementById('ref_exp')?.value;
   const note = document.getElementById('ref_note')?.value.trim();
   if (!name || !ph || !em) { notify('خطأ', 'أكمل بيانات المرشّح', 'error'); return; }
+  if (!/^07[3-9]\d{8}$/.test(ph.replace(/\s/g,''))) { notify('خطأ', 'رقم الهاتف يجب أن يكون عراقياً (07XXXXXXXXX)', 'error'); return; }
   loading('refBtn', true);
   const ref = {
     jobId, jobTitle: j?.title, company: j?.company,
@@ -547,7 +549,6 @@ async function submitReferral(jobId) {
     name, phone: ph, email: em, exp,
     cover: note || 'مرشّح من مكتب توظيف',
     referredBy: U?.uid, officeName: P?.officeName || P?.name,
-    applicantId: U?.uid, // المكتب هو من يقدّم الترشيح
     isReferral: true, status: 'pending',
     appliedAt: new Date().toISOString(),
   };

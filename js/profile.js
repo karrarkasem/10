@@ -75,7 +75,7 @@ function pgSeekerProfile(el) {
         <button class="btn bda bsm" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i>تسجيل الخروج</button>
       </div>
       <div id="changePwSection" style="display:none;margin-top:14px">
-        <div class="div"></div>
+        <div style="border-top:1px solid var(--br);margin-bottom:14px"></div>
         <div style="font-size:12px;font-weight:800;color:var(--tx);margin-bottom:10px"><i class="fas fa-lock" style="color:var(--p)"></i> تغيير كلمة المرور</div>
         <div class="fg">
           <label class="fl req">كلمة المرور الحالية</label>
@@ -130,7 +130,13 @@ async function doChangePassword() {
     document.getElementById('changePwSection').style.display = 'none';
     ['pw_curr','pw_new','pw_conf'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   } catch(e) {
-    const msgs = { 'auth/wrong-password':'كلمة المرور الحالية غير صحيحة', 'auth/too-many-requests':'محاولات كثيرة، حاول لاحقاً', 'auth/requires-recent-login':'يرجى تسجيل الدخول من جديد' };
+    const msgs = {
+      'auth/wrong-password'        : 'كلمة المرور الحالية غير صحيحة',
+      'auth/invalid-credential'    : 'كلمة المرور الحالية غير صحيحة',
+      'auth/too-many-requests'     : 'محاولات كثيرة جداً، حاول لاحقاً',
+      'auth/requires-recent-login' : 'يرجى تسجيل الدخول مجدداً ثم المحاولة',
+      'auth/network-request-failed': 'خطأ في الشبكة، تحقق من اتصالك',
+    };
     const msg = msgs[e.code] || 'حدث خطأ، حاول مجدداً';
     if (err) { err.textContent = msg; err.style.display = 'block'; }
     notify('خطأ', msg, 'error');
@@ -146,6 +152,7 @@ async function saveProfile() {
     bio:      document.getElementById('ebio')?.value  || '',
   };
   if (!d.name) { notify('خطأ', 'يرجى إدخال اسمك الكامل', 'error'); return; }
+  if (d.phone && !/^07[3-9]\d{8}$/.test(d.phone.replace(/\s/g,''))) { notify('خطأ', 'رقم الهاتف يجب أن يكون رقم عراقي صحيح (07XXXXXXXXX)', 'error'); return; }
   P = { ...P, ...d };
   if (!DEMO && window.db && U) { try { await window.db.collection('users').doc(U.uid).update(d); } catch(e) {} }
   updateUserUI();
