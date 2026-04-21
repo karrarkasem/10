@@ -125,12 +125,15 @@ function hideErr(id)       { const e = document.getElementById(id); if (e) e.sty
 // حماية الصلاحيات — يُستخدم في كل إجراء حساس
 // ═══════════════════════════════════════════════
 function requireAuth(requiredRole) {
-  // المستخدم في الوضع التجريبي أو غير مسجّل
-  if (DEMO || !U) {
+  // المستخدم غير مسجّل أو ضيف مجهول
+  if (DEMO || !U || ROLE === 'guest') {
     confirm2(
-      '🔐 تسجيل مطلوب',
+      'تسجيل مطلوب',
       'يجب أن تكون مسجلاً في المنصة للقيام بهذا الإجراء. سجّل الآن مجاناً!',
-      () => {
+      async () => {
+        // تسجيل خروج الضيف المجهول أولاً
+        if (U?.isAnonymous && window.auth) await window.auth.signOut();
+        U = null; P = null; ROLE = null;
         document.getElementById('app').style.display = 'none';
         document.getElementById('authScreen').style.display = 'flex';
         document.getElementById('screenWho').style.display = 'block';
@@ -150,6 +153,18 @@ function requireAuth(requiredRole) {
     return false;
   }
   return true;
+}
+
+function guestBanner() {
+  if (ROLE !== 'guest') return '';
+  return `<div style="background:linear-gradient(135deg,var(--p),#a78bfa);border-radius:14px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+    <i class="fas fa-eye" style="color:rgba(255,255,255,.8);font-size:20px"></i>
+    <div style="flex:1;min-width:160px">
+      <div style="color:#fff;font-weight:700;font-size:14px;margin-bottom:2px">تصفح كضيف — الوظائف والمكاتب فقط</div>
+      <div style="color:rgba(255,255,255,.8);font-size:12px">سجّل مجاناً للتقديم على الوظائف والاستفادة من جميع الميزات</div>
+    </div>
+    <button onclick="requireAuth()" style="background:#fff;color:var(--p);border:none;border-radius:9px;padding:8px 18px;font-weight:700;font-size:13px;cursor:pointer;font-family:Cairo,sans-serif;white-space:nowrap">سجّل الآن</button>
+  </div>`;
 }
 
 function emptyState(ico, tit, desc, btn = '') {
@@ -214,6 +229,16 @@ function toggleTheme() {
 // ═══════════════════════════════════════════════
 // قائمة التنقل
 // ═══════════════════════════════════════════════
+const NAV_EMPLOYER = [
+  { id:'emp_home',    icon:'fa-tachometer-alt', label:'لوحة التحكم',  btm:true  },
+  { id:'emp_jobs',    icon:'fa-briefcase',       label:'وظائفي',        btm:true  },
+  { id:'emp_apps',    icon:'fa-users',           label:'المتقدمون',     btm:true  },
+  { id:'emp_profile', icon:'fa-building',        label:'ملف الشركة',   btm:true  },
+];
+const NAV_GUEST = [
+  { id:'jobs',    icon:'fa-briefcase', label:'الوظائف',         btm:true  },
+  { id:'offices', icon:'fa-building',  label:'مكاتب التوظيف', btm:true  },
+];
 const NAV_SEEKER = [
   { id:'home',      icon:'fa-home',           label:'الرئيسية',         btm:true  },
   { id:'jobs',      icon:'fa-briefcase',       label:'الوظائف',           btm:true  },
@@ -240,7 +265,11 @@ const NAV_ADMIN = [
 ];
 
 function getNav() {
-  return ROLE === 'office' ? NAV_OFFICE : ROLE === 'admin' ? NAV_ADMIN : NAV_SEEKER;
+  if (ROLE === 'office')    return NAV_OFFICE;
+  if (ROLE === 'admin')     return NAV_ADMIN;
+  if (ROLE === 'employer')  return NAV_EMPLOYER;
+  if (ROLE === 'guest')     return NAV_GUEST;
+  return NAV_SEEKER;
 }
 
 function buildNav() {
@@ -249,8 +278,15 @@ function buildNav() {
   pages.forEach(p => {
     html += `<div class="ni" id="ni_${p.id}" onclick="goTo('${p.id}')"><i class="fas ${p.icon} ico"></i>${p.label}</div>`;
   });
-  html += `<div class="nav-lbl">أخرى</div>
-    <div class="ni" onclick="doLogout()"><i class="fas fa-sign-out-alt ico"></i>تسجيل الخروج</div>`;
+  if (ROLE === 'guest') {
+    html += `<div class="nav-lbl">انضم إلينا</div>
+      <div class="ni" onclick="doLogout()" style="background:var(--p);color:#fff;border-radius:10px;margin:4px 8px;font-weight:700">
+        <i class="fas fa-user-plus ico"></i>سجّل مجاناً الآن
+      </div>`;
+  } else {
+    html += `<div class="nav-lbl">أخرى</div>
+      <div class="ni" onclick="doLogout()"><i class="fas fa-sign-out-alt ico"></i>تسجيل الخروج</div>`;
+  }
   document.getElementById('navEl').innerHTML = html;
 
   const btm = pages.filter(p => p.btm);
@@ -277,6 +313,19 @@ function goTo(page) {
 function renderPage(pg) {
   pageFadeIn();
   const el = document.getElementById('pcon');
+  if (ROLE === 'guest') {
+    if (pg === 'jobs')    return pgJobs(el);
+    if (pg === 'offices') return pgOfficesList(el);
+    notify('تسجيل مطلوب', 'سجّل حساباً مجانياً للوصول لهذه الميزة', 'warning');
+    return pgJobs(el);
+  }
+  if (ROLE === 'employer') {
+    if (pg === 'emp_home')    return pgEmployerHome(el);
+    if (pg === 'emp_jobs')    return pgEmployerJobs(el);
+    if (pg === 'emp_apps')    return pgEmployerApps(el);
+    if (pg === 'emp_profile') return pgEmployerProfile(el);
+    return pgEmployerHome(el);
+  }
   if (ROLE === 'office') {
     if (pg === 'home')       return pgOfficeHome(el);
     if (pg === 'myjobs')     return pgOfficeJobs(el);
@@ -319,7 +368,8 @@ function updateUserUI() {
     el.innerHTML = photo ? `<img src="${photo}" alt="">` : init;
   });
   document.getElementById('sname').textContent = name;
-  document.getElementById('srole').textContent = ROLE === 'office' ? 'مكتب توظيف' : ROLE === 'admin' ? 'مدير النظام' : 'باحث عن عمل';
+  const roleLabels = { office:'مكتب توظيف', admin:'مدير النظام', employer:'صاحب عمل', guest:'زائر — سجّل للاستفادة الكاملة', seeker:'باحث عن عمل' };
+  document.getElementById('srole').textContent = roleLabels[ROLE] || 'باحث عن عمل';
 }
 
 function bootApp() {
@@ -333,8 +383,9 @@ function bootApp() {
   if (ndot && MY_APPS.length > 0) ndot.style.display = 'block';
   // استعادة آخر صفحة من URL hash
   const hash = location.hash.replace('#', '');
-  const validPages = getNav().map(p => p.id);
-  const startPage = validPages.includes(hash) ? hash : 'home';
+  const nav = getNav();
+  const validPages = nav.map(p => p.id);
+  const startPage = validPages.includes(hash) ? hash : (nav[0]?.id || 'home');
   goTo(startPage);
 }
 

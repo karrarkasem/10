@@ -76,6 +76,8 @@ function pickRole(r) {
   if (ro) ro.classList.toggle('on', r === 'office');
   const offF = document.getElementById('officeF');
   if (offF) offF.style.display = r === 'office' ? 'block' : 'none';
+  const empF = document.getElementById('employerF');
+  if (empF) empF.style.display = r === 'employer' ? 'block' : 'none';
 }
 
 function togglePw(id, btn) {
@@ -112,15 +114,25 @@ async function doRegister() {
   if (!name || !phone || !prov || !email || !pass) { showErr('rerr', 'أكمل جميع الحقول المطلوبة'); return; }
   if (!/^07[3-9]\d{8}$/.test(phone.replace(/\s/g,''))) { showErr('rerr', 'رقم الهاتف يجب أن يكون عراقياً صحيحاً (07XXXXXXXXX)'); return; }
   if (pass.length < 8) { showErr('rerr', 'كلمة المرور يجب أن تكون 8 أحرف على الأقل'); return; }
+  if (SEL_ROLE === 'employer') {
+    const empName = document.getElementById('remp_name')?.value.trim();
+    const empType = document.getElementById('remp_type')?.value;
+    if (!empName || !empType) { showErr('rerr', 'أدخل اسم الشركة ونوع النشاط التجاري'); return; }
+  }
   if (DEMO) { enterDemo(); return; }
   loading('regBtn', true);
   try {
     const cred = await window.auth.createUserWithEmailAndPassword(email, pass);
     await cred.user.updateProfile({ displayName: name });
-    const offN = SEL_ROLE === 'office' ? document.getElementById('ron').value.trim() : null;
+    const offN = SEL_ROLE === 'office'   ? document.getElementById('ron')?.value.trim()       : null;
+    const empN = SEL_ROLE === 'employer' ? document.getElementById('remp_name')?.value.trim() : null;
+    const empT = SEL_ROLE === 'employer' ? document.getElementById('remp_type')?.value        : null;
     await window.db.collection('users').doc(cred.user.uid).set({
       name, phone, province: prov, email,
-      role: SEL_ROLE, officeName: offN || null,
+      role: SEL_ROLE,
+      officeName:   offN || null,
+      companyName:  empN || null,
+      businessType: empT || null,
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       status: 'active',
     });
@@ -173,7 +185,8 @@ async function forgotPass() {
 
 // ── تسجيل الخروج ──
 async function doLogout() {
-  confirm2('تسجيل الخروج', 'هل تريد تسجيل الخروج من الحساب؟', async () => {
+  const isGuest = U?.isAnonymous;
+  const run = async () => {
     if (!DEMO && window.auth) await window.auth.signOut();
     U = null; P = null; ROLE = null;
     document.getElementById('app').style.display        = 'none';
@@ -181,13 +194,28 @@ async function doLogout() {
     document.getElementById('screenWho').style.display  = 'block';
     document.getElementById('screenAuth').style.display = 'none';
     SEL_ROLE = 'seeker';
-    notify('وداعاً!', 'تم تسجيل الخروج بنجاح', 'info');
-  });
+    if (!isGuest) notify('وداعاً!', 'تم تسجيل الخروج بنجاح', 'info');
+  };
+  if (isGuest) { await run(); } else { confirm2('تسجيل الخروج', 'هل تريد تسجيل الخروج من الحساب؟', run); }
 }
 
 // ── وضع تجريبي — محذوف (يتطلب تسجيل حقيقي) ──
 function enterDemo() {
   notify('تنبيه', 'الوضع التجريبي غير متاح. سجّل حساباً مجانياً للبدء!', 'warning');
+}
+
+// ── تصفح كضيف (مجهول) ──
+async function enterGuest() {
+  if (DEMO || typeof firebase === 'undefined') {
+    notify('تنبيه', 'التصفح كضيف يتطلب اتصالاً بالإنترنت', 'warning');
+    return;
+  }
+  try {
+    await window.auth.signInAnonymously();
+    // onAuthStateChanged يتولى الباقي
+  } catch (e) {
+    notify('خطأ', 'تعذّر التصفح كضيف، حاول لاحقاً', 'error');
+  }
 }
 
 // ── ترجمة أخطاء Firebase ──
@@ -213,6 +241,19 @@ if (!DEMO && typeof firebase !== 'undefined') {
   firebase.auth().onAuthStateChanged(async user => {
     if (user) {
       U = user;
+
+      // ── ضيف مجهول ──
+      if (user.isAnonymous) {
+        ROLE = 'guest';
+        P    = { name: 'زائر', role: 'guest' };
+        try {
+          const snap = await window.db.collection('jobs').where('status', '==', 'active').orderBy('postedAt', 'desc').limit(50).get();
+          JOBS = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        } catch (_) { JOBS = []; }
+        bootApp();
+        return;
+      }
+
       try {
         const doc = await window.db.collection('users').doc(user.uid).get();
         P    = doc.exists ? doc.data() : { name: user.displayName || 'مستخدم', role: 'seeker', email: user.email };

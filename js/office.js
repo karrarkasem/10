@@ -3,6 +3,30 @@
 // ║  لوحة مكتب التوظيف + إدارة الوظائف + المتقدمون     ║
 // ╚══════════════════════════════════════════════════════╝
 
+// ── إحداثيات مراكز المحافظات العراقية ──
+const PROV_COORDS = {
+  'بغداد':       [33.3152, 44.3661, 11],
+  'كربلاء':      [32.6161, 44.0245, 12],
+  'النجف':       [31.9933, 44.3293, 12],
+  'البصرة':      [30.5085, 47.7804, 11],
+  'نينوى':       [36.3350, 43.1189, 11],
+  'أربيل':       [36.1912, 44.0090, 12],
+  'كركوك':       [35.4681, 44.3922, 12],
+  'بابل':        [32.4772, 44.4422, 12],
+  'ذي قار':      [31.0539, 46.2759, 11],
+  'ميسان':       [31.8404, 47.1482, 12],
+  'القادسية':    [32.0267, 44.9262, 12],
+  'واسط':        [32.4883, 45.8227, 12],
+  'المثنى':      [30.9252, 45.2871, 11],
+  'الأنبار':     [33.3733, 43.3290, 10],
+  'صلاح الدين':  [34.6139, 43.6755, 11],
+  'ديالى':       [34.0000, 44.9167, 11],
+  'دهوك':        [37.0000, 43.0000, 11],
+  'السليمانية':  [35.5573, 45.4349, 12],
+};
+let _mapInst = null, _mapMarker = null, _pickedLat = null, _pickedLng = null;
+let _officesMapInst = null;
+
 // ── لوحة التحكم الرئيسية ──
 function pgOfficeHome(el) {
   const nm   = P?.officeName || P?.name || 'المكتب';
@@ -592,6 +616,22 @@ function pgOfficeProfile(el) {
         <div class="fg"><label class="fl">وصف المكتب</label>
           <textarea id="eobio" class="fc" rows="3" placeholder="نبذة عن مكتبك وخدماتك...">${p?.bio||''}</textarea>
         </div>
+
+        <!-- موقع المكتب على الخارطة -->
+        <div class="fg">
+          <label class="fl">موقع المكتب على الخارطة</label>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <div id="mapLocationPreview" style="font-size:12px;color:var(--tx2);flex:1">
+              ${p?.lat
+                ? `<i class="fas fa-map-marker-alt" style="color:#ef4444"></i> تم تحديد الموقع (${(+p.lat).toFixed(4)}, ${(+p.lng).toFixed(4)})`
+                : `<i class="fas fa-map-marker-alt" style="color:var(--tx3)"></i> لم يُحدَّد الموقع بعد`}
+            </div>
+            <button type="button" class="btn bp bsm" onclick="openMapPicker()">
+              <i class="fas fa-map-marker-alt"></i> ${p?.lat ? 'تحديث الموقع' : 'تحديد على الخارطة'}
+            </button>
+          </div>
+        </div>
+
         <button class="btn bp" onclick="saveOfficeProfile()"><i class="fas fa-save"></i>حفظ التغييرات</button>
       </div>
     </div>
@@ -695,15 +735,19 @@ async function saveOfficeProfile() {
     phone:      document.getElementById('eoph')?.value   || '',
     bio:        document.getElementById('eobio')?.value  || '',
   };
+  if (_pickedLat) { d.lat = _pickedLat; d.lng = _pickedLng; }
   P = { ...P, ...d };
   if (!DEMO && window.db && U) { try { await window.db.collection('users').doc(U.uid).update(d); } catch(e) {} }
   updateUserUI();
   notify('تم الحفظ ✅', 'تم تحديث ملف المكتب', 'success');
 }
 
-// ── نشر وظيفة جديدة ──
+// ── نشر وظيفة جديدة (مكتب أو صاحب عمل) ──
 function openAddJob() {
-  if (!requireAuth('office')) return;
+  if (ROLE !== 'office' && ROLE !== 'employer') {
+    notify('غير مسموح ⛔', 'نشر الوظائف للمكاتب وأصحاب العمل فقط', 'error');
+    return;
+  }
   document.getElementById('moAddJobB').innerHTML = `
     <div class="al al-i" style="margin-bottom:16px">
       <i class="fas fa-lightbulb"></i>
@@ -712,7 +756,7 @@ function openAddJob() {
 
     <div class="fr">
       <div class="fg"><label class="fl req">المسمى الوظيفي</label><input type="text" id="jt" class="fc" placeholder="مثال: مبرمج ويب React.js"></div>
-      <div class="fg"><label class="fl req">الشركة / المكتب</label><input type="text" id="jco2" class="fc" value="${P?.officeName||P?.name||''}"></div>
+      <div class="fg"><label class="fl req">الشركة / المكتب</label><input type="text" id="jco2" class="fc" value="${P?.companyName||P?.officeName||P?.name||''}"></div>
     </div>
     <div class="fr">
       <div class="fg"><label class="fl req">نوع الدوام</label>
@@ -787,23 +831,35 @@ async function pgOfficesList(el) {
   }
 
   if (!offices.length) {
-    el.innerHTML = emptyState('🏢', 'لا توجد مكاتب توظيف مسجّلة بعد', 'كن أول من ينضم كمكتب توظيف!');
+    el.innerHTML = guestBanner() + emptyState('🏢', 'لا توجد مكاتب توظيف مسجّلة بعد', 'كن أول من ينضم كمكتب توظيف!');
     return;
   }
 
   el.innerHTML = `
+    ${guestBanner()}
     <div class="sh fade-up">
       <div class="st"><div class="st-ico" style="background:linear-gradient(135deg,var(--purple),#a78bfa)"><i class="fas fa-building"></i></div>مكاتب التوظيف</div>
       <span class="b b-tl">${offices.length} مكتب</span>
     </div>
 
-    <div class="sb fade-up" style="margin-bottom:14px">
-      <i class="fas fa-search"></i>
-      <input type="text" placeholder="ابحث عن مكتب..." oninput="filterOfficesList(this.value)">
+    <div class="tabs fade-up" style="margin-bottom:12px">
+      <button class="tb2 on" onclick="setOfficesView('list',this)"><i class="fas fa-th-large"></i>قائمة</button>
+      <button class="tb2" onclick="setOfficesView('map',this)"><i class="fas fa-map-marker-alt"></i>خارطة</button>
     </div>
 
-    <div id="officesList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px">
-      ${offices.map(o => officeCard(o)).join('')}
+    <div id="officesViewList">
+      <div class="sb fade-up" style="margin-bottom:14px">
+        <i class="fas fa-search"></i>
+        <input type="text" placeholder="ابحث عن مكتب..." oninput="filterOfficesList(this.value)">
+      </div>
+      <div id="officesList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px">
+        ${offices.map(o => officeCard(o)).join('')}
+      </div>
+    </div>
+
+    <div id="officesViewMap" style="display:none">
+      <div id="officesMapElInline" style="height:480px;border-radius:14px;overflow:hidden;border:1px solid var(--br)"></div>
+      <div style="font-size:11px;color:var(--tx3);text-align:center;margin-top:8px"><i class="fas fa-map-pin"></i> المكاتب التي حددت موقعها على الخارطة</div>
     </div>`;
 
   window._officesData = offices;
@@ -956,7 +1012,9 @@ async function submitRating(officeId, officeName) {
 }
 
 async function submitJob() {
-  if (!requireAuth('office')) return;
+  if (ROLE !== 'office' && ROLE !== 'employer') {
+    notify('غير مسموح ⛔', 'نشر الوظائف للمكاتب وأصحاب العمل فقط', 'error'); return;
+  }
   const title = document.getElementById('jt')?.value.trim();
   const co    = document.getElementById('jco2')?.value.trim();
   const desc  = document.getElementById('jd')?.value.trim();
@@ -977,6 +1035,7 @@ async function submitJob() {
     deadline:  document.getElementById('jdl')?.value,
     currency: 'IQD', logo: co.charAt(0), applicants: 0, status: 'active',
     postedBy: U?.uid || 'demo', postedAt: new Date().toISOString(),
+    postedByType: ROLE, // 'office' | 'employer'
   };
   loading('addJobBtn', true);
   if (!DEMO && window.db) {
@@ -989,5 +1048,106 @@ async function submitJob() {
   cmo('moAddJob');
   notify('تم النشر ✅', `وظيفة "${title}" نُشرت بنجاح!`, 'success');
   await notifyAdmin(`وظيفة جديدة — ${title}`, `<b>الشركة:</b> ${co}`, `📢 وظيفة جديدة\n${title}\n${co}`);
-  goTo('myjobs');
+  goTo(ROLE === 'employer' ? 'emp_jobs' : 'myjobs');
+}
+
+// ════════════════════════════════════════════════════════
+// نظام الخارطة — Leaflet.js
+// ════════════════════════════════════════════════════════
+
+function openMapPicker() {
+  const prov = document.getElementById('eprov2')?.value || P?.province;
+  if (!prov || !PROV_COORDS[prov]) {
+    notify('تنبيه', 'اختر المحافظة أولاً ثم حدد الموقع', 'warning');
+    return;
+  }
+  oMo('moMapPicker');
+  const [lat, lng, zoom] = PROV_COORDS[prov];
+  _pickedLat = P?.lat || lat;
+  _pickedLng = P?.lng || lng;
+
+  setTimeout(() => {
+    if (_mapInst) { _mapInst.remove(); _mapInst = null; }
+    _mapInst = L.map('officeMapEl').setView([_pickedLat, _pickedLng], zoom);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      maxZoom: 19,
+    }).addTo(_mapInst);
+
+    const icon = L.divIcon({
+      html: `<div style="width:20px;height:20px;background:#ef4444;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.4)"></div>`,
+      className: '',
+      iconSize: [20, 20],
+      iconAnchor: [10, 10],
+    });
+    _mapMarker = L.marker([_pickedLat, _pickedLng], { draggable: true, icon }).addTo(_mapInst);
+
+    const updateCoord = (lat, lng) => {
+      _pickedLat = lat; _pickedLng = lng;
+      const el = document.getElementById('mapCoordTxt');
+      if (el) el.textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+    };
+    updateCoord(_pickedLat, _pickedLng);
+    _mapMarker.on('dragend', e => { const p = e.target.getLatLng(); updateCoord(p.lat, p.lng); });
+    _mapInst.on('click', e => { _mapMarker.setLatLng(e.latlng); updateCoord(e.latlng.lat, e.latlng.lng); });
+  }, 280);
+}
+
+function confirmMapLocation() {
+  if (!_pickedLat || !_pickedLng) return;
+  P = { ...P, lat: _pickedLat, lng: _pickedLng };
+  const preview = document.getElementById('mapLocationPreview');
+  if (preview) preview.innerHTML = `<i class="fas fa-map-marker-alt" style="color:#ef4444"></i> تم تحديد الموقع (${_pickedLat.toFixed(4)}, ${_pickedLng.toFixed(4)})`;
+  cmo('moMapPicker');
+  notify('تم التحديد ✅', 'سيظهر موقع مكتبك على الخارطة بعد الحفظ', 'success');
+}
+
+function setOfficesView(view, btn) {
+  setTab(btn);
+  document.getElementById('officesViewList').style.display = view === 'list' ? '' : 'none';
+  document.getElementById('officesViewMap').style.display  = view === 'map'  ? '' : 'none';
+  if (view === 'map') initOfficesMapInline();
+}
+
+function initOfficesMapInline() {
+  if (_officesMapInst) { _officesMapInst.invalidateSize(); return; }
+  const mapEl = document.getElementById('officesMapElInline');
+  if (!mapEl) return;
+
+  _officesMapInst = L.map('officesMapElInline').setView([33.0, 44.0], 6);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap', maxZoom: 19,
+  }).addTo(_officesMapInst);
+
+  const offices = window._officesData || [];
+  const withLoc = offices.filter(o => o.lat && o.lng);
+
+  if (!withLoc.length) {
+    _officesMapInst.setView([33.3152, 44.3661], 6);
+    return;
+  }
+
+  withLoc.forEach(o => {
+    const initials = (o.officeName || o.name || '?').charAt(0);
+    const icon = L.divIcon({
+      html: `<div style="width:32px;height:32px;background:var(--p,#0d9488);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3);font-family:Cairo,sans-serif">${initials}</div>`,
+      className: '',
+      iconSize: [32, 32],
+      iconAnchor: [16, 16],
+    });
+    L.marker([o.lat, o.lng], { icon }).addTo(_officesMapInst)
+      .bindPopup(`<div style="font-family:Cairo,sans-serif;direction:rtl;min-width:140px">
+        <b style="font-size:13px">${san(o.officeName || o.name)}</b><br>
+        <span style="font-size:11px;color:#666">${san(o.province||'')}</span><br>
+        ${o.avgRating ? `<span style="color:#f59e0b">★ ${(+o.avgRating).toFixed(1)}</span> (${o.ratingCount||0}) ` : ''}
+        <br><button onclick="viewOfficeJobs('${o.id}','${san(o.officeName||o.name)}')"
+          style="margin-top:6px;background:#0d9488;color:#fff;border:none;border-radius:6px;padding:4px 10px;cursor:pointer;font-family:Cairo,sans-serif;font-size:12px">
+          عرض الوظائف
+        </button>
+      </div>`);
+  });
+
+  // Fit map to markers
+  const bounds = L.latLngBounds(withLoc.map(o => [o.lat, o.lng]));
+  _officesMapInst.fitBounds(bounds, { padding: [30, 30] });
 }

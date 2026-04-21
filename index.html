@@ -18,6 +18,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <!-- Font Awesome -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<!-- Leaflet Maps -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <!-- ═══ CSS ═══ -->
 <link rel="stylesheet" href="css/variables.css">
@@ -167,15 +170,23 @@
         <button onclick="chooseRole('office')" style="display:flex;align-items:center;gap:14px;background:rgba(139,92,246,.2);border:2px solid rgba(139,92,246,.4);border-radius:14px;padding:16px 18px;cursor:pointer;text-align:right;transition:all .2s;font-family:Cairo,sans-serif" onmouseenter="this.style.background='rgba(139,92,246,.35)'" onmouseleave="this.style.background='rgba(139,92,246,.2)'">
           <span style="font-size:32px">🏢</span>
           <div style="flex:1">
-            <div style="font-size:15px;font-weight:800;color:#fff">مكتب / شركة توظيف</div>
-            <div style="font-size:12px;color:rgba(255,255,255,.6)">أنشر وظائف وأوظّف</div>
+            <div style="font-size:15px;font-weight:800;color:#fff">مكتب / وكالة توظيف</div>
+            <div style="font-size:12px;color:rgba(255,255,255,.6)">أنشر وظائف وأوظّف بعمولة</div>
+          </div>
+          <i class="fas fa-arrow-left" style="color:rgba(255,255,255,.4)"></i>
+        </button>
+        <button onclick="chooseRole('employer')" style="display:flex;align-items:center;gap:14px;background:rgba(245,158,11,.15);border:2px solid rgba(245,158,11,.35);border-radius:14px;padding:16px 18px;cursor:pointer;text-align:right;transition:all .2s;font-family:Cairo,sans-serif" onmouseenter="this.style.background='rgba(245,158,11,.28)'" onmouseleave="this.style.background='rgba(245,158,11,.15)'">
+          <span style="font-size:32px">🏪</span>
+          <div style="flex:1">
+            <div style="font-size:15px;font-weight:800;color:#fff">صاحب عمل — أنا أوظّف</div>
+            <div style="font-size:12px;color:rgba(255,255,255,.6)">شركة أو محل يوظّف لصالح نفسه</div>
           </div>
           <i class="fas fa-arrow-left" style="color:rgba(255,255,255,.4)"></i>
         </button>
       </div>
-      <div style="text-align:center">
-        <button onclick="SEL_ROLE='seeker';enterDemo()" style="background:none;border:none;color:rgba(255,255,255,.4);font-size:12px;font-family:Cairo,sans-serif;cursor:pointer;text-decoration:underline;font-weight:600">
-          <i class="fas fa-eye"></i> تصفح بدون تسجيل
+      <div style="text-align:center;margin-top:4px">
+        <button onclick="enterGuest()" style="display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:10px 20px;color:rgba(255,255,255,.75);font-size:13px;font-family:Cairo,sans-serif;cursor:pointer;font-weight:700;transition:all .2s" onmouseenter="this.style.background='rgba(255,255,255,.13)'" onmouseleave="this.style.background='rgba(255,255,255,.07)'">
+          <i class="fas fa-eye" style="color:rgba(255,255,255,.5)"></i> تصفح الوظائف بدون تسجيل
         </button>
       </div>
     </div>
@@ -226,7 +237,23 @@
           <div class="fg"><input type="tel"   id="rph" class="fc" placeholder="رقم الهاتف"></div>
         </div>
         <div id="officeF" style="display:none" class="fg">
-          <input type="text" id="ron" class="fc" placeholder="اسم المكتب / الشركة">
+          <input type="text" id="ron" class="fc" placeholder="اسم المكتب / وكالة التوظيف">
+        </div>
+        <div id="employerF" style="display:none">
+          <div class="fg"><input type="text" id="remp_name" class="fc" placeholder="اسم الشركة / المحل / المؤسسة"></div>
+          <div class="fg">
+            <select id="remp_type" class="fc">
+              <option value="">نوع النشاط التجاري...</option>
+              <option>شركة تقنية</option>
+              <option>محل تجاري</option>
+              <option>مطعم / كافيه</option>
+              <option>مستشفى / عيادة</option>
+              <option>مدرسة / معهد</option>
+              <option>مصنع / مستودع</option>
+              <option>مؤسسة حكومية</option>
+              <option>أخرى</option>
+            </select>
+          </div>
         </div>
         <div class="fg">
           <select id="rprov" class="fc">
@@ -377,6 +404,8 @@
 <script src="js/interview.js"></script>
 <!-- 7. لوحة مكتب التوظيف -->
 <script src="js/office.js"></script>
+<!-- 7b. لوحة صاحب العمل -->
+<script src="js/employer.js"></script>
 <!-- 8. نظام الحجز الحصري -->
 <script src="js/booking.js"></script>
 <!-- 9. الاختبار الذكي -->
@@ -387,6 +416,33 @@
 <script src="js/home.js"></script>
 <!-- 12. الملف الشخصي -->
 <script src="js/profile.js"></script>
+
+<!-- اختيار موقع المكتب على الخارطة -->
+<div class="mo" id="moMapPicker">
+  <div class="md" style="max-width:640px;padding:0;overflow:hidden">
+    <div class="mh"><div class="mt"><i class="fas fa-map-marker-alt" style="color:#ef4444"></i> حدد موقع مكتبك على الخارطة</div><div class="mc" onclick="cmo('moMapPicker')"><i class="fas fa-times"></i></div></div>
+    <div id="officeMapEl" style="height:370px;width:100%"></div>
+    <div style="padding:14px 16px">
+      <div style="font-size:12px;color:var(--tx3);margin-bottom:8px">
+        <i class="fas fa-hand-pointer" style="color:var(--p)"></i>
+        انقر على الخارطة أو اسحب الدبوس لتحديد موقع مكتبك بدقة
+      </div>
+      <div id="mapCoordTxt" style="font-size:11px;color:var(--tx2);margin-bottom:12px;font-family:monospace;direction:ltr;min-height:16px"></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn bp bfu" onclick="confirmMapLocation()"><i class="fas fa-check"></i> تأكيد الموقع</button>
+        <button class="btn bg" onclick="cmo('moMapPicker')">إلغاء</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- خارطة مكاتب التوظيف -->
+<div class="mo" id="moOfficesMap">
+  <div class="md md-xl" style="padding:0;overflow:hidden">
+    <div class="mh"><div class="mt"><i class="fas fa-map" style="color:var(--p)"></i> خارطة مكاتب التوظيف</div><div class="mc" onclick="cmo('moOfficesMap')"><i class="fas fa-times"></i></div></div>
+    <div id="officesMapEl" style="height:500px;width:100%"></div>
+  </div>
+</div>
 
 <!-- ── Service Worker ── -->
 <script>

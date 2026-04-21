@@ -2,8 +2,9 @@
 // ║  الفانوس — نظام الحجز الحصري (12 ساعة)             ║
 // ╚══════════════════════════════════════════════════════╝
 
-const MAX_BOOKINGS   = 3;
-const BOOKING_MS     = 12 * 60 * 60 * 1000; // 12 ساعة
+const MAX_BOOKINGS        = 3;
+const BOOKING_MS          = 12 * 60 * 60 * 1000; // 12 ساعة (للمكاتب)
+const BOOKING_MS_EMPLOYER =  1 * 60 * 60 * 1000; //  1 ساعة (لوظائف أصحاب العمل)
 
 let MY_BOOKINGS = [];
 
@@ -56,9 +57,15 @@ async function bookCandidate(candidateId, candidateName, jobId) {
     }
   } catch (e) {}
 
-  confirm2('تأكيد الحجز', `هل تريد حجز "${candidateName}" لمدة 12 ساعة حصرياً؟`, async () => {
+  // وظائف أصحاب العمل: ساعة واحدة فقط
+  const job = JOBS.find(j => j.id === jobId);
+  const isEmployerJob  = job?.postedByType === 'employer';
+  const duration       = isEmployerJob ? BOOKING_MS_EMPLOYER : BOOKING_MS;
+  const durationLabel  = isEmployerJob ? 'ساعة واحدة' : '12 ساعة';
+
+  confirm2('تأكيد الحجز', `هل تريد حجز "${candidateName}" لمدة ${durationLabel} حصرياً؟`, async () => {
     try {
-      const expiresAt = new Date(Date.now() + BOOKING_MS);
+      const expiresAt = new Date(Date.now() + duration);
       await window.db.collection('bookings').add({
         officeId:      U.uid,
         officeName:    P.officeName || P.name,
@@ -74,12 +81,12 @@ async function bookCandidate(candidateId, candidateName, jobId) {
         userId:    candidateId,
         type:      'booking',
         title:     '🔔 مكتب مهتم بملفك!',
-        body:      `قام ${san(P.officeName || P.name)} بحجز ملفك الوظيفي لمدة 12 ساعة`,
+        body:      `قام ${san(P.officeName || P.name)} بحجز ملفك الوظيفي لمدة ${durationLabel}`,
         read:      false,
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       });
       await loadMyBookings();
-      notify('تم الحجز ✅', `تم حجز ${candidateName} حصرياً لـ 12 ساعة`, 'success');
+      notify('تم الحجز ✅', `تم حجز ${candidateName} حصرياً لـ ${durationLabel}`, 'success');
       goTo('candidates');
     } catch (e) { console.error(e); notify('خطأ', 'فشل الحجز، حاول مرة أخرى', 'error'); }
   });
@@ -148,7 +155,7 @@ async function pgBookings(el) {
         <div style="font-size:32px">🔒</div>
         <div style="flex:1">
           <div style="font-size:14px;font-weight:900;color:var(--tx)">نظام الحجز الحصري</div>
-          <div style="font-size:11px;color:var(--tx2);margin-top:3px">احجز مرشحاً لمدة 12 ساعة — لا يستطيع مكتب آخر التواصل معه خلالها</div>
+          <div style="font-size:11px;color:var(--tx2);margin-top:3px">احجز مرشحاً لمدة 12 ساعة (ساعة واحدة لوظائف أصحاب العمل) — حصري بينكما</div>
         </div>
         <div style="text-align:center;flex-shrink:0">
           <div style="font-size:26px;font-weight:900;color:${remaining > 0 ? 'var(--success)' : 'var(--danger)'}">${remaining}</div>
