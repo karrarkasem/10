@@ -298,6 +298,7 @@ function openJob(id) {
 
 // ── نموذج التقديم (يستقبل نتيجة الاختبار إذا وُجدت) ──
 function openApply(id, quizScore = null, quizFeedback = '') {
+  if (!requireAuth('seeker')) return;
   const j = JOBS.find(x => x.id === id);
   if (!j) return;
   SEL_JOB = j;
@@ -357,6 +358,7 @@ function openApply(id, quizScore = null, quizFeedback = '') {
 }
 
 async function submitApply(quizScore = null, quizFeedback = '') {
+  if (!requireAuth('seeker')) return;
   const j    = SEL_JOB;
   const name = document.getElementById('ap_n')?.value.trim();
   const ph   = document.getElementById('ap_ph')?.value.trim();
@@ -491,6 +493,7 @@ function _copyShareLink(url, btn) {
 
 // ── ترشيح موظف من مكتب التوظيف ──
 function referCandidate(jobId) {
+  if (!requireAuth('office')) return;
   const j = JOBS.find(x => x.id === jobId);
   if (!j) return;
   const el = document.getElementById('moApplyB');
@@ -534,6 +537,7 @@ function referCandidate(jobId) {
 }
 
 async function submitReferral(jobId) {
+  if (!requireAuth('office')) return;
   const j    = JOBS.find(x => x.id === jobId);
   const name = document.getElementById('ref_n')?.value.trim();
   const ph   = document.getElementById('ref_ph')?.value.trim();

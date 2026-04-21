@@ -143,6 +143,37 @@ function loading(btnId, on) {
 function showErr(id, msg) { const e = document.getElementById(id); if (e) { e.style.display = 'block'; e.textContent = msg; } }
 function hideErr(id)       { const e = document.getElementById(id); if (e) e.style.display = 'none'; }
 
+// ═══════════════════════════════════════════════
+// حماية الصلاحيات — يُستخدم في كل إجراء حساس
+// ═══════════════════════════════════════════════
+function requireAuth(requiredRole) {
+  // المستخدم في الوضع التجريبي أو غير مسجّل
+  if (DEMO || !U) {
+    confirm2(
+      '🔐 تسجيل مطلوب',
+      'يجب أن تكون مسجلاً في المنصة للقيام بهذا الإجراء. سجّل الآن مجاناً!',
+      () => {
+        document.getElementById('app').style.display = 'none';
+        document.getElementById('authScreen').style.display = 'flex';
+        document.getElementById('screenWho').style.display = 'block';
+        document.getElementById('screenAuth').style.display = 'none';
+      }
+    );
+    return false;
+  }
+  // التحقق من الدور
+  if (requiredRole && ROLE !== requiredRole) {
+    const msgs = {
+      seeker: 'هذه الميزة للباحثين عن عمل فقط',
+      office: 'هذه الميزة لمكاتب التوظيف فقط',
+      admin:  'هذه الميزة للمدير فقط',
+    };
+    notify('غير مسموح ⛔', msgs[requiredRole] || 'ليس لديك صلاحية لهذا الإجراء', 'error');
+    return false;
+  }
+  return true;
+}
+
 function emptyState(ico, tit, desc, btn = '') {
   return `<div class="es"><div class="es-ico">${ico}</div><div class="es-tit">${tit}</div><div class="es-desc">${desc}</div>${btn}</div>`;
 }

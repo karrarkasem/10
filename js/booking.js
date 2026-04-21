@@ -32,8 +32,7 @@ async function loadMyBookings() {
 
 // ── حجز مرشح ──
 async function bookCandidate(candidateId, candidateName, jobId) {
-  if (DEMO) { notify('تجريبي', 'الحجز يتطلب حساب Firebase حقيقي', 'info'); return; }
-  if (ROLE !== 'office') return;
+  if (!requireAuth('office')) return;
 
   if (MY_BOOKINGS.length >= MAX_BOOKINGS) {
     notify('وصلت للحد الأقصى', `لا يمكنك حجز أكثر من ${MAX_BOOKINGS} مرشحين في وقت واحد`, 'error');

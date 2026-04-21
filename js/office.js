@@ -702,6 +702,7 @@ async function saveOfficeProfile() {
 
 // ── نشر وظيفة جديدة ──
 function openAddJob() {
+  if (!requireAuth('office')) return;
   document.getElementById('moAddJobB').innerHTML = `
     <div class="al al-i" style="margin-bottom:16px">
       <i class="fas fa-lightbulb"></i>
@@ -932,6 +933,7 @@ function selectStar(n, officeId) {
 }
 
 async function submitRating(officeId, officeName) {
+  if (!requireAuth('seeker')) return;
   const stars = window.selectedStars || 0;
   if (!stars) { notify('تنبيه', 'اختر عدد النجوم أولاً', 'warning'); return; }
   const note = document.getElementById('ratingNote')?.value.trim();
@@ -958,6 +960,7 @@ async function submitRating(officeId, officeName) {
 }
 
 async function submitJob() {
+  if (!requireAuth('office')) return;
   const title = document.getElementById('jt')?.value.trim();
   const co    = document.getElementById('jco2')?.value.trim();
   const desc  = document.getElementById('jd')?.value.trim();

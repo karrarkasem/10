@@ -10,6 +10,7 @@ let QUIZ_FB      = '';
 
 // ── فتح الاختبار ──
 function openQuiz(jobId) {
+  if (!requireAuth('seeker')) return;
   const j = JOBS.find(x => x.id === jobId);
   if (!j) return;
 
