@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>🪔 خارطة الفانوس للتوظيف</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Cairo',sans-serif;background:#0f172a;color:#f8fafc;min-height:100vh;padding:24px 16px 60px;overflow-x:auto}
+
+h1{text-align:center;font-size:clamp(20px,4vw,32px);font-weight:900;margin-bottom:6px}
+.subtitle{text-align:center;color:#94a3b8;font-size:13px;margin-bottom:40px}
+
+/* ── Entry ── */
+.entry-row{display:flex;justify-content:center;gap:16px;margin-bottom:0;flex-wrap:wrap}
+.entry-box{background:#1e293b;border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 22px;text-align:center;font-size:13px;font-weight:700;min-width:130px}
+.entry-box.land{border-color:rgba(245,158,11,.4);color:#fcd34d}
+.entry-box.app{border-color:rgba(13,148,136,.4);color:#5eead4}
+
+/* ── Arrow ── */
+.arr{text-align:center;color:#475569;font-size:20px;margin:8px 0;line-height:1}
+.arr-row{display:flex;justify-content:center;gap:60px;margin:8px 0}
+.arr-row .arr{margin:0}
+
+/* ── Onboarding ── */
+.ob-box{background:#1e3a5f;border:1px solid rgba(59,130,246,.3);border-radius:14px;padding:12px 20px;text-align:center;font-size:12px;font-weight:700;color:#93c5fd;max-width:220px;margin:0 auto}
+
+/* ── Auth ── */
+.auth-box{background:#1e293b;border:2px solid rgba(13,148,136,.4);border-radius:16px;padding:20px 24px;max-width:320px;margin:0 auto;text-align:center}
+.auth-box h3{font-size:15px;font-weight:800;margin-bottom:14px;color:#5eead4}
+.auth-methods{display:flex;gap:8px;justify-content:center;margin-bottom:12px}
+.auth-m{background:#0f172a;border:1px solid rgba(255,255,255,.1);border-radius:9px;padding:7px 14px;font-size:11px;font-weight:700;color:#cbd5e1}
+.role-row{display:flex;gap:8px;justify-content:center}
+.role-chip{padding:5px 12px;border-radius:100px;font-size:11px;font-weight:800}
+.rc-s{background:rgba(13,148,136,.2);color:#5eead4;border:1px solid rgba(13,148,136,.3)}
+.rc-o{background:rgba(139,92,246,.2);color:#c4b5fd;border:1px solid rgba(139,92,246,.3)}
+.rc-a{background:rgba(245,158,11,.2);color:#fcd34d;border:1px solid rgba(245,158,11,.3)}
+
+/* ── 3 columns ── */
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;max-width:1200px;margin:0 auto;align-items:start}
+.col-label{text-align:center;font-size:13px;font-weight:900;padding:8px 16px;border-radius:100px;margin-bottom:16px;display:inline-block}
+.col-s .col-label{background:rgba(13,148,136,.15);color:#5eead4;border:1px solid rgba(13,148,136,.25)}
+.col-o .col-label{background:rgba(139,92,246,.15);color:#c4b5fd;border:1px solid rgba(139,92,246,.25)}
+.col-a .col-label{background:rgba(245,158,11,.15);color:#fcd34d;border:1px solid rgba(245,158,11,.25)}
+
+/* ── Page nodes ── */
+.page{border-radius:14px;padding:14px 16px;margin-bottom:12px;border:1px solid;position:relative;cursor:default;transition:transform .15s}
+.page:hover{transform:translateY(-2px)}
+.page-icon{font-size:18px;margin-bottom:6px;display:block}
+.page-title{font-size:13px;font-weight:800;margin-bottom:4px}
+.page-sub{font-size:11px;opacity:.7;line-height:1.5}
+
+/* Seeker pages */
+.pg-s{background:rgba(13,148,136,.08);border-color:rgba(13,148,136,.25)}
+.pg-s .page-title{color:#5eead4}
+/* Office pages */
+.pg-o{background:rgba(139,92,246,.08);border-color:rgba(139,92,246,.25)}
+.pg-o .page-title{color:#c4b5fd}
+/* Admin pages */
+.pg-a{background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.25)}
+.pg-a .page-title{color:#fcd34d}
+
+/* ── Modal tags ── */
+.modals{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.modal-tag{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:3px 9px;font-size:10px;font-weight:700;color:#94a3b8}
+.modal-tag.ai{border-color:rgba(139,92,246,.4);color:#c4b5fd;background:rgba(139,92,246,.08)}
+
+/* ── Flow arrows ── */
+.flow-line{border-top:2px dashed rgba(255,255,255,.1);margin:6px 0}
+
+/* ── Shared modals ── */
+.shared-row{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:1200px;margin:0 auto 20px}
+.shared-box{background:#1e293b;border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:10px 16px;font-size:11px;font-weight:700;color:#94a3b8;display:flex;align-items:center;gap:7px}
+.shared-box i{color:#5eead4}
+
+/* ── Legend ── */
+.legend{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-bottom:32px}
+.leg-item{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600}
+.leg-dot{width:12px;height:12px;border-radius:50%}
+
+/* ── Connector lines ── */
+.connector{display:flex;justify-content:space-around;max-width:1200px;margin:0 auto;position:relative}
+.connector::before{content:'';position:absolute;top:0;right:16.67%;left:16.67%;height:2px;background:rgba(255,255,255,.08)}
+.conn-line{display:flex;flex-direction:column;align-items:center;gap:0;flex:1}
+
+@media(max-width:900px){
+  .three-col{grid-template-columns:1fr;max-width:420px}
+  .arr-row{gap:20px}
+  .connector::before{display:none}
+}
+@media(max-width:480px){
+  .entry-row{gap:10px}
+  .entry-box{min-width:100px;font-size:12px}
+  .auth-methods{flex-wrap:wrap}
+}
+</style>
+</head>
+<body>
+
+<h1>🪔 خارطة تطبيق الفانوس للتوظيف</h1>
+<p class="subtitle">رحلة المستخدم الكاملة — من الدخول إلى كل ميزة</p>
+
+<!-- Legend -->
+<div class="legend">
+  <div class="leg-item"><div class="leg-dot" style="background:#0d9488"></div>باحث عن عمل</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#8b5cf6"></div>مكتب توظيف</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#f59e0b"></div>مدير النظام</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#3b82f6"></div>مشترك بين الأدوار</div>
+</div>
+
+<!-- Entry Points -->
+<div class="entry-row">
+  <div class="entry-box land">🌐 landing.html<br><span style="font-size:10px;opacity:.7">صفحة التسويق</span></div>
+  <div class="entry-box land">📢 marketing.html<br><span style="font-size:10px;opacity:.7">إنشاء إعلانات</span></div>
+  <div class="entry-box app">📱 index.html<br><span style="font-size:10px;opacity:.7">التطبيق الرئيسي</span></div>
+</div>
+
+<div class="arr">↓</div>
+
+<!-- Onboarding -->
+<div class="ob-box">
+  🎉 الترحيب (Onboarding) — 3 شرائح<br>
+  <span style="font-size:10px;opacity:.7">تظهر مرة واحدة للمستخدم الجديد فقط</span>
+</div>
+
+<div class="arr">↓</div>
+
+<!-- Auth -->
+<div class="auth-box">
+  <h3><i class="fas fa-lock" style="margin-left:6px"></i>شاشة تسجيل الدخول</h3>
+  <div class="auth-methods">
+    <div class="auth-m"><i class="fas fa-envelope"></i> إيميل</div>
+    <div class="auth-m"><i class="fab fa-google"></i> Google</div>
+    <div class="auth-m" style="color:#5eead4;border-color:rgba(13,148,136,.3)"><i class="fas fa-eye"></i> تجريبي</div>
+  </div>
+  <div style="font-size:10px;color:#64748b;margin-bottom:10px">اختيار الدور قبل التسجيل</div>
+  <div class="role-row">
+    <span class="role-chip rc-s">🧑‍💼 باحث</span>
+    <span class="role-chip rc-o">🏢 مكتب</span>
+    <span class="role-chip rc-a">🛡️ أدمن</span>
+  </div>
+</div>
+
+<div class="arr">↓</div>
+<div style="text-align:center;font-size:11px;color:#475569;margin-bottom:8px">يتفرع حسب الدور</div>
+
+<!-- Arrows to 3 columns -->
+<div class="arr-row">
+  <div class="arr" style="color:#0d9488">↙</div>
+  <div class="arr" style="color:#475569">↓</div>
+  <div class="arr" style="color:#8b5cf6">↘</div>
+</div>
+
+<!-- 3 Role Columns -->
+<div class="three-col">
+
+  <!-- SEEKER -->
+  <div class="col-s" style="text-align:center">
+    <div><span class="col-label">🧑‍💼 الباحث عن عمل</span></div>
+
+    <div class="page pg-s">
+      <span class="page-icon">🏠</span>
+      <div class="page-title">الرئيسية</div>
+      <div class="page-sub">إحصاءات • اكتمال الملف • تصفح حسب التخصص • أحدث الوظائف • أدوات المهنة</div>
+    </div>
+
+    <div class="page pg-s">
+      <span class="page-icon">🔍</span>
+      <div class="page-title">الوظائف</div>
+      <div class="page-sub">بحث نصي • فلتر (نوع / تخصص / محافظة) • ترتيب (أحدث / راتب) • حفظ وظيفة 🔖</div>
+      <div class="modals">
+        <span class="modal-tag">📋 تفاصيل الوظيفة</span>
+        <span class="modal-tag">📩 نموذج التقديم</span>
+        <span class="modal-tag ai">🤖 اختبار ذكي</span>
+        <span class="modal-tag">📤 مشاركة</span>
+      </div>
+    </div>
+
+    <div class="page pg-s">
+      <span class="page-icon">📋</span>
+      <div class="page-title">طلباتي</div>
+      <div class="page-sub">تتبع الحالة • فلتر (انتظار / مقابلة / قُبلت / مرفوض) • شريط التقدم</div>
+    </div>
+
+    <div class="page pg-s">
+      <span class="page-icon">🏢</span>
+      <div class="page-title">مكاتب التوظيف</div>
+      <div class="page-sub">قائمة المكاتب • التقييم ⭐ • وظائف كل مكتب • إحالة مرشح</div>
+    </div>
+
+    <div class="page pg-s">
+      <span class="page-icon">📄</span>
+      <div class="page-title">سيرتي الذاتية</div>
+      <div class="page-sub">منشئ CV بمساعدة AI • معاينة فورية • تحميل PDF</div>
+      <div class="modals"><span class="modal-tag ai">🤖 AI يحسّن السيرة</span></div>
+    </div>
+
+    <div class="page pg-s">
+      <span class="page-icon">🎯</span>
+      <div class="page-title">مقابلة ذكية</div>
+      <div class="page-sub">أسئلة مخصصة بالذكاء الاصطناعي • تقييم الإجابات • تقرير الأداء</div>
+      <div class="modals"><span class="modal-tag ai">🤖 Gemini AI</span></div>
+    </div>
+
+    <div class="page pg-s">
+      <span class="page-icon">👤</span>
+      <div class="page-title">حسابي الشخصي</div>
+      <div class="page-sub">تعديل المعلومات • اكتمال الملف % • آخر الطلبات • تغيير كلمة المرور • تسجيل الخروج</div>
+    </div>
+  </div>
+
+  <!-- OFFICE -->
+  <div class="col-o" style="text-align:center">
+    <div><span class="col-label">🏢 مكتب التوظيف</span></div>
+
+    <div class="page pg-o">
+      <span class="page-icon">📊</span>
+      <div class="page-title">لوحة التحكم</div>
+      <div class="page-sub">إجمالي الوظائف • المتقدمون • المقبولون • الإيرادات • أحدث الطلبات</div>
+    </div>
+
+    <div class="page pg-o">
+      <span class="page-icon">💼</span>
+      <div class="page-title">وظائفي</div>
+      <div class="page-sub">قائمة الوظائف المنشورة • حالة كل وظيفة • عدد المتقدمين</div>
+      <div class="modals">
+        <span class="modal-tag">➕ نشر وظيفة جديدة</span>
+      </div>
+    </div>
+
+    <div class="page pg-o">
+      <span class="page-icon">👥</span>
+      <div class="page-title">المتقدمون</div>
+      <div class="page-sub">فلتر بالحالة • عرض السيرة الذاتية • نتيجة الاختبار الذكي</div>
+      <div class="modals">
+        <span class="modal-tag">👁️ تفاصيل المتقدم</span>
+        <span class="modal-tag">🔄 تغيير الحالة</span>
+        <span class="modal-tag">📨 إحالة مرشح</span>
+        <span class="modal-tag">🔒 حجز حصري</span>
+      </div>
+    </div>
+
+    <div class="page pg-o">
+      <span class="page-icon">🔒</span>
+      <div class="page-title">الحجوزات</div>
+      <div class="page-sub">مرشحون محجوزون حصرياً • عداد 12 ساعة • إلغاء الحجز</div>
+    </div>
+
+    <div class="page pg-o">
+      <span class="page-icon">🗂️</span>
+      <div class="page-title">خط التوظيف (Kanban)</div>
+      <div class="page-sub">أعمدة: انتظار / مراجعة / مقابلة / قُبل / مرفوض • سحب وإفلات</div>
+    </div>
+
+    <div class="page pg-o">
+      <span class="page-icon">🏢</span>
+      <div class="page-title">ملف المكتب</div>
+      <div class="page-sub">تعديل بيانات المكتب • تغيير كلمة المرور • تقييمات العملاء ⭐</div>
+    </div>
+  </div>
+
+  <!-- ADMIN -->
+  <div class="col-a" style="text-align:center">
+    <div><span class="col-label">🛡️ مدير النظام</span></div>
+
+    <div class="page pg-a">
+      <span class="page-icon">📈</span>
+      <div class="page-title">لوحة التحكم</div>
+      <div class="page-sub">إجمالي المستخدمين • الوظائف • المكاتب • الطلبات • إدارة سريعة</div>
+    </div>
+
+    <div class="page pg-a">
+      <span class="page-icon">💼</span>
+      <div class="page-title">إدارة الوظائف</div>
+      <div class="page-sub">جميع وظائف المنصة • عرض تفاصيل • حذف وظيفة</div>
+    </div>
+
+    <div class="page pg-a">
+      <span class="page-icon">🏢</span>
+      <div class="page-title">مكاتب التوظيف</div>
+      <div class="page-sub">قائمة كل المكاتب من Firestore • تفعيل / إيقاف • عرض وظائف كل مكتب</div>
+    </div>
+
+    <div class="page pg-a">
+      <span class="page-icon">👥</span>
+      <div class="page-title">المستخدمون</div>
+      <div class="page-sub">جدول كامل • بحث • فلتر بالدور • تفعيل / إيقاف أي حساب</div>
+    </div>
+
+    <div class="page pg-a">
+      <span class="page-icon">⚙️</span>
+      <div class="page-title">الإعدادات</div>
+      <div class="page-sub">Telegram Bot • EmailJS • ImgBB API • اختبار الإشعارات • حفظ في Firestore</div>
+    </div>
+  </div>
+
+</div><!-- end three-col -->
+
+<!-- Shared Modals -->
+<div style="margin-top:36px;text-align:center;margin-bottom:14px">
+  <span style="font-size:12px;font-weight:800;color:#64748b;background:#1e293b;border:1px solid rgba(255,255,255,.08);border-radius:100px;padding:5px 16px">
+    <i class="fas fa-layer-group" style="color:#3b82f6"></i> مشترك بين جميع الأدوار
+  </span>
+</div>
+<div class="shared-row">
+  <div class="shared-box"><i class="fas fa-moon"></i>تبديل الثيم (فاتح/داكن)</div>
+  <div class="shared-box"><i class="fas fa-bell"></i>مركز الإشعارات</div>
+  <div class="shared-box"><i class="fas fa-share-alt"></i>مشاركة اجتماعية</div>
+  <div class="shared-box"><i class="fas fa-key"></i>تغيير كلمة المرور</div>
+  <div class="shared-box"><i class="fas fa-sign-out-alt"></i>تسجيل الخروج</div>
+  <div class="shared-box"><i class="fas fa-wifi"></i>وضع أوفلاين (PWA)</div>
+  <div class="shared-box"><i class="fab fa-google"></i>دخول بـ Google</div>
+  <div class="shared-box"><i class="fas fa-shield-alt"></i>Firestore Rules</div>
+</div>
+
+<!-- Firebase Backend -->
+<div style="margin-top:8px;text-align:center;margin-bottom:14px">
+  <span style="font-size:12px;font-weight:800;color:#64748b;background:#1e293b;border:1px solid rgba(255,255,255,.08);border-radius:100px;padding:5px 16px">
+    <i class="fas fa-database" style="color:#f59e0b"></i> قاعدة البيانات — Firebase
+  </span>
+</div>
+<div class="shared-row">
+  <div class="shared-box"><i class="fas fa-fire" style="color:#f59e0b"></i>users</div>
+  <div class="shared-box"><i class="fas fa-fire" style="color:#f59e0b"></i>jobs</div>
+  <div class="shared-box"><i class="fas fa-fire" style="color:#f59e0b"></i>applications</div>
+  <div class="shared-box"><i class="fas fa-fire" style="color:#f59e0b"></i>cvs</div>
+  <div class="shared-box"><i class="fas fa-fire" style="color:#f59e0b"></i>bookings</div>
+  <div class="shared-box"><i class="fas fa-fire" style="color:#f59e0b"></i>quizResults</div>
+  <div class="shared-box"><i class="fas fa-fire" style="color:#f59e0b"></i>ratings</div>
+  <div class="shared-box"><i class="fas fa-fire" style="color:#f59e0b"></i>notifications</div>
+  <div class="shared-box"><i class="fas fa-fire" style="color:#f59e0b"></i>config/settings</div>
+</div>
+
+<!-- Files -->
+<div style="margin-top:8px;text-align:center;margin-bottom:14px">
+  <span style="font-size:12px;font-weight:800;color:#64748b;background:#1e293b;border:1px solid rgba(255,255,255,.08);border-radius:100px;padding:5px 16px">
+    <i class="fas fa-folder" style="color:#60a5fa"></i> ملفات المشروع
+  </span>
+</div>
+<div class="shared-row">
+  <div class="shared-box"><i class="fas fa-file-code" style="color:#60a5fa"></i>index.html</div>
+  <div class="shared-box"><i class="fas fa-file-code" style="color:#fcd34d"></i>landing.html</div>
+  <div class="shared-box"><i class="fas fa-file-code" style="color:#f87171"></i>marketing.html</div>
+  <div class="shared-box"><i class="fas fa-file-code" style="color:#60a5fa"></i>js/app.js</div>
+  <div class="shared-box"><i class="fas fa-file-code" style="color:#60a5fa"></i>js/auth.js</div>
+  <div class="shared-box"><i class="fas fa-file-code" style="color:#60a5fa"></i>js/jobs.js</div>
+  <div class="shared-box"><i class="fas fa-file-code" style="color:#60a5fa"></i>js/office.js</div>
+  <div class="shared-box"><i class="fas fa-file-code" style="color:#60a5fa"></i>js/home.js</div>
+  <div class="shared-box"><i class="fas fa-file-code" style="color:#60a5fa"></i>js/profile.js</div>
+  <div class="shared-box"><i class="fas fa-file-code" style="color:#60a5fa"></i>js/myapps.js</div>
+  <div class="shared-box"><i class="fas fa-file-code" style="color:#60a5fa"></i>js/cv.js</div>
+  <div class="shared-box"><i class="fas fa-file-code" style="color:#60a5fa"></i>js/interview.js</div>
+  <div class="shared-box"><i class="fas fa-file-code" style="color:#60a5fa"></i>js/booking.js</div>
+  <div class="shared-box"><i class="fas fa-file-code" style="color:#60a5fa"></i>js/quiz.js</div>
+  <div class="shared-box"><i class="fas fa-file-code" style="color:#a78bfa"></i>css/variables.css</div>
+  <div class="shared-box"><i class="fas fa-file-code" style="color:#a78bfa"></i>css/components.css</div>
+  <div class="shared-box"><i class="fas fa-file-code" style="color:#a78bfa"></i>css/pages.css</div>
+  <div class="shared-box"><i class="fas fa-file-code" style="color:#34d399"></i>sw.js (PWA)</div>
+</div>
+
+<div style="text-align:center;margin-top:40px;font-size:11px;color:#334155">
+  🪔 الفانوس للتوظيف — خارطة النظام الكاملة • 2026
+</div>
+
+</body>
+</html>
