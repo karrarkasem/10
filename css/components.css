@@ -469,3 +469,53 @@
 .resp-g3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 @media (max-width: 480px) { .resp-g3 { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 340px) { .resp-g3 { grid-template-columns: 1fr; } }
+
+/* ═══════════════════════════════════════════════
+   نافذة المشاركة على التواصل الاجتماعي
+═══════════════════════════════════════════════ */
+.share-panel {
+  position: fixed; inset: 0; z-index: 10000;
+  background: rgba(0,0,0,.65); backdrop-filter: blur(6px);
+  display: flex; align-items: flex-end; justify-content: center;
+  opacity: 0; transition: opacity .25s;
+}
+.share-panel.on { opacity: 1; }
+.share-panel-inner {
+  background: var(--bgc); width: 100%; max-width: 480px;
+  border-radius: var(--rl) var(--rl) 0 0;
+  padding: 22px 20px 28px; animation: fadeUp .28s ease both;
+}
+.share-panel-title {
+  font-size: 15px; font-weight: 800; color: var(--tx);
+  margin-bottom: 18px; display: flex; align-items: center; gap: 8px;
+}
+.share-btns {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px;
+}
+@media (max-width: 360px) { .share-btns { grid-template-columns: repeat(2, 1fr); } }
+.share-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 12px 8px; border-radius: 13px; color: #fff;
+  font-size: 11px; font-weight: 700; text-decoration: none;
+  transition: transform .15s, opacity .15s; border: none; cursor: pointer;
+  font-family: 'Cairo', sans-serif;
+}
+.share-btn:hover  { transform: translateY(-3px); opacity: .9; }
+.share-btn i      { font-size: 22px; }
+.share-btn.share-copy { color: var(--tx); }
+.share-close {
+  width: 100%; padding: 11px; border-radius: 11px;
+  background: var(--bgc2); border: 1.5px solid var(--br);
+  color: var(--tx2); font-size: 13px; font-weight: 700;
+  font-family: 'Cairo', sans-serif; cursor: pointer; transition: all .2s;
+}
+.share-close:hover { background: var(--br); color: var(--tx); }
+
+/* ── Share icon button (on cards) ── */
+.share-ico-btn {
+  width: 32px; height: 32px; border-radius: 8px;
+  border: 1.5px solid var(--br); background: var(--bgc2);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all .2s; flex-shrink: 0; color: var(--tx3);
+}
+.share-ico-btn:hover { border-color: var(--p); color: var(--p); background: rgba(13,148,136,.06); }

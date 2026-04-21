@@ -43,6 +43,9 @@ function jCard(j) {
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
         <div style="display:flex;gap:6px;align-items:center">
+          <button class="share-ico-btn" onclick="event.stopPropagation();shareJobGeneral('${j.id}')" title="مشاركة الوظيفة">
+            <i class="fas fa-share-alt" style="font-size:12px"></i>
+          </button>
           <button class="bkm-btn ${saved ? 'on' : ''}" data-bkm="${j.id}"
             onclick="toggleBookmark('${j.id}',event)" title="حفظ الوظيفة">
             <i class="fas fa-bookmark" style="font-size:12px"></i>
@@ -389,42 +392,100 @@ async function submitApply(quizScore = null, quizFeedback = '') {
   notify('تم الإرسال ✅', `طلبك على "${j.title}" أُرسل بنجاح`, 'success');
 }
 
+// ══════════════════════════════════════════════════════════
+// نظام المشاركة على التواصل الاجتماعي
+// ══════════════════════════════════════════════════════════
+
+function _buildShareText(j, long = false) {
+  const sal  = j.salary ? `${fmt(j.salary)}${j.salaryMax ? '–' + fmt(j.salaryMax) : ''} ${j.currency || 'IQD'}` : 'قابل للتفاوض';
+  const type = jobTypeLabel(j.type);
+  if (long) {
+    return `🔔 *فرصة عمل — الفانوس للتوظيف*\n\n` +
+      `💼 *${j.title}*\n🏢 ${j.company}\n📍 ${j.province || '—'} | ${type}\n💰 ${sal}\n⏳ آخر موعد: ${j.deadline || '—'}\n\n` +
+      `${j.desc ? j.desc.slice(0, 150) + '...' : ''}\n\n` +
+      `👆 تقدّم الآن عبر منصة الفانوس للتوظيف 🪔\n${location.href}`;
+  }
+  return `فرصة عمل: ${j.title} — ${j.company} | ${j.province || ''} | ${type} | ${sal} — الفانوس للتوظيف 🪔 ${location.href}`;
+}
+
 // ── مشاركة الوظيفة عبر WhatsApp ──
 function shareJobWhatsApp(id) {
   const j = JOBS.find(x => x.id === id);
   if (!j) return;
-  const sal  = j.salary ? `${fmt(j.salary)}${j.salaryMax ? '–' + fmt(j.salaryMax) : ''} ${j.currency || 'IQD'}` : 'قابل للتفاوض';
-  const type = jobTypeLabel(j.type);
-  const text = `🔔 *فرصة عمل — فانوس للتوظيف*\n\n` +
-    `💼 *${j.title}*\n🏢 ${j.company}\n📍 ${j.province || '—'} | ${type}\n💰 ${sal}\n⏳ آخر موعد: ${j.deadline || '—'}\n\n` +
-    `${j.desc ? j.desc.slice(0, 120) + '...' : ''}\n\n👆 تقدّم الآن عبر منصة الفانوس للتوظيف`;
-  window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+  window.open(`https://wa.me/?text=${encodeURIComponent(_buildShareText(j, true))}`, '_blank');
 }
 
-// ── مشاركة على منصات متعددة ──
+// ── نافذة المشاركة الشاملة ──
 function shareJobGeneral(id) {
   const j = JOBS.find(x => x.id === id);
   if (!j) return;
-  const text = `فرصة عمل: ${j.title} — ${j.company} | ${j.province || ''} | ${jobTypeLabel(j.type)} — منصة الفانوس للتوظيف`;
-  const el = document.createElement('div');
-  el.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;gap:10px;background:var(--bgc);border:1px solid var(--br);border-radius:16px;padding:14px 18px;box-shadow:var(--shxl)';
-  el.innerHTML = `
-    <a href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(location.href)}&quote=${encodeURIComponent(text)}" target="_blank"
-      style="width:44px;height:44px;border-radius:12px;background:#1877f2;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;text-decoration:none">
-      <i class="fab fa-facebook-f"></i></a>
-    <a href="https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}" target="_blank"
-      style="width:44px;height:44px;border-radius:12px;background:#000;color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;text-decoration:none">
-      <i class="fab fa-x-twitter"></i></a>
-    <a href="https://t.me/share/url?url=${encodeURIComponent(location.href)}&text=${encodeURIComponent(text)}" target="_blank"
-      style="width:44px;height:44px;border-radius:12px;background:#229ed9;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;text-decoration:none">
-      <i class="fab fa-telegram-plane"></i></a>
-    <a href="https://wa.me/?text=${encodeURIComponent(text)}" target="_blank"
-      style="width:44px;height:44px;border-radius:12px;background:#25d366;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;text-decoration:none">
-      <i class="fab fa-whatsapp"></i></a>
-    <button onclick="this.closest('div').remove()"
-      style="width:44px;height:44px;border-radius:12px;background:var(--bgc2);color:var(--tx3);border:1px solid var(--br);cursor:pointer;font-size:16px">✕</button>`;
-  document.body.appendChild(el);
-  setTimeout(() => el.remove(), 8000);
+  _openSharePanel({
+    title: j.title,
+    text:  _buildShareText(j, false),
+    longText: _buildShareText(j, true),
+    url:   location.href,
+  });
+}
+
+// ── مشاركة المنصة نفسها ──
+function sharePlatform() {
+  const text = `🪔 الفانوس للتوظيف — منصة التوظيف الأولى في العراق!\n\nآلاف الوظائف في 18 محافظة، تقدّم بنقرة واحدة وتابع طلبك لحظة بلحظة.\n✨ ذكاء اصطناعي يساعدك في المقابلة والسيرة الذاتية.\n\n${location.href}`;
+  const short = `الفانوس للتوظيف — منصة التوظيف الأولى في العراق 🪔 ${location.href}`;
+  _openSharePanel({ title: 'الفانوس للتوظيف', text: short, longText: text, url: location.href });
+}
+
+// ── بناء نافذة المشاركة ──
+function _openSharePanel({ title, text, longText, url }) {
+  document.getElementById('_sharePanel')?.remove();
+
+  // Web Share API (موبايل أصلي)
+  if (navigator.share) {
+    navigator.share({ title, text, url }).catch(() => {});
+    return;
+  }
+
+  const enc  = encodeURIComponent;
+  const panel = document.createElement('div');
+  panel.id    = '_sharePanel';
+  panel.className = 'share-panel';
+  panel.innerHTML = `
+    <div class="share-panel-inner">
+      <div class="share-panel-title"><i class="fas fa-share-alt" style="color:var(--p)"></i> مشاركة</div>
+      <div class="share-btns">
+        <a class="share-btn" style="background:#25d366" href="https://wa.me/?text=${enc(longText)}" target="_blank" title="WhatsApp">
+          <i class="fab fa-whatsapp"></i><span>واتساب</span></a>
+        <a class="share-btn" style="background:#229ed9" href="https://t.me/share/url?url=${enc(url)}&text=${enc(text)}" target="_blank" title="Telegram">
+          <i class="fab fa-telegram-plane"></i><span>تيليغرام</span></a>
+        <a class="share-btn" style="background:#1877f2" href="https://www.facebook.com/sharer/sharer.php?u=${enc(url)}&quote=${enc(text)}" target="_blank" title="Facebook">
+          <i class="fab fa-facebook-f"></i><span>فيسبوك</span></a>
+        <a class="share-btn" style="background:#000" href="https://twitter.com/intent/tweet?text=${enc(text)}" target="_blank" title="X / Twitter">
+          <i class="fab fa-x-twitter"></i><span>تويتر</span></a>
+        <a class="share-btn" style="background:#0a66c2" href="https://www.linkedin.com/shareArticle?mini=true&url=${enc(url)}&title=${enc(title)}&summary=${enc(text)}" target="_blank" title="LinkedIn">
+          <i class="fab fa-linkedin-in"></i><span>لينكدإن</span></a>
+        <button class="share-btn share-copy" style="background:var(--bgc2);color:var(--tx);border:1.5px solid var(--br)" onclick="_copyShareLink('${url}',this)">
+          <i class="fas fa-link"></i><span>نسخ الرابط</span></button>
+      </div>
+      <button class="share-close" onclick="document.getElementById('_sharePanel')?.remove()">
+        <i class="fas fa-times"></i> إغلاق
+      </button>
+    </div>`;
+
+  document.body.appendChild(panel);
+  requestAnimationFrame(() => panel.classList.add('on'));
+  panel.addEventListener('click', e => { if (e.target === panel) panel.remove(); });
+}
+
+function _copyShareLink(url, btn) {
+  navigator.clipboard?.writeText(url).then(() => {
+    btn.innerHTML = '<i class="fas fa-check"></i><span>تم النسخ!</span>';
+    btn.style.background = 'rgba(34,197,94,.15)';
+    btn.style.color = 'var(--success)';
+    btn.style.borderColor = 'var(--success)';
+    setTimeout(() => {
+      btn.innerHTML = '<i class="fas fa-link"></i><span>نسخ الرابط</span>';
+      btn.style = '';
+    }, 2000);
+  }).catch(() => notify('تنبيه', 'انسخ الرابط يدوياً من شريط العنوان', 'info'));
 }
 
 // ── ترشيح موظف من مكتب التوظيف ──
