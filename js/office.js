@@ -526,12 +526,39 @@ function pgOfficeProfile(el) {
         <i class="fas fa-shield-alt" style="color:var(--danger)"></i> الأمان والحساب
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn bo bsm" onclick="notify('قريباً','ميزة تغيير كلمة المرور','info')">
+        <button class="btn bo bsm" onclick="showChangePwForm()">
           <i class="fas fa-key"></i>تغيير كلمة المرور
         </button>
         <button class="btn bda bsm" onclick="doLogout()">
           <i class="fas fa-sign-out-alt"></i>تسجيل الخروج
         </button>
+      </div>
+      <div id="changePwSection" style="display:none;margin-top:14px">
+        <div style="border-top:1px solid var(--br);margin-bottom:14px"></div>
+        <div style="font-size:12px;font-weight:800;color:var(--tx);margin-bottom:10px"><i class="fas fa-lock" style="color:var(--p)"></i> تغيير كلمة المرور</div>
+        <div class="fg">
+          <label class="fl req">كلمة المرور الحالية</label>
+          <div class="ig">
+            <input type="password" id="pw_curr" class="fc" placeholder="كلمة المرور الحالية">
+            <button class="btn bo bsm" onclick="togglePw('pw_curr',this)"><i class="fas fa-eye"></i></button>
+          </div>
+        </div>
+        <div class="fg">
+          <label class="fl req">كلمة المرور الجديدة</label>
+          <div class="ig">
+            <input type="password" id="pw_new" class="fc" placeholder="8 أحرف على الأقل">
+            <button class="btn bo bsm" onclick="togglePw('pw_new',this)"><i class="fas fa-eye"></i></button>
+          </div>
+        </div>
+        <div class="fg">
+          <label class="fl req">تأكيد كلمة المرور</label>
+          <input type="password" id="pw_conf" class="fc" placeholder="أعد كتابة كلمة المرور">
+          <div id="pw_err" class="err-msg"></div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn bp bsm" id="pwSaveBtn" onclick="doChangePassword()"><i class="fas fa-save"></i>حفظ</button>
+          <button class="btn bg bsm" onclick="document.getElementById('changePwSection').style.display='none'">إلغاء</button>
+        </div>
       </div>
     </div>`;
 }
