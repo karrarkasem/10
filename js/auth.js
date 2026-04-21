@@ -185,14 +185,9 @@ async function doLogout() {
   });
 }
 
-// ── وضع تجريبي ──
+// ── وضع تجريبي — محذوف (يتطلب تسجيل حقيقي) ──
 function enterDemo() {
-  U    = { uid:'demo', email:'demo@fanoos.iq', displayName:'مستخدم تجريبي' };
-  P    = { name:'أحمد محمد', role: SEL_ROLE || 'seeker', province:'كربلاء', phone:'07712345678', email:'demo@fanoos.iq', status:'active' };
-  ROLE = SEL_ROLE || 'seeker';
-  JOBS    = [...DEMO_JOBS];
-  MY_APPS = ROLE === 'seeker' ? [...DEMO_APPS.slice(0, 2)] : [];
-  bootApp();
+  notify('تنبيه', 'الوضع التجريبي غير متاح. سجّل حساباً مجانياً للبدء!', 'warning');
 }
 
 // ── ترجمة أخطاء Firebase ──
@@ -231,12 +226,34 @@ if (!DEMO && typeof firebase !== 'undefined') {
         }
         const snap = await window.db.collection('jobs').where('status', '==', 'active').orderBy('postedAt', 'desc').limit(50).get();
         JOBS = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
         if (ROLE === 'seeker') {
           const asnap = await window.db.collection('applications').where('applicantId', '==', user.uid).orderBy('appliedAt', 'desc').get();
           MY_APPS = asnap.docs.map(d => ({ id: d.id, ...d.data() }));
         }
+
+        if (ROLE === 'office') {
+          const myJobIds = JOBS.filter(j => j.postedBy === user.uid).map(j => j.id);
+          if (myJobIds.length > 0) {
+            try {
+              // Firestore 'in' يدعم 10 عناصر كحد أقصى — نقسّم على دُفعات
+              const chunks = [];
+              for (let i = 0; i < myJobIds.length; i += 10) chunks.push(myJobIds.slice(i, i + 10));
+              const snaps = await Promise.all(chunks.map(c =>
+                window.db.collection('applications').where('jobId', 'in', c).get()
+              ));
+              OFFICE_APPS = snaps.flatMap(s => s.docs.map(d => ({ id: d.id, ...d.data() })))
+                .sort((a, b) => {
+                  const ta = a.appliedAt?.toMillis?.() || new Date(a.appliedAt).getTime() || 0;
+                  const tb = b.appliedAt?.toMillis?.() || new Date(b.appliedAt).getTime() || 0;
+                  return tb - ta;
+                });
+            } catch (_) { OFFICE_APPS = []; }
+          }
+        }
+
         bootApp();
-      } catch (e) { console.error(e); JOBS = DEMO_JOBS; bootApp(); }
+      } catch (e) { console.error(e); JOBS = []; bootApp(); }
     }
   });
 }

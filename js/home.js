@@ -157,8 +157,6 @@ async function pgAdminHome(el) {
         return (Date.now() - t) < 86400000 * 7;
       }).length;
     } catch(e) { console.warn('Admin stats:', e); }
-  } else {
-    totalUsers = 124; totalOffices = 8; totalApps = 56; newThisWeek = 8;
   }
 
   const newJobs = JOBS.filter(j => (Date.now() - new Date(j.postedAt)) < 86400000 * 7).length;
@@ -232,13 +230,12 @@ async function pgAdminOffices(el) {
       const snap = await window.db.collection('users').where('role', '==', 'office').get();
       offices = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     } catch(e) { console.warn('Admin offices:', e); }
-  } else {
-    offices = [
-      { id:'off1', name:'مكتب الأمل للتوظيف',   officeName:'مكتب الأمل',   province:'بغداد',  email:'amal@office.iq',  phone:'07701234567', status:'active',  createdAt:null },
-      { id:'off2', name:'أحمد الراشدي',           officeName:'مكتب الراشدي', province:'كربلاء', email:'rashdi@off.iq',   phone:'07712345678', status:'active',  createdAt:null },
-      { id:'off3', name:'مكتب الصحة المهنية',    officeName:'الصحة المهنية', province:'البصرة', email:'seha@off.iq',     phone:'07723456789', status:'active',  createdAt:null },
-      { id:'off4', name:'التعليم المتقدم',         officeName:'التعليم المتقدم',province:'أربيل', email:'edu@off.iq',      phone:'07734567890', status:'inactive',createdAt:null },
-    ];
+  }
+  if (!offices.length) {
+    el.innerHTML = `
+      <div class="sh"><div class="st"><div class="st-ico"><i class="fas fa-building"></i></div>مكاتب التوظيف</div></div>
+      ${emptyState('🏢', 'لا توجد مكاتب مسجّلة بعد', 'لم يُسجَّل أي مكتب توظيف حتى الآن')}`;
+    return;
   }
 
   const render = (list) => {
@@ -347,14 +344,12 @@ async function pgAdminUsers(el) {
       const snap = await window.db.collection('users').orderBy('createdAt', 'desc').get();
       users = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     } catch(e) { console.warn('Admin users:', e); }
-  } else {
-    users = [
-      { id:'u1', name:'أحمد محمد علي',    email:'ahmed@test.iq',  role:'seeker', province:'بغداد',  phone:'07701234567', status:'active',   createdAt:null },
-      { id:'u2', name:'سارة الزيدي',      email:'sara@test.iq',   role:'seeker', province:'كربلاء', phone:'07712345678', status:'active',   createdAt:null },
-      { id:'u3', name:'مكتب الأمل',       email:'amal@office.iq', role:'office', province:'بغداد',  phone:'07723456789', status:'active',   createdAt:null },
-      { id:'u4', name:'مدير النظام',      email:'admin@fanoos.iq',role:'admin',  province:'كربلاء', phone:'07700000000', status:'active',   createdAt:null },
-      { id:'u5', name:'علي الموسوي',      email:'ali@test.iq',    role:'seeker', province:'النجف',  phone:'07734567890', status:'inactive', createdAt:null },
-    ];
+  }
+  if (!users.length) {
+    el.innerHTML = `
+      <div class="sh"><div class="st"><div class="st-ico"><i class="fas fa-users"></i></div>المستخدمون</div></div>
+      ${emptyState('👤', 'لا يوجد مستخدمون بعد', 'لم يُسجَّل أي مستخدم حتى الآن')}`;
+    return;
   }
 
   const seekers = users.filter(u => u.role === 'seeker' || !u.role).length;

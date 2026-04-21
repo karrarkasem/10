@@ -20,33 +20,11 @@ let P    = null;   // Firestore Profile
 let ROLE = null;   // 'seeker' | 'office' | 'admin'
 const DEMO = window.FIREBASE_ERROR || false;
 
-let JOBS      = [];
-let MY_APPS   = [];
-let SEL_JOB   = null;
-let SEL_ROLE  = 'seeker';
-
-// ═══════════════════════════════════════════════
-// بيانات تجريبية
-// ═══════════════════════════════════════════════
-const DEMO_JOBS = [
-  { id:'j1', title:'مبرمج ويب React', company:'شركة التقنيات المتقدمة', province:'بغداد', type:'full', cat:'tech', salary:900000, salaryMax:1400000, currency:'IQD', desc:'نبحث عن مبرمج ويب متمرس في React.js وNode.js لتطوير منصاتنا الرقمية. يُشترط خبرة لا تقل عن سنتين.', reqs:['React.js','Node.js','MongoDB','REST APIs','Git'], bens:['تأمين صحي','أجازة 30 يوم','وجبات مجانية','عمل هجين'], deadline:'2026-06-30', logo:'💻', applicants:14, status:'active', postedBy:'off1', postedAt:'2026-03-20', exp:'2-4 سنوات', gender:'الجنسين', hours:'8 ساعات' },
-  { id:'j2', title:'محاسب قانوني', company:'مكتب الراشدي للمحاسبة', province:'كربلاء', type:'full', cat:'biz', salary:650000, salaryMax:950000, currency:'IQD', desc:'مطلوب محاسب قانوني معتمد للعمل في أحد أعرق مكاتب المحاسبة في كربلاء. خبرة 3 سنوات على الأقل.', reqs:['بكالوريوس محاسبة','Excel متقدم','برامج محاسبة'], bens:['راتب تنافسي','بيئة مهنية'], deadline:'2026-05-15', logo:'📊', applicants:9, status:'active', postedBy:'off2', postedAt:'2026-03-18', exp:'3+ سنوات', gender:'الجنسين', hours:'8 ساعات' },
-  { id:'j3', title:'مصمم جرافيك', company:'وكالة الإبداع الرقمي', province:'النجف', type:'part', cat:'tech', salary:450000, salaryMax:700000, currency:'IQD', desc:'مطلوب مصمم جرافيك موهوب لتصميم هويات بصرية. يمكن العمل عن بُعد.', reqs:['Photoshop','Illustrator','Figma'], bens:['عمل مرن','عن بُعد'], deadline:'2026-05-20', logo:'🎨', applicants:21, status:'active', postedBy:'off1', postedAt:'2026-03-25', exp:'سنة+', gender:'الجنسين', hours:'4 ساعات' },
-  { id:'j4', title:'ممرض/ة قسم الطوارئ', company:'مستشفى الحياة الأهلي', province:'البصرة', type:'full', cat:'med', salary:800000, salaryMax:1000000, currency:'IQD', desc:'مطلوب ممرض أو ممرضة مؤهل للعمل في قسم الطوارئ.', reqs:['شهادة التمريض','BLS','ACLS'], bens:['تأمين صحي كامل','بدل خطورة'], deadline:'2026-05-30', logo:'🏥', applicants:6, status:'active', postedBy:'off3', postedAt:'2026-03-22', exp:'سنة+', gender:'الجنسين', hours:'12 ساعة' },
-  { id:'j5', title:'مدرّس رياضيات', company:'مدرسة المستقبل الأهلية', province:'أربيل', type:'full', cat:'edu', salary:580000, salaryMax:720000, currency:'IQD', desc:'مطلوب مدرّس رياضيات لمرحلة الإعدادية ضمن بيئة تعليمية متطورة.', reqs:['بكالوريوس رياضيات','مهارات تواصل'], bens:['إجازة صيفية مدفوعة'], deadline:'2026-06-01', logo:'📐', applicants:4, status:'active', postedBy:'off4', postedAt:'2026-03-28', exp:'سنتان+', gender:'الجنسين', hours:'6 ساعات' },
-  { id:'j6', title:'مندوب مبيعات', company:'شركة التوزيع الوطنية', province:'بغداد', type:'full', cat:'biz', salary:550000, salaryMax:900000, currency:'IQD', desc:'مطلوب مندوب مبيعات ميداني. راتب ثابت + عمولة + بدل نقل.', reqs:['خبرة مبيعات','رخصة قيادة','سيارة خاصة'], bens:['بدل نقل','عمولة'], deadline:'2026-05-01', logo:'🏪', applicants:28, status:'active', postedBy:'off2', postedAt:'2026-03-15', exp:'سنة+', gender:'ذكور', hours:'8 ساعات' },
-  { id:'j7', title:'مهندس مدني', company:'شركة البناء الحديث', province:'بغداد', type:'full', cat:'eng', salary:1100000, salaryMax:1500000, currency:'IQD', desc:'نبحث عن مهندس مدني لمشاريع البنية التحتية. خبرة 4 سنوات.', reqs:['بكالوريوس هندسة مدنية','AutoCAD'], bens:['سيارة + هاتف','تأمين شامل'], deadline:'2026-06-15', logo:'🏗️', applicants:7, status:'active', postedBy:'off1', postedAt:'2026-03-29', exp:'4+ سنوات', gender:'الجنسين', hours:'9 ساعات' },
-  { id:'j8', title:'سكرتيرة تنفيذية', company:'مجموعة الخليج التجارية', province:'كربلاء', type:'full', cat:'biz', salary:600000, salaryMax:800000, currency:'IQD', desc:'مطلوبة سكرتيرة تنفيذية ذات خبرة. إتقان الإنجليزية شرط.', reqs:['إنجليزي ممتاز','Office Suite'], bens:['بيئة احترافية','فرص نمو'], deadline:'2026-05-10', logo:'🗂️', applicants:15, status:'active', postedBy:'off4', postedAt:'2026-04-01', exp:'سنتان+', gender:'إناث', hours:'8 ساعات' },
-];
-
-const DEMO_APPS = [
-  { id:'a1', name:'محمد علي الربيعي',  phone:'07701234567', email:'mo@test.iq',    jobTitle:'مبرمج ويب React', jobId:'j1', exp:'2-4 سنوات', cover:'لديّ خبرة 3 سنوات في React.js وNode.js.', status:'pending',   appliedAt:'2026-03-30' },
-  { id:'a2', name:'سارة أحمد الزيدي', phone:'07712345678', email:'sara@test.iq',  jobTitle:'محاسب قانوني',    jobId:'j2', exp:'3+ سنوات',  cover:'حاصلة على شهادة محاسبة معتمدة وخبرة 4 سنوات.', status:'reviewed',  appliedAt:'2026-03-29' },
-  { id:'a3', name:'علي حسين الموسوي', phone:'07723456789', email:'ali@test.iq',   jobTitle:'مصمم جرافيك',     jobId:'j3', exp:'سنة+',      cover:'أعشق التصميم وأتقن Photoshop وFigma.', status:'interview', appliedAt:'2026-03-28' },
-  { id:'a4', name:'نور عبدالله الحسيني', phone:'07734567890', email:'noor@test.iq', jobTitle:'مبرمج ويب React', jobId:'j1', exp:'4+ سنوات', cover:'أتمتع بخبرة 4 سنوات وبنيت أكثر من 20 مشروعاً.', status:'hired',     appliedAt:'2026-03-27' },
-  { id:'a5', name:'حسن محمد الجبوري', phone:'07745678901', email:'hasan@test.iq', jobTitle:'مندوب مبيعات',    jobId:'j6', exp:'أقل من سنة', cover:'متحمس وأرغب في تطوير نفسي.', status:'rejected',  appliedAt:'2026-03-26' },
-  { id:'a6', name:'زينب كريم السعدي',  phone:'07756789012', email:'zainab@test.iq', jobTitle:'ممرض/ة',         jobId:'j4', exp:'سنتان+',   cover:'حاصلة على شهادة التمريض وشهادة BLS.', status:'pending',   appliedAt:'2026-04-01' },
-];
+let JOBS        = [];
+let MY_APPS     = [];
+let OFFICE_APPS = []; // طلبات وظائف المكتب الحالي
+let SEL_JOB     = null;
+let SEL_ROLE    = 'seeker';
 
 const CATS  = { tech:'تقنية', biz:'أعمال', med:'طب', edu:'تعليم', eng:'هندسة', other:'أخرى' };
 const PROVS = ['بغداد','كربلاء','النجف','البصرة','نينوى','أربيل','كركوك','بابل','ذي قار','ميسان','القادسية','واسط','المثنى','الأنبار','صلاح الدين','ديالى','دهوك','السليمانية'];

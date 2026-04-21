@@ -370,7 +370,8 @@ async function submitApply(quizScore = null, quizFeedback = '') {
   if (!/^07[3-9]\d{8}$/.test(ph.replace(/\s/g,''))) { notify('خطأ', 'رقم الهاتف يجب أن يكون رقم عراقي صحيح (07XXXXXXXXX)', 'error'); return; }
   const app = {
     jobId: j.id, jobTitle: j.title, company: j.company,
-    applicantId: U?.uid || 'demo', name, phone: ph, email: em,
+    postedBy: j.postedBy || null,
+    applicantId: U?.uid, name, phone: ph, email: em,
     cover: cv, exp, cvUrl: url || null,
     quizScore: quizScore !== null ? quizScore : null,
     quizFeedback: quizFeedback || null,

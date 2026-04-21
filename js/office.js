@@ -6,7 +6,7 @@
 // ── لوحة التحكم الرئيسية ──
 function pgOfficeHome(el) {
   const nm   = P?.officeName || P?.name || 'المكتب';
-  const apps = DEMO_APPS;
+  const apps = OFFICE_APPS;
   const hired     = apps.filter(a => a.status === 'hired').length;
   const interview = apps.filter(a => a.status === 'interview').length;
   const pending   = apps.filter(a => a.status === 'pending').length;
@@ -141,21 +141,23 @@ function pgOfficeHome(el) {
 
 // ── وظائفي ──
 function pgOfficeJobs(el) {
-  const jobs = DEMO_JOBS.slice(0, 3);
+  const jobs = JOBS.filter(j => j.postedBy === U?.uid);
   el.innerHTML = `
     <div class="sh">
       <div class="st"><div class="st-ico"><i class="fas fa-briefcase"></i></div>وظائفي</div>
       <button class="btn bp bsm" onclick="openAddJob()"><i class="fas fa-plus"></i>نشر وظيفة</button>
     </div>
-    ${jobs.map(j => `
+    ${!jobs.length
+      ? emptyState('📋', 'لا توجد وظائف منشورة بعد', 'انشر وظيفتك الأولى الآن', '<button class="btn bp bsm" style="margin-top:8px" onclick="openAddJob()"><i class="fas fa-plus"></i>نشر وظيفة</button>')
+      : jobs.map(j => `
       <div class="oj-card">
         <div class="oj-header">
           <div class="jlo" style="width:48px;height:48px;border-radius:13px;font-size:20px;flex-shrink:0">${j.logo || '🏢'}</div>
           <div style="flex:1;min-width:0">
             <div style="font-size:14px;font-weight:800;color:var(--tx);margin-bottom:3px">${j.title}</div>
             <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
-              <span class="b ${j.type==='full'?'b-tl':'b-am'}">${j.type==='full'?'دوام كامل':'دوام جزئي'}</span>
-              <span style="font-size:11px;color:var(--tx3)"><i class="fas fa-users"></i> ${j.applicants} متقدم</span>
+              <span class="b ${j.type==='full'?'b-tl':'b-am'}">${jobTypeLabel(j.type)}</span>
+              <span style="font-size:11px;color:var(--tx3)"><i class="fas fa-users"></i> ${j.applicants||0} متقدم</span>
               <span style="font-size:11px;color:var(--tx3)"><i class="fas fa-map-marker-alt"></i> ${j.province}</span>
             </div>
           </div>
@@ -165,8 +167,7 @@ function pgOfficeJobs(el) {
           </div>
         </div>
         <div class="oj-body">
-          <button class="btn bp bsm" onclick="goTo('candidates')"><i class="fas fa-users"></i>المتقدمون (${j.applicants})</button>
-          <button class="btn bg bsm" onclick="notify('قريباً','تعديل الوظائف','info')"><i class="fas fa-edit"></i>تعديل</button>
+          <button class="btn bp bsm" onclick="goTo('candidates')"><i class="fas fa-users"></i>المتقدمون (${j.applicants||0})</button>
           <button class="btn bda bsm" onclick="confirm2('إيقاف الوظيفة','هل تريد إيقاف هذه الوظيفة مؤقتاً؟',()=>notify('تم','تم إيقاف الوظيفة','warning'))"><i class="fas fa-pause"></i>إيقاف</button>
         </div>
       </div>`).join('')}
@@ -178,7 +179,7 @@ function pgOfficeJobs(el) {
 
 // ── المتقدمون ──
 function pgCandidates(el) {
-  const apps = DEMO_APPS;
+  const apps = OFFICE_APPS;
   el.innerHTML = `
     <div class="sh">
       <div class="st"><div class="st-ico"><i class="fas fa-users"></i></div>المتقدمون</div>
@@ -251,7 +252,7 @@ function filterCands(q) {
 }
 
 function filterCandsByStatus(status) {
-  const apps  = status ? DEMO_APPS.filter(a => a.status === status) : DEMO_APPS;
+  const apps  = status ? OFFICE_APPS.filter(a => a.status === status) : OFFICE_APPS;
   const tbody = document.getElementById('candBody');
   if (tbody) tbody.innerHTML = renderCandRows(apps);
 }
@@ -266,7 +267,7 @@ async function quickUpdateStatus(btn, status, appId, e) {
     try { await window.db.collection('applications').doc(appId).update({ status }); } catch(_) {}
   }
   // تحديث محلي
-  const app = DEMO_APPS.find(a => a.id === appId);
+  const app = OFFICE_APPS.find(a => a.id === appId);
   if (app) app.status = status;
   notify('تم التحديث ✅', `تم تغيير الحالة إلى: ${s?.l || status}`, 'success');
 }
@@ -404,7 +405,7 @@ async function _doUpdateStatus(appId, status, extra = {}) {
   if (!DEMO && window.db && appId && !appId.startsWith('a')) {
     try { await window.db.collection('applications').doc(appId).update({ status, ...extra }); } catch(e) {}
   }
-  const app = MY_APPS.find(a => a.id === appId) || DEMO_APPS.find(a => a.id === appId);
+  const app = OFFICE_APPS.find(a => a.id === appId) || MY_APPS.find(a => a.id === appId);
   if (app) { app.status = status; Object.assign(app, extra); }
   notify('تم التحديث ✅', `تم تغيير الحالة إلى: ${s?.l}`, 'success');
   cmo('moCand');
@@ -508,11 +509,11 @@ function pgPipeline(el) {
   ];
   el.innerHTML = `
     <div class="sh"><div class="st"><div class="st-ico"><i class="fas fa-columns"></i></div>خط التوظيف</div>
-      <span class="b b-tl">${DEMO_APPS.length} متقدم</span>
+      <span class="b b-tl">${OFFICE_APPS.length} متقدم</span>
     </div>
     <div class="kb">
       ${stages.map(s => {
-        const apps = DEMO_APPS.filter(a => a.status === s.id);
+        const apps = OFFICE_APPS.filter(a => a.status === s.id);
         return `<div class="kcol">
           <div class="kch">
             <span style="display:flex;align-items:center;gap:5px;color:${s.c};font-size:12px">
@@ -564,9 +565,9 @@ function pgOfficeProfile(el) {
         <!-- الإحصائيات -->
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px">
           ${[
-            { v:3,               l:'وظائف نشطة',  c:'var(--p)' },
-            { v:DEMO_APPS.length, l:'المتقدمون',   c:'var(--acc)' },
-            { v:DEMO_APPS.filter(a=>a.status==='hired').length, l:'تم توظيفهم', c:'var(--success)' },
+            { v:JOBS.filter(j=>j.postedBy===U?.uid).length, l:'وظائف نشطة', c:'var(--p)' },
+            { v:OFFICE_APPS.length,                          l:'المتقدمون',  c:'var(--acc)' },
+            { v:OFFICE_APPS.filter(a=>a.status==='hired').length, l:'تم توظيفهم', c:'var(--success)' },
           ].map(x => `<div style="text-align:center;padding:12px 10px;background:var(--bgc2);border-radius:11px;border:1px solid var(--br)">
             <div style="font-size:20px;font-weight:900;color:${x.c}">${x.v}</div>
             <div style="font-size:10px;color:var(--tx3);margin-top:2px">${x.l}</div>
@@ -785,14 +786,9 @@ async function pgOfficesList(el) {
     } catch (e) {}
   }
 
-  // بيانات تجريبية
   if (!offices.length) {
-    offices = [
-      { id:'o1', officeName:'مكتب الأمل للتوظيف',    name:'مكتب الأمل',    province:'بغداد',  bio:'متخصصون في التوظيف التقني والإداري', rating:4.7, ratingCount:23, jobsCount:8  },
-      { id:'o2', officeName:'مكتب الراشدي',           name:'مكتب الراشدي', province:'كربلاء', bio:'خبرة 10 سنوات في سوق العمل العراقي',  rating:4.5, ratingCount:17, jobsCount:5  },
-      { id:'o3', officeName:'مكتب التعليم المتقدم',   name:'مكتب التعليم', province:'أربيل',  bio:'توظيف في القطاع التعليمي والصحي',     rating:4.8, ratingCount:31, jobsCount:6  },
-      { id:'o4', officeName:'مكتب الصحة المهنية',     name:'مكتب الصحة',   province:'البصرة', bio:'متخصصون في الكوادر الطبية',            rating:4.3, ratingCount:12, jobsCount:3  },
-    ];
+    el.innerHTML = emptyState('🏢', 'لا توجد مكاتب توظيف مسجّلة بعد', 'كن أول من ينضم كمكتب توظيف!');
+    return;
   }
 
   el.innerHTML = `
