@@ -18,6 +18,9 @@ const LOCAL_ASSETS = [
   './js/office.js',
   './js/booking.js',
   './js/quiz.js',
+  './js/myapps.js',
+  './js/home.js',
+  './js/profile.js',
   './manifest.json',
 ];
 
