@@ -333,6 +333,7 @@ function renderPage(pg) {
     if (pg === 'bookings')   return pgBookings(el);
     if (pg === 'pipeline')   return pgPipeline(el);
     if (pg === 'profile')    return pgOfficeProfile(el);
+    return pgOfficeHome(el); // catch-all — لا يسقط لصفحات الباحث
   }
   if (ROLE === 'admin') {
     if (pg === 'home')        return pgAdminHome(el);
@@ -340,15 +341,17 @@ function renderPage(pg) {
     if (pg === 'alloffices')  return pgAdminOffices(el);
     if (pg === 'allusers')    return pgAdminUsers(el);
     if (pg === 'settings')    return pgAdminSettings(el);
+    return pgAdminHome(el); // catch-all
   }
   // seeker (default)
   if (pg === 'home')      return pgSeekerHome(el);
   if (pg === 'jobs')      return pgJobs(el);
   if (pg === 'myapps')    return pgMyApps(el);
   if (pg === 'offices')   return pgOfficesList(el);
-  if (pg === 'cv')        { oMo('moCV'); buildCVModal(); return; }
-  if (pg === 'interview') { oMo('moIV'); buildIVModal(); return; }
+  if (pg === 'cv')        { history.replaceState(null,'','#home'); oMo('moCV'); buildCVModal(); return; }
+  if (pg === 'interview') { history.replaceState(null,'','#home'); oMo('moIV'); buildIVModal(); return; }
   if (pg === 'profile')   return pgSeekerProfile(el);
+  return pgSeekerHome(el);
 }
 
 function openSidebar()  { document.getElementById('sidebar').classList.add('open'); document.getElementById('ov').style.display = 'block'; }

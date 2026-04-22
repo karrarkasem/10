@@ -617,6 +617,28 @@ function pgOfficeProfile(el) {
           <textarea id="eobio" class="fc" rows="3" placeholder="نبذة عن مكتبك وخدماتك...">${p?.bio||''}</textarea>
         </div>
 
+        <!-- التوثيق الرسمي -->
+        <div style="font-size:13px;font-weight:800;color:var(--tx);margin-bottom:12px;margin-top:6px;display:flex;align-items:center;gap:6px">
+          <i class="fas fa-id-card" style="color:var(--acc)"></i>التوثيق الرسمي
+          ${p?.licenseNum || p?.storefrontPhoto ? '<span class="b b-gr" style="font-size:10px"><i class="fas fa-check-circle"></i> موثّق</span>' : '<span class="b b-am" style="font-size:10px"><i class="fas fa-exclamation-circle"></i> غير موثّق</span>'}
+        </div>
+        <div class="fg">
+          <label class="fl">رقم الإجازة الرسمية</label>
+          <input type="text" id="elic" class="fc" value="${san(p?.licenseNum||'')}" placeholder="رقم الإجازة التجارية أو ترخيص مكتب التوظيف">
+          <div class="fh"><i class="fas fa-info-circle"></i> الإجازة الرسمية تزيد من ثقة الباحثين بمكتبك</div>
+        </div>
+        <div class="fg">
+          <label class="fl">صورة واجهة المكتب</label>
+          ${p?.storefrontPhoto
+            ? `<div style="margin-bottom:8px;position:relative;display:inline-block">
+                <img src="${p.storefrontPhoto}" alt="واجهة المكتب" style="width:100%;max-width:340px;border-radius:10px;border:2px solid var(--br);object-fit:cover;max-height:160px">
+                <div style="position:absolute;top:6px;left:6px;background:rgba(34,197,94,.9);border-radius:6px;padding:2px 8px;font-size:10px;color:#fff;font-weight:700"><i class="fas fa-check"></i> مرفوعة</div>
+               </div><br>`
+            : ''}
+          <input type="file" id="estorefrontFile" accept="image/*" class="fc" style="padding:7px">
+          <div class="fh">صورة الواجهة الخارجية للمكتب — تساعد في تعزيز المصداقية</div>
+        </div>
+
         <!-- موقع المكتب على الخارطة -->
         <div class="fg">
           <label class="fl">موقع المكتب على الخارطة</label>
@@ -734,8 +756,22 @@ async function saveOfficeProfile() {
     province:   document.getElementById('eprov2')?.value || '',
     phone:      document.getElementById('eoph')?.value   || '',
     bio:        document.getElementById('eobio')?.value  || '',
+    licenseNum: document.getElementById('elic')?.value.trim() || '',
   };
   if (_pickedLat) { d.lat = _pickedLat; d.lng = _pickedLng; }
+
+  // رفع صورة الواجهة إن وُجدت
+  const fileInput = document.getElementById('estorefrontFile');
+  const file = fileInput?.files?.[0];
+  if (file && typeof firebase !== 'undefined' && firebase.storage && !DEMO) {
+    try {
+      notify('جاري الرفع...', 'يتم رفع صورة الواجهة', 'info');
+      const ref = firebase.storage().ref(`storefronts/${U.uid}`);
+      await ref.put(file);
+      d.storefrontPhoto = await ref.getDownloadURL();
+    } catch(e) { console.warn('storefront upload error', e); }
+  }
+
   P = { ...P, ...d };
   if (!DEMO && window.db && U) { try { await window.db.collection('users').doc(U.uid).update(d); } catch(e) {} }
   updateUserUI();
@@ -873,13 +909,20 @@ function officeCard(o) {
   // هل قدّم الباحث على وظيفة من هذا المكتب؟
   const canRate = MY_APPS.some(a => a.postedBy === o.id || a.company === (o.officeName || o.name));
 
-  return `<div class="card cp fade-up">
+  return `<div class="card fade-up" style="overflow:hidden">
+    ${o.storefrontPhoto ? `<img src="${o.storefrontPhoto}" alt="واجهة المكتب" style="width:100%;height:100px;object-fit:cover;display:block">` : ''}
+    <div class="cp" style="${o.storefrontPhoto ? 'padding-top:12px' : ''}">
     <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px">
       <div class="av avl" style="background:var(--grad-p);color:#fff;font-size:18px;font-weight:900;flex-shrink:0">
         ${(o.officeName || o.name || '؟').charAt(0)}
       </div>
       <div style="flex:1;min-width:0">
-        <div style="font-size:14px;font-weight:900;color:var(--tx)">${san(o.officeName || o.name)}</div>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          <div style="font-size:14px;font-weight:900;color:var(--tx)">${san(o.officeName || o.name)}</div>
+          ${o.licenseNum || o.storefrontPhoto
+            ? `<span style="background:rgba(34,197,94,.1);color:#15803d;font-size:9px;font-weight:800;padding:1px 7px;border-radius:20px;display:inline-flex;align-items:center;gap:3px"><i class="fas fa-shield-alt"></i>موثّق</span>`
+            : ''}
+        </div>
         <div style="font-size:11px;color:var(--tx2);margin-top:2px">
           <i class="fas fa-map-marker-alt" style="color:var(--tx3)"></i> ${san(o.province || '—')}
         </div>
@@ -913,6 +956,7 @@ function officeCard(o) {
           onclick="openRating('${o.id}','${san(o.officeName || o.name)}')">
           <i class="fas fa-star"></i>قيّم
         </button>` : ''}
+    </div>
     </div>
   </div>`;
 }

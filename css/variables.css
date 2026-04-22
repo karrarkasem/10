@@ -43,8 +43,8 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html  { scroll-behavior: smooth; }
 body  { font-family: 'Cairo', sans-serif; background: var(--bg); color: var(--tx); min-height: 100vh; direction: rtl; overflow-x: hidden; transition: background .3s, color .3s; }
-button { cursor: pointer; font-family: 'Cairo', sans-serif; border: none; outline: none; }
-input, textarea, select { font-family: 'Cairo', sans-serif; outline: none; }
+button { cursor: pointer; font-family: 'Cairo', sans-serif; border: none; outline: none; touch-action: manipulation; }
+input, textarea, select { font-family: 'Cairo', sans-serif; outline: none; touch-action: manipulation; }
 a  { text-decoration: none; color: inherit; }
 img { max-width: 100%; }
 

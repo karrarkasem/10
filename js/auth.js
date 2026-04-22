@@ -124,15 +124,17 @@ async function doRegister() {
   try {
     const cred = await window.auth.createUserWithEmailAndPassword(email, pass);
     await cred.user.updateProfile({ displayName: name });
-    const offN = SEL_ROLE === 'office'   ? document.getElementById('ron')?.value.trim()       : null;
-    const empN = SEL_ROLE === 'employer' ? document.getElementById('remp_name')?.value.trim() : null;
-    const empT = SEL_ROLE === 'employer' ? document.getElementById('remp_type')?.value        : null;
+    const offN = SEL_ROLE === 'office'   ? document.getElementById('ron')?.value.trim()         : null;
+    const offL = SEL_ROLE === 'office'   ? document.getElementById('ron_license')?.value.trim() : null;
+    const empN = SEL_ROLE === 'employer' ? document.getElementById('remp_name')?.value.trim()   : null;
+    const empT = SEL_ROLE === 'employer' ? document.getElementById('remp_type')?.value          : null;
     await window.db.collection('users').doc(cred.user.uid).set({
       name, phone, province: prov, email,
       role: SEL_ROLE,
-      officeName:   offN || null,
-      companyName:  empN || null,
-      businessType: empT || null,
+      officeName:    offN || null,
+      licenseNum:    offL || null,
+      companyName:   empN || null,
+      businessType:  empT || null,
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       status: 'active',
     });
