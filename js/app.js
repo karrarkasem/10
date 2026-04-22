@@ -242,11 +242,12 @@ const NAV_GUEST = [
 const NAV_SEEKER = [
   { id:'home',      icon:'fa-home',           label:'الرئيسية',         btm:true  },
   { id:'jobs',      icon:'fa-briefcase',       label:'الوظائف',           btm:true  },
+  { id:'post_job',  icon:'fa-plus-circle',    label:'نشر وظيفة',        btm:true  },
   { id:'myapps',    icon:'fa-clipboard-list',  label:'طلباتي',            btm:true  },
   { id:'offices',   icon:'fa-building',        label:'مكاتب التوظيف',   btm:false },
   { id:'cv',        icon:'fa-file-alt',        label:'سيرتي الذاتية',    btm:false },
   { id:'interview', icon:'fa-comments',        label:'مقابلة ذكية',      btm:false },
-  { id:'profile',   icon:'fa-user-circle',     label:'حسابي',             btm:true  },
+  { id:'profile',   icon:'fa-user-circle',     label:'حسابي',             btm:false },
 ];
 const NAV_OFFICE = [
   { id:'home',       icon:'fa-tachometer-alt', label:'لوحة التحكم',      btm:true  },
@@ -346,6 +347,7 @@ function renderPage(pg) {
   // seeker (default)
   if (pg === 'home')      return pgSeekerHome(el);
   if (pg === 'jobs')      return pgJobs(el);
+  if (pg === 'post_job')  { history.replaceState(null,'','#home'); openAddJob(); return; }
   if (pg === 'myapps')    return pgMyApps(el);
   if (pg === 'offices')   return pgOfficesList(el);
   if (pg === 'cv')        { history.replaceState(null,'','#home'); oMo('moCV'); buildCVModal(); return; }

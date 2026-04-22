@@ -201,35 +201,73 @@ function pgOfficeJobs(el) {
     </div>`;
 }
 
-// ── المتقدمون ──
-function pgCandidates(el) {
+// ── المتقدمون والملفات المنشورة ──
+async function pgCandidates(el) {
   const apps = OFFICE_APPS;
+
+  // تحميل الباحثين الذين نشروا ملفاتهم
+  let publishedSeekers = [];
+  if (!DEMO && window.db) {
+    try {
+      const snap = await window.db.collection('users')
+        .where('role', '==', 'seeker')
+        .where('cvPublished', '==', true)
+        .limit(50).get();
+      publishedSeekers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    } catch(e) {}
+  }
+
   el.innerHTML = `
     <div class="sh">
-      <div class="st"><div class="st-ico"><i class="fas fa-users"></i></div>المتقدمون</div>
-      <span class="b b-tl">${apps.length} متقدم</span>
+      <div class="st"><div class="st-ico"><i class="fas fa-users"></i></div>المرشحون</div>
     </div>
 
-    <!-- الفلاتر -->
-    <div class="fb" style="margin-bottom:14px">
-      <div class="sb" style="min-width:180px">
-        <i class="fas fa-search"></i>
-        <input type="text" placeholder="ابحث بالاسم أو الوظيفة..." oninput="filterCands(this.value)">
+    <div class="tabs fade-up" style="margin-bottom:14px">
+      <button class="tb2 on" id="candTab1" onclick="switchCandTab('applicants')">
+        <i class="fas fa-paper-plane"></i>المتقدمون <span class="b b-tl" style="margin-right:4px">${apps.length}</span>
+      </button>
+      <button class="tb2" id="candTab2" onclick="switchCandTab('published')">
+        <i class="fas fa-address-card"></i>الملفات المنشورة <span class="b b-gr" style="margin-right:4px">${publishedSeekers.length}</span>
+      </button>
+    </div>
+
+    <!-- تبويب المتقدمين -->
+    <div id="candViewApplicants">
+      <div class="fb" style="margin-bottom:14px">
+        <div class="sb" style="min-width:180px">
+          <i class="fas fa-search"></i>
+          <input type="text" placeholder="ابحث بالاسم أو الوظيفة..." oninput="filterCands(this.value)">
+        </div>
+        ${['الكل','قيد المراجعة','مدعو للمقابلة','تم القبول','مرفوض'].map((l, i) =>
+          `<button class="fc2 ${i===0?'on':''}"
+            onclick="this.closest('.fb').querySelectorAll('.fc2').forEach(b=>b.classList.remove('on'));this.classList.add('on');filterCandsByStatus(['','pending','interview','hired','rejected'][${i}])">${l}
+          </button>`
+        ).join('')}
       </div>
-      ${['الكل','قيد المراجعة','مدعو للمقابلة','تم القبول','مرفوض'].map((l, i) =>
-        `<button class="fc2 ${i===0?'on':''}"
-          onclick="this.closest('.fb').querySelectorAll('.fc2').forEach(b=>b.classList.remove('on'));this.classList.add('on');filterCandsByStatus(['','pending','interview','hired','rejected'][${i}])">${l}
-        </button>`
-      ).join('')}
+      <div class="card"><div class="tw"><table class="dt">
+        <thead><tr>
+          <th>المتقدم</th><th>الوظيفة</th><th>الخبرة</th><th>التاريخ</th><th>الحالة</th><th>إجراءات</th>
+        </tr></thead>
+        <tbody id="candBody">${renderCandRows(apps)}</tbody>
+      </table></div></div>
     </div>
 
-    <!-- الجدول -->
-    <div class="card"><div class="tw"><table class="dt">
-      <thead><tr>
-        <th>المتقدم</th><th>الوظيفة</th><th>الخبرة</th><th>التاريخ</th><th>الحالة</th><th>إجراءات</th>
-      </tr></thead>
-      <tbody id="candBody">${renderCandRows(apps)}</tbody>
-    </table></div></div>`;
+    <!-- تبويب الملفات المنشورة -->
+    <div id="candViewPublished" style="display:none">
+      ${publishedSeekers.length ? `
+        <div class="sb fade-up" style="margin-bottom:14px">
+          <i class="fas fa-search"></i>
+          <input type="text" placeholder="ابحث بالاسم أو التخصص..." oninput="filterPublishedSeekers(this.value)">
+        </div>
+        <div id="publishedSeekersList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px">
+          ${publishedSeekers.map(s => publishedSeekerCard(s)).join('')}
+        </div>` :
+        emptyState('📭', 'لا توجد ملفات منشورة بعد', 'الباحثون الذين ينشرون ملفاتهم سيظهرون هنا')
+      }
+    </div>`;
+
+  window._publishedSeekers = publishedSeekers;
+}
 }
 
 function renderCandRows(apps) {
@@ -279,6 +317,54 @@ function filterCandsByStatus(status) {
   const apps  = status ? OFFICE_APPS.filter(a => a.status === status) : OFFICE_APPS;
   const tbody = document.getElementById('candBody');
   if (tbody) tbody.innerHTML = renderCandRows(apps);
+}
+
+function switchCandTab(tab) {
+  document.getElementById('candViewApplicants').style.display = tab === 'applicants' ? '' : 'none';
+  document.getElementById('candViewPublished').style.display  = tab === 'published'  ? '' : 'none';
+  document.getElementById('candTab1').classList.toggle('on', tab === 'applicants');
+  document.getElementById('candTab2').classList.toggle('on', tab === 'published');
+}
+
+function publishedSeekerCard(s) {
+  const name  = s.name || 'باحث عن عمل';
+  const title = s.jobTitle || s.title || '';
+  const prov  = s.province || '';
+  const exp   = s.experience || s.exp || '';
+  const bio   = s.bio || '';
+  return `<div class="card cp fade-up">
+    <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:10px">
+      <div class="av avl" style="background:var(--grad-p);color:#fff;font-size:16px;font-weight:900;flex-shrink:0">${name.charAt(0)}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:900;color:var(--tx)">${san(name)}</div>
+        ${title ? `<div style="font-size:11px;color:var(--p);font-weight:700;margin-top:1px">${san(title)}</div>` : ''}
+        <div style="font-size:11px;color:var(--tx3);margin-top:2px">
+          ${prov ? `<i class="fas fa-map-marker-alt"></i> ${san(prov)}` : ''}
+          ${exp  ? ` &nbsp;•&nbsp; ${san(exp)}`                        : ''}
+        </div>
+      </div>
+      <span class="b b-gr" style="font-size:9px;flex-shrink:0"><i class="fas fa-circle"></i>متاح</span>
+    </div>
+    ${bio ? `<div style="font-size:11px;color:var(--tx2);line-height:1.6;margin-bottom:10px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${san(bio)}</div>` : ''}
+    <div style="display:flex;gap:7px;flex-wrap:wrap">
+      <button class="btn bp bsm" style="flex:1" onclick="bookCandidate('${s.id}','${san(name)}','')">
+        <i class="fas fa-lock"></i>حجز الملف
+      </button>
+      ${s.phone ? `<a href="tel:${san(s.phone)}" class="btn bo bsm"><i class="fas fa-phone"></i></a>` : ''}
+    </div>
+  </div>`;
+}
+
+function filterPublishedSeekers(q) {
+  const list = window._publishedSeekers || [];
+  const filtered = q ? list.filter(s =>
+    (s.name || '').includes(q) ||
+    (s.jobTitle || s.title || '').includes(q) ||
+    (s.province || '').includes(q) ||
+    (s.bio || '').includes(q)
+  ) : list;
+  const el = document.getElementById('publishedSeekersList');
+  if (el) el.innerHTML = filtered.length ? filtered.map(s => publishedSeekerCard(s)).join('') : emptyState('🔍', 'لا توجد نتائج', '');
 }
 
 async function quickUpdateStatus(btn, status, appId, e) {
@@ -778,10 +864,10 @@ async function saveOfficeProfile() {
   notify('تم الحفظ ✅', 'تم تحديث ملف المكتب', 'success');
 }
 
-// ── نشر وظيفة جديدة (مكتب أو صاحب عمل) ──
+// ── نشر وظيفة جديدة (جميع الأدوار) ──
 function openAddJob() {
-  if (ROLE !== 'office' && ROLE !== 'employer') {
-    notify('غير مسموح ⛔', 'نشر الوظائف للمكاتب وأصحاب العمل فقط', 'error');
+  if (!U || ROLE === 'guest') {
+    notify('سجّل دخولك', 'يجب تسجيل الدخول لنشر وظيفة', 'warning');
     return;
   }
   document.getElementById('moAddJobB').innerHTML = `
@@ -1056,8 +1142,8 @@ async function submitRating(officeId, officeName) {
 }
 
 async function submitJob() {
-  if (ROLE !== 'office' && ROLE !== 'employer') {
-    notify('غير مسموح ⛔', 'نشر الوظائف للمكاتب وأصحاب العمل فقط', 'error'); return;
+  if (!U || ROLE === 'guest') {
+    notify('سجّل دخولك', 'يجب تسجيل الدخول لنشر وظيفة', 'warning'); return;
   }
   const title = document.getElementById('jt')?.value.trim();
   const co    = document.getElementById('jco2')?.value.trim();
@@ -1092,7 +1178,9 @@ async function submitJob() {
   cmo('moAddJob');
   notify('تم النشر ✅', `وظيفة "${title}" نُشرت بنجاح!`, 'success');
   await notifyAdmin(`وظيفة جديدة — ${title}`, `<b>الشركة:</b> ${co}`, `📢 وظيفة جديدة\n${title}\n${co}`);
-  goTo(ROLE === 'employer' ? 'emp_jobs' : 'myjobs');
+  if (ROLE === 'employer') goTo('emp_jobs');
+  else if (ROLE === 'office') goTo('myjobs');
+  else goTo('home');
 }
 
 // ════════════════════════════════════════════════════════

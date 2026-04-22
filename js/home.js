@@ -5,6 +5,27 @@
 
 function selectCat(cat) { JF = { type:'', cat:cat, prov:'', q:'' }; JSORT = 'newest'; goTo('jobs'); }
 
+async function toggleCvPublish(btn) {
+  if (!U || ROLE !== 'seeker') return;
+  const next = !P?.cvPublished;
+  P = { ...P, cvPublished: next };
+  if (!DEMO && window.db) {
+    try { await window.db.collection('users').doc(U.uid).update({ cvPublished: next }); } catch(e) {}
+  }
+  notify(
+    next ? 'ملفك منشور ✅' : 'تم إخفاء ملفك',
+    next ? 'المكاتب وأصحاب العمل يستطيعون الآن رؤية ملفك' : 'لن يظهر ملفك للمكاتب بعد الآن',
+    next ? 'success' : 'info'
+  );
+  // تحديث البطاقة مباشرة بدون إعادة تحميل كاملة
+  const ico = btn.querySelector('.qact-ico');
+  const tit = btn.querySelector('.qact-tit');
+  const sub = btn.querySelector('.qact-sub');
+  if (ico) { ico.style.background = next ? 'linear-gradient(135deg,#22c55e,#4ade80)' : 'linear-gradient(135deg,#64748b,#94a3b8)'; ico.innerHTML = `<i class="fas fa-${next ? 'eye' : 'eye-slash'}"></i>`; }
+  if (tit) tit.textContent = next ? 'ملفك منشور ✅' : 'انشر ملفك الوظيفي';
+  if (sub) sub.textContent = next ? 'المكاتب وأصحاب العمل يستطيعون رؤية ملفك' : 'اجعل ملفك مرئياً للمكاتب وأصحاب العمل';
+}
+
 // ════════════════════════════════════════════
 // رئيسية الباحث
 // ════════════════════════════════════════════
@@ -121,6 +142,20 @@ function pgSeekerHome(el) {
         <div class="qact-ico" style="background:linear-gradient(135deg,var(--purple),#a78bfa)"><i class="fas fa-robot"></i></div>
         <div class="qact-tit">المقابلة الذكية</div>
         <div class="qact-sub">تدرّب مع الذكاء الاصطناعي وقيّم أداءك</div>
+        <i class="fas fa-arrow-left qact-arr"></i>
+      </div>
+      <div class="qact-card" onclick="openAddJob()">
+        <div class="qact-ico" style="background:linear-gradient(135deg,#f59e0b,#fbbf24)"><i class="fas fa-plus-circle"></i></div>
+        <div class="qact-tit">نشر وظيفة</div>
+        <div class="qact-sub">أنشر فرصة عمل وابحث عن الشخص المناسب</div>
+        <i class="fas fa-arrow-left qact-arr"></i>
+      </div>
+      <div class="qact-card" onclick="toggleCvPublish(this)">
+        <div class="qact-ico" style="background:linear-gradient(135deg,${P?.cvPublished ? '#22c55e' : '#64748b'},${P?.cvPublished ? '#4ade80' : '#94a3b8'})">
+          <i class="fas fa-${P?.cvPublished ? 'eye' : 'eye-slash'}"></i>
+        </div>
+        <div class="qact-tit">${P?.cvPublished ? 'ملفك منشور ✅' : 'انشر ملفك الوظيفي'}</div>
+        <div class="qact-sub">${P?.cvPublished ? 'المكاتب وأصحاب العمل يستطيعون رؤية ملفك' : 'اجعل ملفك مرئياً للمكاتب وأصحاب العمل'}</div>
         <i class="fas fa-arrow-left qact-arr"></i>
       </div>
     </div>
