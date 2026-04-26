@@ -76,8 +76,8 @@ function pgOfficeHome(el) {
     <!-- الإحصائيات -->
     <div class="sg fade-up del2">
       <div class="sc"><div class="si tl"><i class="fas fa-briefcase"></i></div><div>
-        <div class="sl">وظائف نشطة</div><div class="sv">3</div>
-        <div class="sc-trend up"><i class="fas fa-arrow-up"></i>+1 هذا الشهر</div>
+        <div class="sl">وظائف نشطة</div><div class="sv">${JOBS.filter(j=>j.postedBy===U?.uid).length}</div>
+        <div class="sc-trend up"><i class="fas fa-arrow-up"></i>${JOBS.filter(j=>j.postedBy===U?.uid&&(Date.now()-new Date(j.postedAt))<2592000000).length} هذا الشهر</div>
       </div></div>
       <div class="sc"><div class="si am"><i class="fas fa-users"></i></div><div>
         <div class="sl">إجمالي المتقدمين</div><div class="sv">${apps.length}</div>
