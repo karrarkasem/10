@@ -26,7 +26,18 @@ service cloud.firestore {
       return isLoggedIn() && (userData().status == 'active' || userData().status == null);
     }
 
+    // تحقق من حجم الوثيقة (حماية من الحقول الزائدة)
     function validSize(d) { return d.keys().size() <= 30; }
+
+    // ── تحقق من نوع النص وطوله ──
+    function validStr(val, minLen, maxLen) {
+      return val is string && val.size() >= minLen && val.size() <= maxLen;
+    }
+
+    // ── تحقق من أن الحقول المطلوبة موجودة ──
+    function hasFields(d, fields) {
+      return fields.toSet().difference(d.keys().toSet()).size() == 0;
+    }
 
 
     // ══════════════════════════════════════
@@ -35,8 +46,10 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isOwner(userId) || isAdmin()
         || (isLoggedIn() && resource.data.role == 'office' && resource.data.status == 'active');
-      allow create: if isOwner(userId) && validSize(request.resource.data);
-      // السماح بتحديث role/status إذا كانا null (ترحيل المستخدمين القدامى)
+      allow create: if isOwner(userId) && validSize(request.resource.data)
+        && hasFields(request.resource.data, ['name', 'email', 'role'])
+        && validStr(request.resource.data.name, 2, 80)
+        && validStr(request.resource.data.email, 5, 120);
       allow update: if isOwner(userId) && validSize(request.resource.data)
         && (resource.data.role == null || request.resource.data.role == resource.data.role);
       allow delete: if isAdmin();
@@ -49,29 +62,55 @@ service cloud.firestore {
     match /jobs/{jobId} {
       allow read: if resource.data.status == 'active'
         || isAdmin()
-        || (isOffice() && resource.data.postedBy == request.auth.uid);
-      allow create: if isOffice() && isActive()
+        || (isLoggedIn() && resource.data.postedBy == request.auth.uid);
+
+      allow create: if (isOffice() || userRole() == 'employer') && isActive()
         && request.resource.data.postedBy == request.auth.uid
-        && validSize(request.resource.data);
+        && validSize(request.resource.data)
+        && hasFields(request.resource.data, ['title', 'company', 'desc', 'province', 'postedBy', 'postedAt'])
+        && validStr(request.resource.data.title,   3, 100)
+        && validStr(request.resource.data.company,  2, 100)
+        && validStr(request.resource.data.desc,    20, 3000)
+        && request.resource.data.status == 'active';
+
       allow update: if isAdmin()
-        || (isOffice() && resource.data.postedBy == request.auth.uid && validSize(request.resource.data));
+        || (isLoggedIn() && resource.data.postedBy == request.auth.uid
+            && validSize(request.resource.data)
+            // السماح فقط بتحديث حقول محددة (ليس postedBy)
+            && request.resource.data.postedBy == resource.data.postedBy);
+
       allow delete: if isAdmin()
-        || (isOffice() && resource.data.postedBy == request.auth.uid);
+        || (isLoggedIn() && resource.data.postedBy == request.auth.uid);
     }
 
 
     // ══════════════════════════════════════
-    // APPLICATIONS
+    // APPLICATIONS — مع Rate Limiting
     // ══════════════════════════════════════
     match /applications/{appId} {
       allow read: if isAdmin()
         || (isLoggedIn() && resource.data.applicantId == request.auth.uid)
         || (isOffice() && get(/databases/$(database)/documents/jobs/$(resource.data.jobId)).data.postedBy == request.auth.uid);
+
       allow create: if isLoggedIn() && isActive()
         && request.resource.data.applicantId == request.auth.uid
-        && validSize(request.resource.data);
+        && validSize(request.resource.data)
+        // الحقول المطلوبة
+        && hasFields(request.resource.data, ['jobId', 'applicantId', 'name', 'phone', 'email', 'cover', 'status'])
+        // تحقق من القيم
+        && validStr(request.resource.data.name,  2, 80)
+        && validStr(request.resource.data.cover, 30, 3000)
+        && validStr(request.resource.data.phone,  9, 20)
+        && validStr(request.resource.data.email,  5, 120)
+        // الحالة لا بد أن تكون pending عند الإنشاء
+        && request.resource.data.status == 'pending';
+
       allow update: if isAdmin()
-        || (isOffice() && get(/databases/$(database)/documents/jobs/$(resource.data.jobId)).data.postedBy == request.auth.uid);
+        || (isOffice() && get(/databases/$(database)/documents/jobs/$(resource.data.jobId)).data.postedBy == request.auth.uid
+            // المكتب يستطيع فقط تحديث الحالة وبيانات المقابلة والرفض
+            && request.resource.data.applicantId == resource.data.applicantId
+            && request.resource.data.jobId       == resource.data.jobId);
+
       allow delete: if isAdmin();
     }
 
@@ -109,7 +148,11 @@ service cloud.firestore {
     match /notifications/{notifId} {
       allow read, update, delete: if isLoggedIn()
         && resource.data.userId == request.auth.uid;
-      allow create: if isAdmin();
+      // المكاتب والنظام يستطيعون إنشاء إشعارات للمستخدمين
+      allow create: if isLoggedIn() && isActive()
+        && validSize(request.resource.data)
+        && hasFields(request.resource.data, ['userId', 'type', 'title', 'body'])
+        && (isAdmin() || isOffice());
     }
 
 
@@ -128,8 +171,9 @@ service cloud.firestore {
     match /interviews/{intId} {
       allow read: if isAdmin()
         || (isLoggedIn() && resource.data.userId == request.auth.uid);
-      allow create: if isLoggedIn()
-        && request.resource.data.userId == request.auth.uid;
+      allow create: if isLoggedIn() && isActive()
+        && request.resource.data.userId == request.auth.uid
+        && validSize(request.resource.data);
       allow update: if isLoggedIn()
         && resource.data.userId == request.auth.uid;
       allow delete: if isAdmin()
@@ -145,8 +189,10 @@ service cloud.firestore {
         && (resource.data.from == request.auth.uid
             || resource.data.to == request.auth.uid
             || isAdmin());
-      allow create: if isLoggedIn()
-        && request.resource.data.from == request.auth.uid;
+      allow create: if isLoggedIn() && isActive()
+        && request.resource.data.from == request.auth.uid
+        && hasFields(request.resource.data, ['from', 'to', 'body'])
+        && validStr(request.resource.data.body, 1, 2000);
       allow update: if isLoggedIn()
         && (resource.data.from == request.auth.uid || resource.data.to == request.auth.uid);
       allow delete: if isAdmin();
@@ -157,8 +203,10 @@ service cloud.firestore {
     // REPORTS
     // ══════════════════════════════════════
     match /reports/{reportId} {
-      allow create: if isLoggedIn()
-        && request.resource.data.reportedBy == request.auth.uid;
+      allow create: if isLoggedIn() && isActive()
+        && request.resource.data.reportedBy == request.auth.uid
+        && hasFields(request.resource.data, ['reportedBy', 'targetId', 'reason'])
+        && validStr(request.resource.data.reason, 5, 500);
       allow read, update, delete: if isAdmin();
     }
 
@@ -173,35 +221,48 @@ service cloud.firestore {
             || isAdmin());
       allow create: if isOffice() && isActive()
         && request.resource.data.officeId == request.auth.uid
-        && validSize(request.resource.data);
+        && validSize(request.resource.data)
+        && hasFields(request.resource.data, ['officeId', 'candidateId', 'bookedAt', 'expiresAt', 'status'])
+        && request.resource.data.status == 'active';
       allow update: if isAdmin()
-        || (isOffice() && resource.data.officeId == request.auth.uid);
+        || (isOffice() && resource.data.officeId == request.auth.uid
+            // يسمح فقط بتحديث الحالة
+            && request.resource.data.officeId    == resource.data.officeId
+            && request.resource.data.candidateId == resource.data.candidateId);
       allow delete: if isAdmin();
+    }
+
+
+    // ══════════════════════════════════════
+    // RATINGS — تقييمات المكاتب
+    // ══════════════════════════════════════
+    match /ratings/{ratingId} {
+      allow read: if true;
+      allow create: if isLoggedIn() && isActive()
+        && request.resource.data.userId == request.auth.uid
+        && validSize(request.resource.data)
+        && hasFields(request.resource.data, ['officeId', 'userId', 'rating'])
+        && request.resource.data.rating is int
+        && request.resource.data.rating >= 1
+        && request.resource.data.rating <= 5;
+      allow update, delete: if isAdmin();
     }
 
 
     // ══════════════════════════════════════
     // QUIZ RESULTS — نتائج الاختبارات الذكية
     // ══════════════════════════════════════
-    // ══════════════════════════════════════
-    // RATINGS — تقييمات المكاتب
-    // ══════════════════════════════════════
-    match /ratings/{ratingId} {
-      allow read: if true;
-      allow create: if isLoggedIn()
-        && request.resource.data.userId == request.auth.uid
-        && validSize(request.resource.data);
-      allow update, delete: if isAdmin();
-    }
-
-
     match /quizResults/{resultId} {
       allow read: if isAdmin()
         || (isLoggedIn() && resource.data.applicantId == request.auth.uid)
         || isOffice();
-      allow create: if isLoggedIn()
+      allow create: if isLoggedIn() && isActive()
         && request.resource.data.applicantId == request.auth.uid
-        && validSize(request.resource.data);
+        && validSize(request.resource.data)
+        && hasFields(request.resource.data, ['applicantId', 'jobId', 'score'])
+        && request.resource.data.score is int
+        && request.resource.data.score >= 0
+        && request.resource.data.score <= 100;
       allow update: if false;
       allow delete: if isAdmin();
     }

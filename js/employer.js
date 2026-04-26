@@ -270,7 +270,8 @@ async function saveEmployerProfile() {
   }
   P = { ...P, ...d };
   if (!DEMO && window.db && U) {
-    try { await window.db.collection('users').doc(U.uid).update(d); } catch(e) {}
+    try { await window.db.collection('users').doc(U.uid).update(d); }
+    catch(e) { notify('خطأ', 'فشل حفظ بيانات الشركة: ' + e.message, 'error'); return; }
   }
   updateUserUI();
   notify('تم الحفظ ✅', 'تم تحديث ملف الشركة', 'success');

@@ -55,7 +55,7 @@ async function bookCandidate(candidateId, candidateName, jobId) {
       notify('مرشح محجوز', 'هذا المرشح محجوز حالياً من قبل مكتب آخر', 'warning');
       return;
     }
-  } catch (e) {}
+  } catch (e) { console.warn('bookingCheck:', e.message); }
 
   // وظائف أصحاب العمل: ساعة واحدة فقط
   const job = JOBS.find(j => j.id === jobId);

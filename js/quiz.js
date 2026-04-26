@@ -184,7 +184,7 @@ FEEDBACK: [جملة تقييم واحدة مختصرة باللغة العربي
         answers:   QUIZ_ANSWERS,
         takenAt:   firebase.firestore.FieldValue.serverTimestamp(),
       });
-    } catch (e) {}
+    } catch (e) { console.warn('quizResult save:', e.message); }
   }
 
   const color   = score >= 80 ? 'var(--success)' : score >= 55 ? 'var(--acc)' : 'var(--danger)';

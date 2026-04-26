@@ -248,7 +248,7 @@ async function saveCV() {
     updatedAt: new Date().toISOString(),
   };
   if (!DEMO && window.db && U) {
-    try { await window.db.collection('cvs').doc(U.uid).set({ ...data, userId: U.uid }, { merge: true }); } catch (e) {}
+    try { await window.db.collection('cvs').doc(U.uid).set({ ...data, userId: U.uid }, { merge: true }); } catch (e) { console.warn('cv save:', e.message); }
   }
   notify('تم الحفظ ✅', 'تم حفظ سيرتك الذاتية', 'success');
 }

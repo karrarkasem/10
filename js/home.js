@@ -10,7 +10,7 @@ async function toggleCvPublish(btn) {
   const next = !P?.cvPublished;
   P = { ...P, cvPublished: next };
   if (!DEMO && window.db) {
-    try { await window.db.collection('users').doc(U.uid).update({ cvPublished: next }); } catch(e) {}
+    try { await window.db.collection('users').doc(U.uid).update({ cvPublished: next }); } catch(e) { console.warn('cvPublish:', e.message); }
   }
   notify(
     next ? 'ملفك منشور ✅' : 'تم إخفاء ملفك',

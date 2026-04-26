@@ -375,9 +375,21 @@ function openApply(id, quizScore = null, quizFeedback = '') {
   oMo('moApply');
 }
 
+// حماية من الإرسال المتكرر — 30 ثانية بين كل طلبَين
+const _applyThrottle = {};
 async function submitApply(quizScore = null, quizFeedback = '') {
   if (!requireAuth('seeker')) return;
   const j    = SEL_JOB;
+  // منع التكرار: 30 ثانية بين كل طلب وآخر
+  const now = Date.now();
+  if (_applyThrottle[j.id] && now - _applyThrottle[j.id] < 30000) {
+    notify('تنبيه', 'انتظر قليلاً قبل المحاولة مجدداً', 'warning'); return;
+  }
+  // التحقق أن المستخدم لم يتقدم مسبقاً (فحص ثانٍ قبل الإرسال)
+  if (MY_APPS.find(a => a.jobId === j.id)) {
+    notify('تنبيه', 'لقد تقدمت لهذه الوظيفة مسبقاً', 'warning'); return;
+  }
+
   const name = document.getElementById('ap_n')?.value.trim();
   const ph   = document.getElementById('ap_ph')?.value.trim();
   const em   = document.getElementById('ap_e')?.value.trim();
@@ -412,6 +424,7 @@ async function submitApply(quizScore = null, quizFeedback = '') {
     } catch (e) { console.warn(e); }
   }
   app.id = app.id || 'a_' + Date.now();
+  _applyThrottle[j.id] = Date.now(); // تسجيل وقت الإرسال
   MY_APPS.unshift(app);
   j.applicants = (j.applicants || 0) + 1;
   await notifyAdmin(`طلب جديد — ${j.title}`, `<b>المتقدم:</b> ${name}`, `📩 طلب جديد\nالاسم: ${name}\nالوظيفة: ${j.title}\nالهاتف: ${ph}`);

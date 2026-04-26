@@ -265,7 +265,7 @@ if (!DEMO && typeof firebase !== 'undefined') {
           const upd = {};
           if (!P.role)   upd.role   = 'seeker';
           if (!P.status) upd.status = 'active';
-          try { await window.db.collection('users').doc(user.uid).update(upd); P = { ...P, ...upd }; ROLE = P.role; } catch(_) {}
+          try { await window.db.collection('users').doc(user.uid).update(upd); P = { ...P, ...upd }; ROLE = P.role; } catch(e) { console.warn('profile migrate:', e.message); }
         }
         const snap = await window.db.collection('jobs').where('status', '==', 'active').orderBy('postedAt', 'desc').limit(50).get();
         JOBS = snap.docs.map(d => ({ id: d.id, ...d.data() }));

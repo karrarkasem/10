@@ -154,7 +154,10 @@ async function saveProfile() {
   if (!d.name) { notify('خطأ', 'يرجى إدخال اسمك الكامل', 'error'); return; }
   if (d.phone && !/^07[3-9]\d{8}$/.test(d.phone.replace(/\s/g,''))) { notify('خطأ', 'رقم الهاتف يجب أن يكون رقم عراقي صحيح (07XXXXXXXXX)', 'error'); return; }
   P = { ...P, ...d };
-  if (!DEMO && window.db && U) { try { await window.db.collection('users').doc(U.uid).update(d); } catch(e) {} }
+  if (!DEMO && window.db && U) {
+    try { await window.db.collection('users').doc(U.uid).update(d); }
+    catch(e) { notify('خطأ', 'فشل حفظ الملف الشخصي: ' + e.message, 'error'); return; }
+  }
   updateUserUI();
   notify('تم الحفظ ✅', 'تم تحديث ملفك الشخصي بنجاح', 'success');
   setTimeout(() => pgSeekerProfile(document.getElementById('pcon')), 600);

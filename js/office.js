@@ -243,7 +243,7 @@ async function pgCandidates(el) {
         .where('cvPublished', '==', true)
         .limit(50).get();
       publishedSeekers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    } catch(e) {}
+    } catch(e) { console.warn('publishedSeekers load:', e.message); }
   }
 
   el.innerHTML = `
@@ -415,7 +415,7 @@ async function quickUpdateStatus(btn, status, appId, e) {
   if (cell && s) cell.innerHTML = `<span class="b ${s.c}"><i class="fas ${s.ico}"></i>${s.l}</span>`;
   // تحديث في Firestore
   if (!DEMO && window.db && appId && !appId.startsWith('a')) {
-    try { await window.db.collection('applications').doc(appId).update({ status }); } catch(_) {}
+    try { await window.db.collection('applications').doc(appId).update({ status }); } catch(e) { console.warn('quickUpdateStatus:', e.message); }
   }
   // تحديث محلي
   const app = OFFICE_APPS.find(a => a.id === appId);
@@ -554,7 +554,7 @@ async function updateCandStatus(appId, status) {
 async function _doUpdateStatus(appId, status, extra = {}) {
   const s = STAT[status];
   if (!DEMO && window.db && appId && !appId.startsWith('a')) {
-    try { await window.db.collection('applications').doc(appId).update({ status, ...extra }); } catch(e) {}
+    try { await window.db.collection('applications').doc(appId).update({ status, ...extra }); } catch(e) { console.warn('_doUpdateStatus:', e.message); }
   }
   const app = OFFICE_APPS.find(a => a.id === appId) || MY_APPS.find(a => a.id === appId);
   if (app) { app.status = status; Object.assign(app, extra); }
@@ -900,7 +900,10 @@ async function saveOfficeProfile() {
   }
 
   P = { ...P, ...d };
-  if (!DEMO && window.db && U) { try { await window.db.collection('users').doc(U.uid).update(d); } catch(e) {} }
+  if (!DEMO && window.db && U) {
+    try { await window.db.collection('users').doc(U.uid).update(d); }
+    catch(e) { notify('خطأ', 'فشل حفظ بيانات المكتب: ' + e.message, 'error'); return; }
+  }
   updateUserUI();
   notify('تم الحفظ ✅', 'تم تحديث ملف المكتب', 'success');
 }
@@ -990,7 +993,7 @@ async function pgOfficesList(el) {
         .where('status', '==', 'active')
         .limit(30).get();
       offices = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    } catch (e) {}
+    } catch (e) { console.warn('pgOfficesList load:', e.message); }
   }
 
   if (!offices.length) {
@@ -1182,9 +1185,14 @@ async function submitRating(officeId, officeName) {
   notify('شكراً لتقييمك ✅', `تم إرسال تقييمك لـ ${officeName}`, 'success');
 }
 
+// حماية من نشر وظائف متكررة — 60 ثانية بين كل نشر وآخر
+let _lastJobPost = 0;
 async function submitJob() {
   if (!U || ROLE === 'guest') {
     notify('سجّل دخولك', 'يجب تسجيل الدخول لنشر وظيفة', 'warning'); return;
+  }
+  if (Date.now() - _lastJobPost < 60000) {
+    notify('تنبيه', 'انتظر دقيقة واحدة بين كل نشر وظيفة وأخرى', 'warning'); return;
   }
   const title   = document.getElementById('jt')?.value.trim();
   const co      = document.getElementById('jco2')?.value.trim();
@@ -1226,6 +1234,7 @@ async function submitJob() {
   } else { job.id = 'j_' + Date.now(); }
   JOBS.unshift(job);
   cmo('moAddJob');
+  _lastJobPost = Date.now();
   notify('تم النشر ✅', `وظيفة "${title}" نُشرت بنجاح!`, 'success');
   await notifyAdmin(`وظيفة جديدة — ${title}`, `<b>الشركة:</b> ${co}`, `📢 وظيفة جديدة\n${title}\n${co}`);
   if (ROLE === 'employer') goTo('emp_jobs');
