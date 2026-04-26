@@ -5,6 +5,8 @@
 
 let JF = { type: '', cat: '', prov: '', q: '' };
 let JSORT = 'newest'; // newest | salary_high | salary_low | applicants
+let JOBS_PAGE = 1;
+const JOBS_PER_PAGE = 20;
 
 // ── تحديد نوع الوظيفة ──
 function jobTypeLabel(type) {
@@ -129,8 +131,9 @@ function pgJobs(el) {
     </div>
 
     <div class="jg" id="jobsList">
-      ${res.length ? res.map(j => jCard(j)).join('') : emptyState('🔍', 'لا توجد وظائف مطابقة', 'جرب تغيير فلاتر البحث أو اختر تخصصاً مختلفاً')}
-    </div>`;
+      ${res.length ? res.slice(0, JOBS_PER_PAGE).map(j => jCard(j)).join('') : emptyState('🔍', 'لا توجد وظائف مطابقة', 'جرب تغيير فلاتر البحث أو اختر تخصصاً مختلفاً')}
+    </div>
+    <div id="jobsPag" class="pag">${res.length > JOBS_PER_PAGE ? _buildPagination(Math.ceil(res.length/JOBS_PER_PAGE), 1, p => { JOBS_PAGE = p; _renderJobsPage(); }) : ''}</div>`;
 
   // مراقبة حقل البحث لإظهار زر المسح
   const jqEl = document.getElementById('jq');
@@ -171,14 +174,28 @@ function fSortJobs(list) {
 }
 
 function rJobs() {
-  const res = fSortJobs(fJobs());
-  const el  = document.getElementById('jobsList');
-  const cnt = document.getElementById('resultsCount');
+  JOBS_PAGE = 1;
+  _renderJobsPage();
+}
+
+function _renderJobsPage() {
+  const res  = fSortJobs(fJobs());
+  const el   = document.getElementById('jobsList');
+  const cnt  = document.getElementById('resultsCount');
+  const pagEl = document.getElementById('jobsPag');
   if (cnt) cnt.textContent = `${res.length} نتيجة`;
   if (!el) return;
-  el.innerHTML = res.length
-    ? res.map(j => jCard(j)).join('')
+
+  const total = res.length;
+  const pages = Math.ceil(total / JOBS_PER_PAGE);
+  const start = (JOBS_PAGE - 1) * JOBS_PER_PAGE;
+  const slice = res.slice(start, start + JOBS_PER_PAGE);
+
+  el.innerHTML = slice.length
+    ? slice.map(j => jCard(j)).join('')
     : emptyState('🔍', 'لا توجد نتائج', 'جرب فلاتر مختلفة');
+
+  if (pagEl) pagEl.innerHTML = pages > 1 ? _buildPagination(pages, JOBS_PAGE, p => { JOBS_PAGE = p; _renderJobsPage(); }) : '';
 }
 
 function showBookmarks(btn) {
@@ -367,8 +384,16 @@ async function submitApply(quizScore = null, quizFeedback = '') {
   const cv   = document.getElementById('ap_cv')?.value.trim();
   const exp  = document.getElementById('ap_exp')?.value;
   const url  = document.getElementById('ap_url')?.value.trim();
-  if (!name || !ph || !em || !cv) { notify('خطأ', 'أكمل الحقول المطلوبة', 'error'); return; }
-  if (!/^07[3-9]\d{8}$/.test(ph.replace(/\s/g,''))) { notify('خطأ', 'رقم الهاتف يجب أن يكون رقم عراقي صحيح (07XXXXXXXXX)', 'error'); return; }
+  if (!name) { notify('خطأ', 'أدخل الاسم الكامل', 'error'); return; }
+  if (!ph)   { notify('خطأ', 'أدخل رقم الهاتف', 'error'); return; }
+  if (!em)   { notify('خطأ', 'أدخل البريد الإلكتروني', 'error'); return; }
+  if (!cv || cv.length < 30) { notify('خطأ', 'رسالة التغطية يجب أن تكون 30 حرفاً على الأقل', 'error'); return; }
+  const cleanPh = ph.replace(/[\s\-]/g, '');
+  if (!/^(07[3-9]\d{8}|\+9647[3-9]\d{8}|009647[3-9]\d{8})$/.test(cleanPh)) {
+    notify('خطأ', 'رقم الهاتف يجب أن يكون عراقياً صحيحاً (07XXXXXXXXX أو +9647XXXXXXXXX)', 'error'); return;
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { notify('خطأ', 'البريد الإلكتروني غير صحيح', 'error'); return; }
+  if (url && !url.startsWith('http')) { notify('خطأ', 'رابط السيرة الذاتية يجب أن يبدأ بـ http', 'error'); return; }
   const app = {
     jobId: j.id, jobTitle: j.title, company: j.company,
     postedBy: j.postedBy || null,

@@ -26,6 +26,8 @@ const PROV_COORDS = {
 };
 let _mapInst = null, _mapMarker = null, _pickedLat = null, _pickedLng = null;
 let _officesMapInst = null;
+let _candPage = 1;
+const _CAND_PER_PAGE = 25;
 
 // ── لوحة التحكم الرئيسية ──
 function pgOfficeHome(el) {
@@ -192,13 +194,40 @@ function pgOfficeJobs(el) {
         </div>
         <div class="oj-body">
           <button class="btn bp bsm" onclick="goTo('candidates')"><i class="fas fa-users"></i>المتقدمون (${j.applicants||0})</button>
-          <button class="btn bda bsm" onclick="confirm2('إيقاف الوظيفة','هل تريد إيقاف هذه الوظيفة مؤقتاً؟',()=>notify('تم','تم إيقاف الوظيفة','warning'))"><i class="fas fa-pause"></i>إيقاف</button>
+          <button class="btn bda bsm" onclick="officeToggleJob('${j.id}','${j.status||'active'}','${san(j.title)}')">
+            <i class="fas fa-${(j.status||'active')==='paused'?'play':'pause'}"></i>${(j.status||'active')==='paused'?'تفعيل':'إيقاف'}
+          </button>
+          <button class="btn bg bsm" onclick="confirm2('حذف الوظيفة','سيتم حذف الوظيفة نهائياً. هل أنت متأكد؟',()=>officeDeleteJob('${j.id}','${san(j.title)}'))">
+            <i class="fas fa-trash"></i>
+          </button>
         </div>
       </div>`).join('')}
 
     <div class="al al-i"><i class="fas fa-lightbulb"></i>
       <span>تصل إليك التنبيهات تلقائياً عند تقديم طلبات جديدة على وظائفك.</span>
-    </div>`;
+    </div>`;}
+
+async function officeToggleJob(jobId, currentStatus, title) {
+  const newStatus = currentStatus === 'paused' ? 'active' : 'paused';
+  const label     = newStatus === 'paused' ? 'إيقاف' : 'تفعيل';
+  confirm2(`${label} الوظيفة`, `هل تريد ${label} وظيفة "${title}"؟`, async () => {
+    try {
+      if (!DEMO && window.db) await window.db.collection('jobs').doc(jobId).update({ status: newStatus });
+      const job = JOBS.find(j => j.id === jobId);
+      if (job) job.status = newStatus;
+      notify('تم ✅', `تم ${label} الوظيفة`, 'success');
+      pgOfficeJobs(document.getElementById('pcon'));
+    } catch(e) { notify('خطأ', 'فشلت العملية', 'error'); }
+  });
+}
+
+async function officeDeleteJob(jobId, title) {
+  try {
+    if (!DEMO && window.db) await window.db.collection('jobs').doc(jobId).delete();
+    JOBS = JOBS.filter(j => j.id !== jobId);
+    notify('تم الحذف', `وظيفة "${title}" حُذفت`, 'info');
+    pgOfficeJobs(document.getElementById('pcon'));
+  } catch(e) { notify('خطأ', 'فشل الحذف، حاول مرة أخرى', 'error'); }
 }
 
 // ── المتقدمون والملفات المنشورة ──
@@ -248,8 +277,9 @@ async function pgCandidates(el) {
         <thead><tr>
           <th>المتقدم</th><th>الوظيفة</th><th>الخبرة</th><th>التاريخ</th><th>الحالة</th><th>إجراءات</th>
         </tr></thead>
-        <tbody id="candBody">${renderCandRows(apps)}</tbody>
+        <tbody id="candBody">${renderCandRows(apps.slice(0, _CAND_PER_PAGE))}</tbody>
       </table></div></div>
+      <div id="candPag" class="pag">${apps.length > _CAND_PER_PAGE ? _buildPagination(Math.ceil(apps.length/_CAND_PER_PAGE), 1, 'goToCandPage') : ''}</div>
     </div>
 
     <!-- تبويب الملفات المنشورة -->
@@ -268,6 +298,17 @@ async function pgCandidates(el) {
 
   window._publishedSeekers = publishedSeekers;
 }
+
+function goToCandPage(p) {
+  _candPage = p;
+  const apps  = OFFICE_APPS;
+  const pages = Math.ceil(apps.length / _CAND_PER_PAGE);
+  const slice = apps.slice((p - 1) * _CAND_PER_PAGE, p * _CAND_PER_PAGE);
+  const tbody = document.getElementById('candBody');
+  const pagEl = document.getElementById('candPag');
+  if (tbody) tbody.innerHTML = renderCandRows(slice);
+  if (pagEl) pagEl.innerHTML = _buildPagination(pages, p, 'goToCandPage');
+  document.getElementById('candViewApplicants')?.scrollIntoView({ behavior: 'smooth' });
 }
 
 function renderCandRows(apps) {
@@ -1145,24 +1186,33 @@ async function submitJob() {
   if (!U || ROLE === 'guest') {
     notify('سجّل دخولك', 'يجب تسجيل الدخول لنشر وظيفة', 'warning'); return;
   }
-  const title = document.getElementById('jt')?.value.trim();
-  const co    = document.getElementById('jco2')?.value.trim();
-  const desc  = document.getElementById('jd')?.value.trim();
-  if (!title || !co || !desc) { notify('خطأ', 'أكمل الحقول المطلوبة: الاسم، الشركة، والوصف', 'error'); return; }
+  const title   = document.getElementById('jt')?.value.trim();
+  const co      = document.getElementById('jco2')?.value.trim();
+  const desc    = document.getElementById('jd')?.value.trim();
+  const salMin  = +document.getElementById('js')?.value  || 0;
+  const salMax  = +document.getElementById('jsm')?.value || 0;
+  const deadline = document.getElementById('jdl')?.value;
+
+  if (!title)  { notify('خطأ', 'أدخل المسمى الوظيفي', 'error'); return; }
+  if (!co)     { notify('خطأ', 'أدخل اسم الشركة أو المكتب', 'error'); return; }
+  if (!desc || desc.length < 20) { notify('خطأ', 'أدخل وصفاً للوظيفة (20 حرفاً على الأقل)', 'error'); return; }
+  if (salMin && salMax && salMin > salMax) { notify('خطأ', 'الراتب الأدنى لا يمكن أن يكون أكبر من الأعلى', 'error'); return; }
+  if (deadline && new Date(deadline) < new Date()) { notify('خطأ', 'تاريخ انتهاء التقديم يجب أن يكون في المستقبل', 'error'); return; }
+
   const job = {
     title, company: co,
     type:      document.getElementById('jty')?.value,
     cat:       document.getElementById('jca')?.value,
-    salary:    +document.getElementById('js')?.value  || null,
-    salaryMax: +document.getElementById('jsm')?.value || null,
+    salary:    salMin || null,
+    salaryMax: salMax || null,
     province:  document.getElementById('jp')?.value,
     exp:       document.getElementById('je')?.value,
     gender:    document.getElementById('jge')?.value,
-    hours:     document.getElementById('jhr')?.value,
+    hours:     document.getElementById('jhr')?.value.trim(),
     desc,
-    reqs: document.getElementById('jr')?.value.split(',').map(s=>s.trim()).filter(Boolean),
-    bens: document.getElementById('jb')?.value.split(',').map(s=>s.trim()).filter(Boolean),
-    deadline:  document.getElementById('jdl')?.value,
+    reqs: (document.getElementById('jr')?.value||'').split(',').map(s=>s.trim()).filter(Boolean),
+    bens: (document.getElementById('jb')?.value||'').split(',').map(s=>s.trim()).filter(Boolean),
+    deadline:  deadline || null,
     currency: 'IQD', logo: co.charAt(0), applicants: 0, status: 'active',
     postedBy: U?.uid || 'demo', postedAt: new Date().toISOString(),
     postedByType: ROLE, // 'office' | 'employer'

@@ -76,6 +76,34 @@ function san(str) {
 }
 
 function fmt(n)  { return n ? n.toLocaleString('ar-IQ') : '—'; }
+
+// بناء عناصر pagination — يُعيد HTML جاهز للعرض
+// onPage: إما اسم دالة عالمية (string) أو callback مباشر
+function _buildPagination(pages, cur, onPage) {
+  if (pages <= 1) return '';
+  const call = typeof onPage === 'string' ? `${onPage}` : onPage.toString();
+  const invokeStr = typeof onPage === 'string'
+    ? p => `onclick="${call}(${p})"`
+    : p => `onclick="(${call})(${p})"`;
+
+  const btn = (p, label, disabled, active) =>
+    `<button class="pag-btn${active?' on':''}" ${disabled?'disabled':''} ${invokeStr(p)}>${label}</button>`;
+
+  let html = btn(cur - 1, '<i class="fas fa-chevron-right"></i>', cur <= 1, false);
+
+  const range = [];
+  for (let i = 1; i <= pages; i++) {
+    if (i === 1 || i === pages || Math.abs(i - cur) <= 1) range.push(i);
+    else if (range[range.length - 1] !== '...') range.push('...');
+  }
+  range.forEach(p => {
+    if (p === '...') html += `<span class="pag-btn" style="pointer-events:none;opacity:.4">…</span>`;
+    else html += btn(p, p, false, p === cur);
+  });
+
+  html += btn(cur + 1, '<i class="fas fa-chevron-left"></i>', cur >= pages, false);
+  return html;
+}
 function ago(d)  {
   if (!d) return '';
   const s = Math.floor((Date.now() - new Date(d)) / 1000);
