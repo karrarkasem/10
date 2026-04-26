@@ -438,6 +438,7 @@ async function pgAdminUsers(el) {
               <th style="padding:10px 12px;text-align:right;color:var(--tx3);font-weight:700">المستخدم</th>
               <th style="padding:10px 12px;text-align:right;color:var(--tx3);font-weight:700">الدور</th>
               <th style="padding:10px 12px;text-align:right;color:var(--tx3);font-weight:700">المحافظة</th>
+              <th style="padding:10px 12px;text-align:right;color:var(--tx3);font-weight:700">Plus</th>
               <th style="padding:10px 12px;text-align:right;color:var(--tx3);font-weight:700">الحالة</th>
               <th style="padding:10px 12px;text-align:right;color:var(--tx3);font-weight:700">إجراء</th>
             </tr>
@@ -493,6 +494,15 @@ function renderAdminUsersList() {
       </td>
       <td style="padding:10px 12px"><span class="b ${roleClass[role]||'b-tl'}"><i class="fas ${role==='admin'?'fa-shield-alt':role==='office'?'fa-building':'fa-user'}"></i>${roleLabel[role]||'باحث'}</span></td>
       <td style="padding:10px 12px;color:var(--tx2)">${san(u.province||'—')}</td>
+      <td style="padding:10px 12px">
+        ${u.plus
+          ? `<span class="b b-am" style="cursor:pointer" title="إلغاء Plus" onclick="adminToggleUserPlus('${u.id}',false,'${san(u.name||'')}')">
+               <i class="fas fa-crown" style="color:#f59e0b"></i>Plus
+             </span>`
+          : `<button class="btn bo bsm" onclick="adminToggleUserPlus('${u.id}',true,'${san(u.name||'')}')">
+               <i class="fas fa-crown"></i>تفعيل
+             </button>`}
+      </td>
       <td style="padding:10px 12px"><span class="b ${isActive?'b-gr':'b-rd'}"><i class="fas ${isActive?'fa-check-circle':'fa-times-circle'}"></i>${isActive?'نشط':'موقوف'}</span></td>
       <td style="padding:10px 12px">
         ${role !== 'admin' ? `

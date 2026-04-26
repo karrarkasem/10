@@ -290,6 +290,7 @@ const NAV_ADMIN = [
   { id:'alljobs',     icon:'fa-briefcase',      label:'الوظائف',          btm:false },
   { id:'alloffices',  icon:'fa-building',       label:'المكاتب',          btm:false },
   { id:'allusers',    icon:'fa-users',          label:'المستخدمون',       btm:false },
+  { id:'campaigns',   icon:'fa-bullhorn',       label:'حملات التواصل',    btm:false },
   { id:'settings',    icon:'fa-cog',            label:'الإعدادات',        btm:true  },
 ];
 
@@ -370,6 +371,7 @@ function renderPage(pg) {
     if (pg === 'alloffices')  return pgAdminOffices(el);
     if (pg === 'allusers')    return pgAdminUsers(el);
     if (pg === 'settings')    return pgAdminSettings(el);
+    if (pg === 'campaigns')   return pgAdminCampaigns(el);
     return pgAdminHome(el); // catch-all
   }
   // seeker (default)

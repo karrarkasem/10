@@ -613,3 +613,6 @@
 .fn-bar-wrap { flex: 1; height: 8px; background: var(--bgc2); border-radius: 4px; overflow: hidden; }
 .fn-bar { height: 100%; border-radius: 4px; transition: width .6s cubic-bezier(.34,1.56,.64,1); }
 .fn-count { font-size: 11px; font-weight: 800; color: var(--tx); width: 24px; text-align: left; flex-shrink: 0; }
+
+/* ── Contact Locked (Plus gate) ── */
+.contact-locked { padding: 14px; background: rgba(245,158,11,.06); border: 1px dashed rgba(245,158,11,.4); border-radius: 14px; }

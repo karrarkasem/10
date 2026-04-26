@@ -295,6 +295,7 @@ if (!DEMO && typeof firebase !== 'undefined') {
           }
         }
 
+        await loadContactCampaigns();
         bootApp();
       } catch (e) { console.error(e); JOBS = []; bootApp(); }
     }

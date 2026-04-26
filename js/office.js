@@ -972,6 +972,15 @@ function openAddJob() {
     </div>
     <div class="fg"><label class="fl">آخر موعد للتقديم</label><input type="date" id="jdl" class="fc"></div>
 
+    <div class="al al-i" style="margin-top:12px">
+      <i class="fas fa-crown" style="color:#f59e0b"></i>
+      <span>أرقام التواصل تظهر فقط للمشتركين Plus أو خلال حملات الأدمن</span>
+    </div>
+    <div class="fr">
+      <div class="fg"><label class="fl">رقم الهاتف للتواصل</label><input type="tel" id="jph" class="fc" value="${P?.phone||''}" placeholder="07X XXXX XXXX"></div>
+      <div class="fg"><label class="fl">معرّف تيليجرام (اختياري)</label><input type="text" id="jtg" class="fc" placeholder="@username أو رابط"></div>
+    </div>
+
     <div class="mf" style="padding:0;border:none;margin-top:12px">
       <button class="btn bo" onclick="cmo('moAddJob')"><i class="fas fa-times"></i>إلغاء</button>
       <button class="btn bp blg" id="addJobBtn" onclick="submitJob()"><i class="fas fa-bullhorn"></i>نشر الوظيفة</button>
@@ -1221,6 +1230,8 @@ async function submitJob() {
     reqs: (document.getElementById('jr')?.value||'').split(',').map(s=>s.trim()).filter(Boolean),
     bens: (document.getElementById('jb')?.value||'').split(',').map(s=>s.trim()).filter(Boolean),
     deadline:  deadline || null,
+    phone:     document.getElementById('jph')?.value.trim() || null,
+    telegram:  document.getElementById('jtg')?.value.trim() || null,
     currency: 'IQD', logo: co.charAt(0), applicants: 0, status: 'active',
     postedBy: U?.uid || 'demo', postedAt: new Date().toISOString(),
     postedByType: ROLE, // 'office' | 'employer'

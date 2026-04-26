@@ -285,6 +285,15 @@ function openJob(id) {
       </div>
     </div>` : ''}
 
+    <!-- التواصل المباشر -->
+    ${(ROLE === 'seeker' || ROLE === 'guest') && j.phone ? `
+    <div style="margin-bottom:20px;padding:14px;background:var(--bgc2);border-radius:14px;border:1px solid var(--br)">
+      <div style="font-size:11px;font-weight:700;color:var(--tx3);margin-bottom:8px">
+        <i class="fas fa-headset" style="color:var(--p)"></i> التواصل المباشر مع جهة العمل
+      </div>
+      ${renderContactBtns(j.phone, true, j.telegram || null)}
+    </div>` : ''}
+
     <!-- أزرار الإجراءات -->
     <div style="display:flex;gap:9px;flex-wrap:wrap">
       ${ROLE === 'office'
