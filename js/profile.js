@@ -12,7 +12,15 @@ function pgSeekerProfile(el) {
     <div class="card" style="margin-bottom:14px">
       <div class="prof-banner">
         <div style="position:absolute;bottom:-22px;right:22px;z-index:2">
-          <div class="av avxl" style="background:var(--grad-p);color:#fff;font-size:28px;font-weight:900;border:3px solid var(--bgc);box-shadow:var(--shxl)">${p?.name?.charAt(0)||'م'}</div>
+          <div style="position:relative;display:inline-block;cursor:pointer" onclick="triggerAvatarUpload()" title="تغيير الصورة الشخصية">
+            ${p?.photoURL
+              ? `<img src="${p.photoURL}" class="av avxl" style="object-fit:cover;border:3px solid var(--bgc);box-shadow:var(--shxl)">`
+              : `<div class="av avxl" style="background:var(--grad-p);color:#fff;font-size:28px;font-weight:900;border:3px solid var(--bgc);box-shadow:var(--shxl)">${p?.name?.charAt(0)||'م'}</div>`}
+            <div style="position:absolute;bottom:0;left:0;width:26px;height:26px;background:var(--p);border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid var(--bgc)">
+              <i class="fas fa-camera" style="color:#fff;font-size:11px"></i>
+            </div>
+          </div>
+          <input type="file" id="avatarInput" accept="image/*" style="display:none" onchange="uploadAvatar(this.files[0])">
         </div>
       </div>
       <div class="cp" style="padding-top:32px">
@@ -141,6 +149,42 @@ async function doChangePassword() {
     if (err) { err.textContent = msg; err.style.display = 'block'; }
     notify('خطأ', msg, 'error');
   } finally { loading('pwSaveBtn', false); }
+}
+
+function triggerAvatarUpload() {
+  document.getElementById('avatarInput')?.click();
+}
+
+async function uploadAvatar(file) {
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) { notify('خطأ', 'الصورة أكبر من 5 ميغابايت', 'error'); return; }
+
+  const key = CFG.imgbb?.key;
+  if (!key) {
+    notify('إعداد مطلوب', 'أدخل مفتاح ImgBB في الأدمن > الإعدادات أولاً', 'warning');
+    return;
+  }
+
+  notify('جارٍ الرفع...', 'يرجى الانتظار', 'info');
+
+  try {
+    const fd = new FormData();
+    fd.append('image', file);
+    const res  = await fetch(`https://api.imgbb.com/1/upload?key=${key}`, { method: 'POST', body: fd });
+    const json = await res.json();
+    if (!json.success) throw new Error('upload failed');
+
+    const url = json.data.url;
+    if (!DEMO && window.db && U) {
+      await window.db.collection('users').doc(U.uid).update({ photoURL: url });
+    }
+    P = { ...P, photoURL: url };
+    updateUserUI();
+    notify('تم ✅', 'تم تحديث صورتك الشخصية', 'success');
+    pgSeekerProfile(document.getElementById('pcon'));
+  } catch(e) {
+    notify('خطأ', 'فشل رفع الصورة، تحقق من مفتاح ImgBB', 'error');
+  }
 }
 
 async function saveProfile() {
