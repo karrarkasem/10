@@ -15,7 +15,9 @@ service cloud.firestore {
 
     // يدعم المستخدمين القدامى الذين ليس لديهم role
     function userRole() {
-      return isLoggedIn() && userData().role != null ? userData().role : 'seeker';
+      let r = isLoggedIn() && userData().role != null ? userData().role : 'seeker';
+      // ترحيل role: "user" من النظام القديم → seeker
+      return r == 'user' ? 'seeker' : r;
     }
 
     function isAdmin()  { return userRole() == 'admin'; }
@@ -23,7 +25,7 @@ service cloud.firestore {
 
     // يدعم المستخدمين القدامى الذين ليس لديهم status
     function isActive() {
-      return isLoggedIn() && (userData().status == 'active' || userData().status == null);
+      return isLoggedIn() && (userData().status == 'active' || userData().status == 'approved' || userData().status == null);
     }
 
     // تحقق من حجم الوثيقة (حماية من الحقول الزائدة)

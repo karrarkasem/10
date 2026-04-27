@@ -304,12 +304,23 @@ if (!DEMO && typeof firebase !== 'undefined') {
         const doc = await window.db.collection('users').doc(user.uid).get();
         P    = doc.exists ? doc.data() : { name: user.displayName || 'مستخدم', role: 'seeker', email: user.email };
         ROLE = P.role || 'seeker';
-        // ترحيل المستخدمين القدامى الذين ليس لديهم role أو status
-        if (doc.exists && (!P.role || !P.status)) {
+
+        // ترحيل المستخدمين من النظام القديم
+        if (doc.exists) {
           const upd = {};
-          if (!P.role)   upd.role   = 'seeker';
-          if (!P.status) upd.status = 'active';
-          try { await window.db.collection('users').doc(user.uid).update(upd); P = { ...P, ...upd }; ROLE = P.role; } catch(e) { console.warn('profile migrate:', e.message); }
+          // role: "user" → "seeker"
+          if (!P.role || P.role === 'user') upd.role = 'seeker';
+          // status: "approved" أو غائب → "active"
+          if (!P.status || P.status === 'approved') upd.status = 'active';
+          // avatar → photoURL
+          if (P.avatar && !P.photoURL) upd.photoURL = P.avatar;
+          if (Object.keys(upd).length) {
+            try {
+              await window.db.collection('users').doc(user.uid).update(upd);
+              P = { ...P, ...upd };
+              ROLE = P.role;
+            } catch(e) { console.warn('profile migrate:', e.message); }
+          }
         }
         // الأدمن يرى كل الوظائف — بقية الأدوار يرون النشطة فقط
         const jobsSnap = ROLE === 'admin'
