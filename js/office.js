@@ -915,9 +915,26 @@ function openAddJob() {
     return;
   }
   document.getElementById('moAddJobB').innerHTML = `
-    <div class="al al-i" style="margin-bottom:16px">
-      <i class="fas fa-lightbulb"></i>
-      <span>الوظائف ذات الأوصاف الواضحة تجذب متقدمين أفضل. أضف التفاصيل كاملةً.</span>
+    <!-- ── قسم الاستيراد الذكي ── -->
+    <div id="importJobSection" style="background:linear-gradient(135deg,#f0f4ff,#faf5ff);border:1.5px dashed var(--p);border-radius:14px;padding:14px 16px;margin-bottom:16px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <i class="fas fa-magic" style="color:var(--p);font-size:16px"></i>
+        <span style="font-weight:700;font-size:14px;color:var(--tx1)">استيراد من نص</span>
+        <span style="font-size:12px;color:var(--tx3);margin-right:auto">الصق أي إعلان من تلجرام أو فيسبوك</span>
+      </div>
+      <textarea id="importTxt" class="fc" rows="3"
+        style="font-size:13px;resize:vertical"
+        placeholder="مثال: مطلوب محاسب للعمل في شركة الأمل ببغداد، الراتب 500 ألف، خبرة سنتين، للتواصل: 07801234567"></textarea>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn bp bsm" id="importAIBtn" onclick="importJobFromText()">
+          <i class="fas fa-magic"></i> تحليل تلقائي
+        </button>
+        <button class="btn bsm" style="border:1px solid var(--br);background:var(--bg2);color:var(--tx2)"
+          onclick="document.getElementById('importJobSection').style.display='none'">
+          <i class="fas fa-times"></i> إخفاء
+        </button>
+      </div>
+      <div id="importStatus" style="display:none;margin-top:8px;font-size:12px;color:var(--tx3)"></div>
     </div>
 
     <div class="fr">
@@ -1354,4 +1371,130 @@ function initOfficesMapInline() {
   // Fit map to markers
   const bounds = L.latLngBounds(withLoc.map(o => [o.lat, o.lng]));
   _officesMapInst.fitBounds(bounds, { padding: [30, 30] });
+}
+
+
+// ══════════════════════════════════════════════════════
+// استيراد وظيفة من نص بالذكاء الاصطناعي
+// ══════════════════════════════════════════════════════
+
+async function importJobFromText() {
+  const txt = (document.getElementById('importTxt')?.value || '').trim();
+  if (txt.length < 15) {
+    notify('نص قصير', 'الصق نص إعلان الوظيفة كاملاً', 'warning');
+    return;
+  }
+
+  const btn    = document.getElementById('importAIBtn');
+  const status = document.getElementById('importStatus');
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-circle-notch spin"></i> جارٍ التحليل...';
+  if (status) { status.style.display = 'block'; status.textContent = 'يحلّل الذكاء الاصطناعي النص...'; }
+
+  try {
+    const data = await _parseJobText(txt);
+    if (!data) throw new Error('empty');
+    _fillJobForm(data);
+    if (status) status.textContent = '✓ تم التحليل — راجع البيانات وعدّل ما تحتاج';
+    notify('تم التحليل ✓', 'راجع البيانات ثم اضغط نشر', 'success');
+  } catch (e) {
+    const noKey = !CFG.gemini?.key;
+    notify('فشل التحليل', noKey ? 'أدخل مفتاح Gemini في الأدمن > الإعدادات أولاً' : 'حاول مجدداً أو أدخل البيانات يدوياً', 'error');
+    if (status) status.textContent = noKey ? 'مفتاح Gemini غير موجود في الإعدادات' : 'فشل التحليل — حاول مجدداً';
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-magic"></i> تحليل تلقائي';
+  }
+}
+
+async function _parseJobText(text) {
+  const key = CFG.gemini?.key;
+  const prompt = _buildJobPrompt(text);
+
+  if (key) {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+      }
+    );
+    if (!res.ok) throw new Error('api error');
+    const json = await res.json();
+    const raw  = json?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    return _extractJSON(raw);
+  }
+
+  // Fallback: Cloud Function
+  const raw = await callGemini(prompt);
+  if (!raw) throw new Error('no response');
+  return _extractJSON(raw);
+}
+
+function _buildJobPrompt(text) {
+  return `أنت مساعد متخصص في استخراج بيانات إعلانات الوظائف العراقية. استخرج المعلومات من النص التالي وأعد JSON فقط بدون أي نص إضافي أو markdown.
+
+النص المراد تحليله:
+"""
+${text}
+"""
+
+المحافظات العراقية المتاحة فقط: بغداد، كربلاء، النجف، البصرة، نينوى، أربيل، كركوك، بابل، ذي قار، ميسان، القادسية، واسط، المثنى، الأنبار، صلاح الدين، ديالى، دهوك، السليمانية
+
+أعد JSON بهذه الحقول بالضبط (ضع null إذا لم تجد المعلومة):
+{
+  "title": "المسمى الوظيفي",
+  "company": "اسم الشركة أو المؤسسة",
+  "province": "اسم المحافظة من القائمة أعلاه فقط",
+  "type": "full أو part أو freelance",
+  "category": "tech أو biz أو med أو edu أو eng أو other",
+  "salary": رقم صحيح فقط بدون نص,
+  "salaryMax": رقم صحيح فقط بدون نص,
+  "experience": "بدون خبرة أو أقل من سنة أو 1-2 سنة أو 2-4 سنوات أو 4+ سنوات",
+  "gender": "الجنسين أو ذكور أو إناث",
+  "hours": "وصف ساعات العمل",
+  "description": "وصف مفصل ومنسق للوظيفة والمهام المطلوبة",
+  "requirements": "متطلب1، متطلب2، متطلب3",
+  "benefits": "ميزة1، ميزة2",
+  "phone": "رقم الهاتف بدون مسافات أو شرطات",
+  "telegram": "معرف تلجرام أو رابط"
+}`;
+}
+
+function _extractJSON(raw) {
+  try {
+    const m = raw.match(/\{[\s\S]*\}/);
+    if (!m) return null;
+    return JSON.parse(m[0]);
+  } catch { return null; }
+}
+
+function _fillJobForm(d) {
+  if (!d) return;
+  const sv  = (id, val) => { const el = document.getElementById(id); if (el && val != null) el.value = val; };
+  const sel = (id, val) => {
+    if (!val) return;
+    const el = document.getElementById(id);
+    if (!el) return;
+    const opt = Array.from(el.options).find(o => o.value === val || o.text === val);
+    if (opt) el.value = opt.value;
+  };
+
+  sv('jt',   d.title);
+  sv('jco2', d.company);
+  sel('jty', d.type || 'full');
+  sel('jca', d.category || 'other');
+  sv('js',   d.salary);
+  sv('jsm',  d.salaryMax);
+  sel('jp',  d.province);
+  sel('je',  d.experience);
+  sel('jge', d.gender || 'الجنسين');
+  sv('jhr',  d.hours);
+  sv('jd',   d.description);
+  sv('jr',   d.requirements);
+  sv('jb',   d.benefits);
+  sv('jph',  d.phone);
+  sv('jtg',  d.telegram);
 }
