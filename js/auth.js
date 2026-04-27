@@ -15,6 +15,7 @@ function initApp() {
     document.getElementById('onboarding').style.display = 'flex';
   } else {
     document.getElementById('authScreen').style.display = 'flex';
+    mainSwitchTab('login');
   }
 }
 
@@ -38,6 +39,7 @@ function skipOnboarding() {
   localStorage.setItem('fanoos_onboarded', '1');
   document.getElementById('onboarding').style.display  = 'none';
   document.getElementById('authScreen').style.display  = 'flex';
+  mainSwitchTab('login');
 }
 
 // ═══════════════════════════════════════════════
@@ -88,12 +90,7 @@ function backToWho() {
 document.addEventListener('DOMContentLoaded', initApp);
 
 function switchAuth(m) {
-  const show = m === 'login' ? 'formLogin' : 'formReg';
-  const hide = m === 'login' ? 'formReg'   : 'formLogin';
-  document.getElementById(show).style.display = 'block';
-  document.getElementById(hide).style.display = 'none';
-  document.getElementById('atab_login').classList.toggle('on', m === 'login');
-  document.getElementById('atab_reg').classList.toggle('on',   m === 'register');
+  mainSwitchTab(m === 'register' ? 'register' : 'login');
 }
 
 function pickRole(r) {
@@ -241,8 +238,7 @@ async function doLogout() {
     U = null; P = null; ROLE = null;
     document.getElementById('app').style.display        = 'none';
     document.getElementById('authScreen').style.display = 'flex';
-    document.getElementById('screenWho').style.display  = 'block';
-    document.getElementById('screenAuth').style.display = 'none';
+    mainSwitchTab('login');
     SEL_ROLE = 'seeker';
     if (!isGuest) notify('وداعاً!', 'تم تسجيل الخروج بنجاح', 'info');
   };

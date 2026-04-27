@@ -173,8 +173,7 @@ function requireAuth(requiredRole) {
         U = null; P = null; ROLE = null;
         document.getElementById('app').style.display = 'none';
         document.getElementById('authScreen').style.display = 'flex';
-        document.getElementById('screenWho').style.display = 'block';
-        document.getElementById('screenAuth').style.display = 'none';
+        mainSwitchTab('login');
       }
     );
     return false;
