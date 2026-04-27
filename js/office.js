@@ -557,7 +557,29 @@ async function updateCandStatus(appId, status) {
 async function _doUpdateStatus(appId, status, extra = {}) {
   const s = STAT[status];
   if (!DEMO && window.db && appId && !appId.startsWith('a')) {
-    try { await window.db.collection('applications').doc(appId).update({ status, ...extra }); } catch(e) { console.warn('_doUpdateStatus:', e.message); }
+    try {
+      await window.db.collection('applications').doc(appId).update({ status, ...extra });
+      // إشعار الباحث بتغيير الحالة
+      const app = OFFICE_APPS.find(a => a.id === appId);
+      if (app?.applicantId) {
+        const msgs = {
+          reviewed : 'تمت مراجعة طلبك',
+          interview: 'مبروك! أنت مدعو للمقابلة',
+          hired    : 'مبروك! تم قبولك في الوظيفة 🎉',
+          rejected : 'نأسف، لم يتم قبول طلبك هذه المرة',
+        };
+        const body = msgs[status] || `تم تحديث حالة طلبك إلى: ${s?.l}`;
+        window.db.collection('notifications').add({
+          userId   : app.applicantId,
+          type     : 'app_status',
+          title    : s?.l || status,
+          body,
+          jobTitle : app.jobTitle || '',
+          read     : false,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        }).catch(() => {});
+      }
+    } catch(e) { console.warn('_doUpdateStatus:', e.message); }
   }
   const app = OFFICE_APPS.find(a => a.id === appId) || MY_APPS.find(a => a.id === appId);
   if (app) { app.status = status; Object.assign(app, extra); }

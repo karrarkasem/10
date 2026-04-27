@@ -642,10 +642,6 @@ function adminChangeRole(uid, currentRole, name) {
       </button>
     </div>`;
 
-  // نستخدم moConfirm كمودال عام
-  const el = document.getElementById('moConfirmB') || document.getElementById('moConfirm');
-  if (!el) { notify('خطأ', 'المودال غير موجود', 'error'); return; }
-  // بناء مودال مؤقت
   _showAdminModal('تغيير الدور', body);
 }
 

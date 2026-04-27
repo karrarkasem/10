@@ -311,8 +311,11 @@ if (!DEMO && typeof firebase !== 'undefined') {
           if (!P.status) upd.status = 'active';
           try { await window.db.collection('users').doc(user.uid).update(upd); P = { ...P, ...upd }; ROLE = P.role; } catch(e) { console.warn('profile migrate:', e.message); }
         }
-        const snap = await window.db.collection('jobs').where('status', '==', 'active').orderBy('postedAt', 'desc').limit(50).get();
-        JOBS = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        // الأدمن يرى كل الوظائف — بقية الأدوار يرون النشطة فقط
+        const jobsSnap = ROLE === 'admin'
+          ? await window.db.collection('jobs').orderBy('postedAt', 'desc').limit(100).get()
+          : await window.db.collection('jobs').where('status', '==', 'active').orderBy('postedAt', 'desc').limit(50).get();
+        JOBS = jobsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
         if (ROLE === 'seeker') {
           const asnap = await window.db.collection('applications').where('applicantId', '==', user.uid).orderBy('appliedAt', 'desc').get();
@@ -320,10 +323,20 @@ if (!DEMO && typeof firebase !== 'undefined') {
         }
 
         if (ROLE === 'office') {
+          // تحميل وظائف المكتب المتوقفة أيضاً (ليست في JOBS لأنها active فقط)
+          try {
+            const pausedSnap = await window.db.collection('jobs')
+              .where('postedBy', '==', user.uid)
+              .where('status', '==', 'paused').get();
+            const pausedJobs = pausedSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+            // دمج مع JOBS بدون تكرار
+            const existingIds = new Set(JOBS.map(j => j.id));
+            pausedJobs.forEach(j => { if (!existingIds.has(j.id)) JOBS.push(j); });
+          } catch (_) {}
+
           const myJobIds = JOBS.filter(j => j.postedBy === user.uid).map(j => j.id);
           if (myJobIds.length > 0) {
             try {
-              // Firestore 'in' يدعم 10 عناصر كحد أقصى — نقسّم على دُفعات
               const chunks = [];
               for (let i = 0; i < myJobIds.length; i += 10) chunks.push(myJobIds.slice(i, i + 10));
               const snaps = await Promise.all(chunks.map(c =>
