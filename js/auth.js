@@ -43,17 +43,45 @@ function skipOnboarding() {
 // ═══════════════════════════════════════════════
 // اختيار الدور قبل التسجيل/الدخول
 // ═══════════════════════════════════════════════
+// التبديل بين تسجيل الدخول والتسجيل الجديد (التابات الرئيسية)
+function mainSwitchTab(tab) {
+  const isLogin = tab === 'login';
+  const tl = document.getElementById('mainTab_login');
+  const tr = document.getElementById('mainTab_reg');
+  const sl = document.getElementById('screenLogin');
+  const sw = document.getElementById('screenWho');
+
+  if (tl) {
+    tl.style.background = isLogin ? 'rgba(255,255,255,.25)' : 'rgba(255,255,255,.07)';
+    tl.style.borderColor = isLogin ? 'rgba(255,255,255,.6)' : 'rgba(255,255,255,.2)';
+  }
+  if (tr) {
+    tr.style.background = isLogin ? 'rgba(255,255,255,.07)' : 'linear-gradient(135deg,var(--p),#6d28d9)';
+    tr.style.boxShadow  = isLogin ? 'none' : '0 4px 15px rgba(13,148,136,.4)';
+    tr.style.borderColor = isLogin ? 'rgba(255,255,255,.2)' : 'transparent';
+  }
+  if (sl) sl.style.display = isLogin ? 'block' : 'none';
+  if (sw) sw.style.display = isLogin ? 'none'  : 'block';
+
+  // إذا رجعنا للدخول، نخفي نموذج التسجيل
+  if (isLogin) {
+    const sa = document.getElementById('screenAuth');
+    const ws = document.getElementById('whoStep');
+    if (sa) sa.style.display = 'none';
+    if (ws) ws.style.display = 'block';
+  }
+}
+
 function chooseRole(role) {
   SEL_ROLE = role;
-  document.getElementById('screenWho').style.display  = 'none';
+  document.getElementById('whoStep').style.display    = 'none';
   document.getElementById('screenAuth').style.display = 'block';
-  // عرض نموذج التسجيل مباشرة للمستخدم الجديد
   pickRole(role);
 }
 
 function backToWho() {
   document.getElementById('screenAuth').style.display = 'none';
-  document.getElementById('screenWho').style.display  = 'block';
+  document.getElementById('whoStep').style.display    = 'block';
 }
 
 // تشغيل عند تحميل الصفحة
