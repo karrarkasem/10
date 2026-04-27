@@ -128,9 +128,20 @@ async function doRegister() {
     const offL = SEL_ROLE === 'office'   ? document.getElementById('ron_license')?.value.trim() : null;
     const empN = SEL_ROLE === 'employer' ? document.getElementById('remp_name')?.value.trim()   : null;
     const empT = SEL_ROLE === 'employer' ? document.getElementById('remp_type')?.value          : null;
+
+    // فحص الدعوة من الأدمن
+    let assignedRole = SEL_ROLE;
+    try {
+      const invDoc = await window.db.collection('invites').doc(email.toLowerCase()).get();
+      if (invDoc.exists && !invDoc.data().used) {
+        assignedRole = invDoc.data().role || SEL_ROLE;
+        await window.db.collection('invites').doc(email.toLowerCase()).update({ used: true, usedAt: firebase.firestore.FieldValue.serverTimestamp() });
+      }
+    } catch(_) {}
+
     await window.db.collection('users').doc(cred.user.uid).set({
       name, phone, province: prov, email,
-      role: SEL_ROLE,
+      role: assignedRole,
       officeName:    offN || null,
       licenseNum:    offL || null,
       companyName:   empN || null,
@@ -153,11 +164,20 @@ async function doGoogleLogin() {
     const uid = res.user.uid;
     const doc = await window.db.collection('users').doc(uid).get();
     if (!doc.exists) {
+      const gEmail = (res.user.email || '').toLowerCase();
+      let gRole = SEL_ROLE || 'seeker';
+      try {
+        const invDoc = await window.db.collection('invites').doc(gEmail).get();
+        if (invDoc.exists && !invDoc.data().used) {
+          gRole = invDoc.data().role || gRole;
+          await window.db.collection('invites').doc(gEmail).update({ used: true, usedAt: firebase.firestore.FieldValue.serverTimestamp() });
+        }
+      } catch(_) {}
       await window.db.collection('users').doc(uid).set({
         name: res.user.displayName || 'مستخدم',
         email: res.user.email,
         photoURL: res.user.photoURL || null,
-        role: SEL_ROLE || 'seeker',
+        role: gRole,
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         status: 'active',
       });

@@ -64,7 +64,7 @@ service cloud.firestore {
         || isAdmin()
         || (isLoggedIn() && resource.data.postedBy == request.auth.uid);
 
-      allow create: if (isOffice() || userRole() == 'employer') && isActive()
+      allow create: if (isOffice() || userRole() == 'employer' || isAdmin()) && isActive()
         && request.resource.data.postedBy == request.auth.uid
         && validSize(request.resource.data)
         && hasFields(request.resource.data, ['title', 'company', 'desc', 'province', 'postedBy', 'postedAt'])
@@ -264,6 +264,16 @@ service cloud.firestore {
         && request.resource.data.score >= 0
         && request.resource.data.score <= 100;
       allow update: if false;
+      allow delete: if isAdmin();
+    }
+
+
+    // ══════════════════════════════════════
+    // INVITES — دعوات الأدمن للمستخدمين
+    // ══════════════════════════════════════
+    match /invites/{email} {
+      allow read: if isAdmin() || (isLoggedIn() && request.auth.token.email == email);
+      allow create, update: if isAdmin();
       allow delete: if isAdmin();
     }
 

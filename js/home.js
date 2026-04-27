@@ -230,10 +230,12 @@ async function pgAdminHome(el) {
     <div class="sh fade-up del2"><div class="st"><div class="st-ico"><i class="fas fa-bolt"></i></div>إدارة سريعة</div></div>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:20px" class="fade-up del2">
       ${[
-        { ico:'fa-briefcase', l:'الوظائف',          c:'var(--p)',      a:"goTo('alljobs')" },
-        { ico:'fa-building',  l:'مكاتب التوظيف',    c:'var(--purple)', a:"goTo('alloffices')" },
-        { ico:'fa-users',     l:'المستخدمون',         c:'var(--acc)',    a:"goTo('allusers')" },
-        { ico:'fa-cog',       l:'الإعدادات',          c:'var(--info)',   a:"goTo('settings')" },
+        { ico:'fa-plus-circle', l:'نشر وظيفة جديدة',  c:'var(--success)', a:"openAddJob()" },
+        { ico:'fa-user-plus',   l:'دعوة مستخدم',       c:'var(--p)',       a:"openInviteUser()" },
+        { ico:'fa-briefcase',   l:'الوظائف',            c:'var(--acc)',     a:"goTo('alljobs')" },
+        { ico:'fa-building',    l:'مكاتب التوظيف',     c:'var(--purple)',  a:"goTo('alloffices')" },
+        { ico:'fa-users',       l:'المستخدمون',          c:'var(--info)',    a:"goTo('allusers')" },
+        { ico:'fa-cog',         l:'الإعدادات',           c:'var(--tx3)',     a:"goTo('settings')" },
       ].map(a => '<div class="cat-item" onclick="' + a.a + '"><div class="cat-ico" style="color:' + a.c + ';background:' + a.c + '18"><i class="fas ' + a.ico + '"></i></div><div class="cat-label">' + a.l + '</div></div>').join('')}
     </div>
     <div class="sh fade-up del3"><div class="st"><div class="st-ico"><i class="fas fa-briefcase"></i></div>أحدث الوظائف</div></div>
@@ -399,7 +401,9 @@ async function pgAdminUsers(el) {
   el.innerHTML = `
     <div class="sh">
       <div class="st"><div class="st-ico"><i class="fas fa-users"></i></div>المستخدمون</div>
-      <span class="b b-tl">${total} مستخدم</span>
+      <button class="btn bp bsm" onclick="openInviteUser()">
+        <i class="fas fa-user-plus"></i>دعوة مستخدم
+      </button>
     </div>
 
     <div class="resp-g3" style="gap:12px;margin-bottom:20px">
@@ -467,8 +471,8 @@ function renderAdminUsersList() {
     return matchRole && matchSearch;
   });
 
-  const roleLabel = { seeker:'باحث', office:'مكتب', admin:'أدمن' };
-  const roleClass = { seeker:'b-tl', office:'b-pu', admin:'b-am' };
+  const roleLabel = { seeker:'باحث', office:'مكتب', employer:'صاحب عمل', admin:'أدمن' };
+  const roleClass = { seeker:'b-tl', office:'b-pu', employer:'b-bl', admin:'b-am' };
 
   const tbody = document.getElementById('usersTableBody');
   if (!tbody) return;
@@ -492,7 +496,15 @@ function renderAdminUsersList() {
           </div>
         </div>
       </td>
-      <td style="padding:10px 12px"><span class="b ${roleClass[role]||'b-tl'}"><i class="fas ${role==='admin'?'fa-shield-alt':role==='office'?'fa-building':'fa-user'}"></i>${roleLabel[role]||'باحث'}</span></td>
+      <td style="padding:10px 12px">
+        <div style="display:flex;align-items:center;gap:6px">
+          <span class="b ${roleClass[role]||'b-tl'}"><i class="fas ${role==='admin'?'fa-shield-alt':role==='office'?'fa-building':role==='employer'?'fa-briefcase':'fa-user'}"></i>${roleLabel[role]||'باحث'}</span>
+          ${role !== 'admin' ? `<button class="btn bo bsm" style="padding:2px 7px;font-size:10px" title="تغيير الدور"
+            onclick="adminChangeRole('${u.id}','${role}','${san(u.name||'')}')">
+            <i class="fas fa-exchange-alt"></i>
+          </button>` : ''}
+        </div>
+      </td>
       <td style="padding:10px 12px;color:var(--tx2)">${san(u.province||'—')}</td>
       <td style="padding:10px 12px">
         ${u.plus
@@ -526,6 +538,139 @@ async function adminToggleUser(uid, newStatus, name) {
       notify('تم ✅', `تم ${label} الحساب بنجاح`, 'success');
     } catch(e) { notify('خطأ', 'فشلت العملية', 'error'); }
   });
+}
+
+// ── تغيير دور المستخدم ──
+function adminChangeRole(uid, currentRole, name) {
+  const roles = [
+    { v:'seeker',   l:'باحث عن عمل',  ico:'fa-user' },
+    { v:'office',   l:'مكتب توظيف',    ico:'fa-building' },
+    { v:'employer', l:'صاحب عمل',      ico:'fa-briefcase' },
+    { v:'admin',    l:'مدير النظام',   ico:'fa-shield-alt' },
+  ];
+  const opts = roles.map(r =>
+    `<label style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:2px solid ${r.v===currentRole?'var(--p)':'var(--br)'};
+      border-radius:10px;cursor:pointer;margin-bottom:8px;transition:.2s"
+      onclick="document.querySelectorAll('.role-opt').forEach(x=>x.style.borderColor='var(--br)');this.style.borderColor='var(--p)';document.getElementById('roleSelect').value='${r.v}'">
+      <i class="fas ${r.ico}" style="color:var(--p);width:18px;text-align:center"></i>
+      <div>
+        <div style="font-size:13px;font-weight:700;color:var(--tx)">${r.l}</div>
+      </div>
+      ${r.v===currentRole?'<span class="b b-tl" style="margin-right:auto;font-size:10px">الحالي</span>':''}
+    </label>`
+  ).join('');
+
+  const body = `
+    <input type="hidden" id="roleSelect" value="${currentRole}">
+    <div style="font-size:13px;color:var(--tx2);margin-bottom:14px">
+      تغيير دور <strong>${san(name)}</strong> إلى:
+    </div>
+    <div class="role-opts">${opts}</div>
+    <div class="mf" style="border:none;padding:0;margin-top:12px">
+      <button class="btn bo" onclick="cmo('moConfirm')">إلغاء</button>
+      <button class="btn bp bfu" onclick="_doChangeRole('${uid}','${san(name)}')">
+        <i class="fas fa-check"></i>تأكيد التغيير
+      </button>
+    </div>`;
+
+  // نستخدم moConfirm كمودال عام
+  const el = document.getElementById('moConfirmB') || document.getElementById('moConfirm');
+  if (!el) { notify('خطأ', 'المودال غير موجود', 'error'); return; }
+  // بناء مودال مؤقت
+  _showAdminModal('تغيير الدور', body);
+}
+
+async function _doChangeRole(uid, name) {
+  const newRole = document.getElementById('roleSelect')?.value;
+  if (!newRole) return;
+  cmo('_adminModal');
+  if (DEMO || !window.db) return;
+  try {
+    await window.db.collection('users').doc(uid).update({ role: newRole });
+    const u = (window._adminUsers||[]).find(u => u.id === uid);
+    if (u) u.role = newRole;
+    renderAdminUsersList();
+    const roleNames = { seeker:'باحث', office:'مكتب توظيف', employer:'صاحب عمل', admin:'مدير نظام' };
+    notify('تم ✅', `تم تغيير دور "${name}" إلى ${roleNames[newRole]||newRole}`, 'success');
+  } catch(e) { notify('خطأ', 'فشل تغيير الدور: ' + e.message, 'error'); }
+}
+
+// ── دعوة مستخدم جديد ──
+function openInviteUser() {
+  const body = `
+    <div class="al al-i" style="margin-bottom:14px">
+      <i class="fas fa-info-circle"></i>
+      <span>سيُحدَّد الدور تلقائياً عند تسجيل المستخدم بهذا الإيميل</span>
+    </div>
+    <div class="fg">
+      <label class="fl req">البريد الإلكتروني</label>
+      <input type="email" class="fc" id="invEmail" placeholder="user@example.com">
+    </div>
+    <div class="fg">
+      <label class="fl req">الدور المخصص</label>
+      <select class="fc" id="invRole">
+        <option value="seeker">باحث عن عمل</option>
+        <option value="office">مكتب توظيف</option>
+        <option value="employer">صاحب عمل</option>
+        <option value="admin">مدير نظام</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label class="fl">ملاحظة للمستخدم (اختياري)</label>
+      <input type="text" class="fc" id="invNote" placeholder="مثال: حساب مكتب التوظيف المركزي">
+    </div>
+    <div class="mf" style="border:none;padding:0;margin-top:12px">
+      <button class="btn bo" onclick="cmo('_adminModal')">إلغاء</button>
+      <button class="btn bp bfu" id="inviteBtn" onclick="adminSendInvite()">
+        <i class="fas fa-paper-plane"></i>إرسال الدعوة
+      </button>
+    </div>`;
+  _showAdminModal('دعوة مستخدم جديد', body);
+}
+
+async function adminSendInvite() {
+  const email = document.getElementById('invEmail')?.value.trim().toLowerCase();
+  const role  = document.getElementById('invRole')?.value;
+  const note  = document.getElementById('invNote')?.value.trim();
+  if (!email) { notify('خطأ', 'أدخل البريد الإلكتروني', 'error'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { notify('خطأ', 'البريد الإلكتروني غير صحيح', 'error'); return; }
+  loading('inviteBtn', true);
+  try {
+    if (!DEMO && window.db) {
+      await window.db.collection('invites').doc(email).set({
+        email, role, note: note || '',
+        invitedBy: U?.uid,
+        invitedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        used: false,
+      });
+    }
+    cmo('_adminModal');
+    notify('تم ✅', `تم حفظ الدعوة — عند تسجيل ${email} سيحصل على دور "${role}"`, 'success');
+  } catch(e) {
+    notify('خطأ', 'فشل الحفظ: ' + e.message, 'error');
+  } finally { loading('inviteBtn', false); }
+}
+
+// ── مودال عام للأدمن ──
+function _showAdminModal(title, body) {
+  let mo = document.getElementById('_adminModal');
+  if (!mo) {
+    mo = document.createElement('div');
+    mo.id = '_adminModal';
+    mo.className = 'mo';
+    mo.onclick = e => { if (e.target === mo) cmo('_adminModal'); };
+    mo.innerHTML = `<div class="mob" style="max-width:460px">
+      <div class="mh">
+        <div class="mt" id="_adminModalTitle"></div>
+        <div class="mc" onclick="cmo('_adminModal')"><i class="fas fa-times"></i></div>
+      </div>
+      <div class="mbod" id="_adminModalB"></div>
+    </div>`;
+    document.body.appendChild(mo);
+  }
+  document.getElementById('_adminModalTitle').textContent = title;
+  document.getElementById('_adminModalB').innerHTML = body;
+  oMo('_adminModal');
 }
 
 // ════════════════════════════════════════════
