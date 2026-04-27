@@ -187,8 +187,11 @@ function pgOfficeJobs(el) {
               <span style="font-size:11px;color:var(--tx3)"><i class="fas fa-map-marker-alt"></i> ${j.province}</span>
             </div>
           </div>
-          <div style="text-align:left;flex-shrink:0">
-            <span class="b b-gr" style="display:inline-flex;margin-bottom:4px"><i class="fas fa-circle" style="font-size:6px"></i>نشطة</span>
+          <div style="text-align:left;flex-shrink:0;display:flex;flex-direction:column;gap:4px;align-items:flex-end">
+            ${isJobLive(j)
+              ? `<span class="b b-gr" style="display:inline-flex"><i class="fas fa-circle" style="font-size:6px"></i>نشطة</span>`
+              : `<span class="b b-rd" style="display:inline-flex"><i class="fas fa-circle" style="font-size:6px"></i>منتهية</span>`}
+            ${jobExpiryLabel(j)}
             ${daysLeftBadge(j.deadline)}
           </div>
         </div>
@@ -989,6 +992,18 @@ function openAddJob() {
     </div>
     <div class="fg"><label class="fl">آخر موعد للتقديم</label><input type="date" id="jdl" class="fc"></div>
 
+    <div class="fg">
+      <label class="fl req">مدة إتاحة الوظيفة</label>
+      <select id="jdur" class="fc">
+        <option value="hour">ساعة واحدة</option>
+        <option value="day">يوم واحد</option>
+        <option value="week" selected>أسبوع</option>
+        <option value="month">شهر</option>
+        <option value="permanent">دائمي — حتى أوقفها أنا أو الأدمن</option>
+      </select>
+      <div class="fh" style="margin-top:4px"><i class="fas fa-info-circle"></i> بعد انتهاء المدة تختفي الوظيفة تلقائياً. الأدمن يستطيع تثبيتها بصرف النظر عن المدة.</div>
+    </div>
+
     <div class="al al-i" style="margin-top:12px">
       <i class="fas fa-crown" style="color:#f59e0b"></i>
       <span>أرقام التواصل تظهر فقط للمشتركين Plus أو خلال حملات الأدمن</span>
@@ -1252,6 +1267,9 @@ async function submitJob() {
     currency: 'IQD', logo: co.charAt(0), applicants: 0, status: 'active',
     postedBy: U?.uid || 'demo', postedAt: new Date().toISOString(),
     postedByType: ROLE, // 'office' | 'employer'
+    duration:    document.getElementById('jdur')?.value || 'week',
+    expiresAt:   calcExpiresAt(document.getElementById('jdur')?.value || 'week'),
+    adminPinned: false,
   };
   loading('addJobBtn', true);
   if (!DEMO && window.db) {

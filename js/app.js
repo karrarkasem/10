@@ -573,3 +573,41 @@ function jobMatchScore(j) {
   if (j.province === P.province) return 'high';
   return null;
 }
+
+// ═══════════════════════════════════════════════
+// نظام عمر الوظيفة والانتهاء
+// ═══════════════════════════════════════════════
+
+// هل الوظيفة لا تزال متاحة فعلياً؟
+function isJobLive(j) {
+  if (!j) return false;
+  if (j.status === 'paused' || j.status === 'closed') return false;
+  // الأدمن يثبّت الوظيفة → تتجاوز أي انتهاء
+  if (j.adminPinned) return true;
+  // وظيفة دائمة أو بدون expiresAt
+  if (!j.expiresAt) return true;
+  return new Date(j.expiresAt) > new Date();
+}
+
+// التسمية المرئية لعمر الوظيفة
+function jobExpiryLabel(j) {
+  if (j.adminPinned) return `<span class="b b-pu" style="font-size:11px"><i class="fas fa-thumbtack"></i> مثبّت من الأدمن</span>`;
+  if (!j.expiresAt)  return `<span class="b b-gr" style="font-size:11px"><i class="fas fa-infinity"></i> دائمي</span>`;
+  const ms   = new Date(j.expiresAt) - Date.now();
+  if (ms <= 0) return `<span class="b b-rd" style="font-size:11px"><i class="fas fa-clock"></i> منتهية</span>`;
+  const mins = Math.floor(ms / 60000);
+  const hrs  = Math.floor(ms / 3600000);
+  const days = Math.floor(ms / 86400000);
+  if (mins < 60)  return `<span class="b b-am" style="font-size:11px"><i class="fas fa-clock"></i> تنتهي خلال ${mins} دقيقة</span>`;
+  if (hrs  < 24)  return `<span class="b b-am" style="font-size:11px"><i class="fas fa-clock"></i> تنتهي خلال ${hrs} ساعة</span>`;
+  if (days < 30)  return `<span class="b b-tl" style="font-size:11px"><i class="fas fa-calendar"></i> تنتهي خلال ${days} يوم</span>`;
+  return `<span class="b b-gr" style="font-size:11px"><i class="fas fa-calendar-check"></i> تنتهي ${new Date(j.expiresAt).toLocaleDateString('ar-IQ')}</span>`;
+}
+
+// حساب expiresAt من قيمة duration
+function calcExpiresAt(duration) {
+  const now = Date.now();
+  const map = { hour: 3600000, day: 86400000, week: 604800000, month: 2592000000 };
+  if (!duration || duration === 'permanent' || !map[duration]) return null;
+  return new Date(now + map[duration]).toISOString();
+}

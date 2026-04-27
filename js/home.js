@@ -246,12 +246,81 @@ async function pgAdminHome(el) {
 // صفحة الوظائف — أدمن
 // ════════════════════════════════════════════
 function pgAdminJobs(el) {
+  const live    = JOBS.filter(j => isJobLive(j)).length;
+  const expired = JOBS.filter(j => !isJobLive(j)).length;
+  const pinned  = JOBS.filter(j => j.adminPinned).length;
+
   el.innerHTML = `
     <div class="sh">
       <div class="st"><div class="st-ico"><i class="fas fa-briefcase"></i></div>إدارة الوظائف</div>
       <span class="b b-tl">${JOBS.length} وظيفة</span>
     </div>
-    <div class="jg">${JOBS.map(j => jCard(j)).join('')}</div>`;
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+      <span class="b b-gr"><i class="fas fa-circle" style="font-size:8px"></i> نشطة: ${live}</span>
+      <span class="b b-rd"><i class="fas fa-clock"></i> منتهية: ${expired}</span>
+      <span class="b b-pu"><i class="fas fa-thumbtack"></i> مثبّتة: ${pinned}</span>
+    </div>
+    <div class="jg">${JOBS.map(j => _adminJobCard(j)).join('')}
+    </div>`;
+}
+
+function _adminJobCard(j) {
+  const live = isJobLive(j);
+  return `<div class="jc" style="${live ? '' : 'opacity:.7;'}">
+    <div class="jch">
+      <div class="jcl">
+        <div class="jcav" style="background:${live ? 'var(--grad-p)' : '#9ca3af'}">${(j.logo||j.company||'و').charAt(0)}</div>
+        <div>
+          <div class="jct">${san(j.title)}</div>
+          <div class="jcco">${san(j.company)} • ${san(j.province)}</div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
+        ${live
+          ? `<span class="b b-gr" style="font-size:11px"><i class="fas fa-circle" style="font-size:7px"></i>نشطة</span>`
+          : `<span class="b b-rd" style="font-size:11px"><i class="fas fa-clock"></i>منتهية</span>`}
+        ${jobExpiryLabel(j)}
+      </div>
+    </div>
+    <div class="jcf" style="display:flex;gap:7px;flex-wrap:wrap;padding:10px 14px;border-top:1px solid var(--br)">
+      ${j.adminPinned
+        ? `<button class="btn bsm" style="background:#7c3aed;color:#fff" onclick="adminPinJob('${j.id}',false,'${san(j.title)}')">
+             <i class="fas fa-thumbtack"></i> إلغاء التثبيت
+           </button>`
+        : `<button class="btn bsm" style="background:var(--success);color:#fff" onclick="adminPinJob('${j.id}',true,'${san(j.title)}')">
+             <i class="fas fa-thumbtack"></i> تثبيت دائم
+           </button>`}
+      <button class="btn bda bsm" onclick="confirm2('حذف الوظيفة','سيتم حذف الوظيفة نهائياً.',()=>adminDeleteJob('${j.id}','${san(j.title)}'))">
+        <i class="fas fa-trash"></i> حذف
+      </button>
+    </div>
+  </div>`;
+}
+
+async function adminPinJob(jobId, pin, title) {
+  const action = pin ? 'تثبيت' : 'إلغاء تثبيت';
+  confirm2(`${action} الوظيفة`, `هل تريد ${action} وظيفة "${title}"؟`, async () => {
+    try {
+      if (!DEMO && window.db) {
+        const upd = { adminPinned: pin };
+        if (pin) upd.status = 'active'; // التثبيت يعيد تفعيلها تلقائياً
+        await window.db.collection('jobs').doc(jobId).update(upd);
+      }
+      const job = JOBS.find(j => j.id === jobId);
+      if (job) { job.adminPinned = pin; if (pin) job.status = 'active'; }
+      notify(pin ? 'تم التثبيت 📌' : 'تم إلغاء التثبيت', `وظيفة "${title}" ${pin ? 'مثبّتة ولن تنتهي تلقائياً' : 'ستنتهي حسب مدتها الأصلية'}`, 'success');
+      pgAdminJobs(document.getElementById('pcon'));
+    } catch(e) { notify('خطأ', 'فشلت العملية', 'error'); }
+  });
+}
+
+async function adminDeleteJob(jobId, title) {
+  try {
+    if (!DEMO && window.db) await window.db.collection('jobs').doc(jobId).delete();
+    JOBS = JOBS.filter(j => j.id !== jobId);
+    notify('تم الحذف', `وظيفة "${title}" حُذفت`, 'info');
+    pgAdminJobs(document.getElementById('pcon'));
+  } catch(e) { notify('خطأ', 'فشل الحذف', 'error'); }
 }
 
 // ════════════════════════════════════════════

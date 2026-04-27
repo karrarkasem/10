@@ -152,6 +152,7 @@ function setCat(btn) {
 
 function fJobs() {
   return JOBS.filter(j => {
+    if (!isJobLive(j)) return false;  // فلتر الوظائف المنتهية
     if (JF.type && j.type !== JF.type) return false;
     if (JF.cat  && j.cat  !== JF.cat)  return false;
     if (JF.prov && j.province !== JF.prov) return false;
