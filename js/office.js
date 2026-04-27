@@ -1248,6 +1248,7 @@ async function submitJob() {
   _lastJobPost = Date.now();
   notify('تم النشر ✅', `وظيفة "${title}" نُشرت بنجاح!`, 'success');
   await notifyAdmin(`وظيفة جديدة — ${title}`, `<b>الشركة:</b> ${co}`, `📢 وظيفة جديدة\n${title}\n${co}`);
+  autoPostJob(job);
   if (ROLE === 'employer') goTo('emp_jobs');
   else if (ROLE === 'office') goTo('myjobs');
   else goTo('home');

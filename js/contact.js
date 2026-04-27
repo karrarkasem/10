@@ -332,3 +332,68 @@ async function adminToggleUserPlus(uid, newVal, name) {
     } catch(e) { notify('خطأ', 'فشلت العملية: ' + e.message, 'error'); }
   });
 }
+
+// ════════════════════════════════════════════════════════
+// النشر التلقائي على السوشال ميديا عند نشر وظيفة
+// ════════════════════════════════════════════════════════
+async function autoPostJob(job) {
+  if (!job) return;
+  const sal   = job.salary ? `${job.salary.toLocaleString('ar')} IQD` : 'قابل للتفاوض';
+  const site  = CFG.general?.siteUrl || location.href;
+  const prov  = job.province || '';
+  const type  = job.type === 'full' ? 'دوام كامل' : job.type === 'part' ? 'دوام جزئي' : 'مستقل';
+
+  const tgText =
+`📢 <b>وظيفة جديدة — الفانوس للتوظيف</b>
+
+🏢 <b>${job.title}</b>
+🏛 ${job.company}
+📍 ${prov} | ${type}
+💰 ${sal}
+
+${job.desc ? job.desc.slice(0, 200) + (job.desc.length > 200 ? '...' : '') : ''}
+
+🔗 للتقديم: ${site}
+#وظائف #${prov.replace(/\s/g,'')} #العراق`;
+
+  const fbText =
+`📢 وظيفة جديدة — ${job.title}
+🏛 ${job.company} | 📍 ${prov}
+💰 ${sal}
+
+${job.desc ? job.desc.slice(0, 300) : ''}
+
+سجّل وتقدّم الآن: ${site}
+#وظائف_العراق #${prov.replace(/\s/g,'')}`;
+
+  const results = [];
+
+  // Telegram Channel
+  if (CFG.telegram?.autoPost && CFG.telegram.bot && CFG.telegram.channel) {
+    try {
+      const r = await fetch(`https://api.telegram.org/bot${CFG.telegram.bot}/sendMessage`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: CFG.telegram.channel, text: tgText, parse_mode: 'HTML' })
+      });
+      const d = await r.json();
+      results.push(d.ok ? '✅ Telegram' : `❌ Telegram: ${d.description}`);
+    } catch(e) { results.push('❌ Telegram: خطأ في الاتصال'); }
+  }
+
+  // Facebook Page
+  if (CFG.facebook?.autoPost && CFG.facebook.pageToken && CFG.facebook.pageId) {
+    try {
+      const r = await fetch(`https://graph.facebook.com/v19.0/${CFG.facebook.pageId}/feed`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: fbText, access_token: CFG.facebook.pageToken })
+      });
+      const d = await r.json();
+      results.push(d.id ? '✅ Facebook' : `❌ Facebook: ${d.error?.message || 'فشل'}`);
+    } catch(e) { results.push('❌ Facebook: خطأ في الاتصال'); }
+  }
+
+  if (results.length) {
+    console.info('Auto-post results:', results.join(' | '));
+  }
+}
+

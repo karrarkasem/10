@@ -529,105 +529,293 @@ async function adminToggleUser(uid, newStatus, name) {
 }
 
 // ════════════════════════════════════════════
-// صفحة الإعدادات — أدمن (مع حفظ في Firestore)
+// صفحة الإعدادات — أدمن (شاملة كل المنصات)
 // ════════════════════════════════════════════
+function _cfgVal(v) { return v && !v.startsWith('YOUR') ? v : ''; }
+function _toggle(id, val) {
+  return `<label style="position:relative;display:inline-block;width:44px;height:24px;cursor:pointer">
+    <input type="checkbox" id="${id}" ${val?'checked':''} style="opacity:0;width:0;height:0">
+    <span style="position:absolute;inset:0;background:var(--br);border-radius:24px;transition:.3s;cursor:pointer;display:block"
+      onclick="var c=this.previousElementSibling;c.checked=!c.checked;this.style.background=c.checked?'var(--p)':'var(--br)'"
+      style="${val?'background:var(--p)':''}"></span>
+  </label>`;
+}
+function _toggleRow(id, val, label, hint) {
+  return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--br)">
+    <div><div style="font-size:13px;font-weight:700;color:var(--tx)">${label}</div>${hint?`<div style="font-size:11px;color:var(--tx3)">${hint}</div>`:''}
+    </div>${_toggle(id, val)}</div>`;
+}
+function _apiSection(color, icon, fab, title, hint, link, linkLabel, fields, toggleId, toggleVal) {
+  return `<div class="card" style="margin-bottom:14px">
+    <div class="ch" style="display:flex;align-items:center;justify-content:space-between">
+      <div class="cht"><i class="${fab?'fab':'fas'} ${icon}" style="color:${color}"></i> ${title}</div>
+      ${hint ? `<a href="${link}" target="_blank" rel="noopener" style="font-size:10px;color:var(--p);text-decoration:none"><i class="fas fa-external-link-alt"></i> ${linkLabel}</a>` : ''}
+    </div>
+    <div class="cp">
+      ${toggleId ? _toggleRow(toggleId, toggleVal, 'نشر تلقائي عند إضافة وظيفة', 'سيُنشر إعلان الوظيفة تلقائياً عند إنشائها') : ''}
+      ${fields}
+    </div>
+  </div>`;
+}
+
 async function pgAdminSettings(el) {
   el.innerHTML = `<div class="es"><div class="es-ico"><i class="fas fa-circle-notch spin" style="color:var(--p)"></i></div><div class="es-desc">جارٍ تحميل الإعدادات...</div></div>`;
 
-  // حاول تحميل الإعدادات من Firestore
   if (!DEMO && window.db) {
     try {
       const doc = await window.db.collection('config').doc('settings').get();
       if (doc.exists) {
         const s = doc.data();
-        if (s.telegram) CFG.telegram = { ...CFG.telegram, ...s.telegram };
-        if (s.emailjs)  CFG.emailjs  = { ...CFG.emailjs,  ...s.emailjs };
-        if (s.imgbb)    CFG.imgbb    = { ...CFG.imgbb,    ...s.imgbb };
+        ['telegram','emailjs','imgbb','facebook','instagram','twitter','linkedin','tiktok','snapchat','youtube','gemini','general'].forEach(k => {
+          if (s[k]) CFG[k] = { ...CFG[k], ...s[k] };
+        });
       }
     } catch(e) { console.warn('Settings load:', e); }
   }
 
+  const c = CFG;
   el.innerHTML = `
     <div class="sh"><div class="st"><div class="st-ico"><i class="fas fa-cog"></i></div>إعدادات النظام</div></div>
 
-    <!-- Telegram -->
-    <div class="card" style="margin-bottom:14px">
-      <div class="ch"><div class="cht"><i class="fas fa-paper-plane" style="color:#0088cc"></i> إعدادات Telegram</div></div>
-      <div class="cp">
+    <!-- تبويبات -->
+    <div class="tabs" style="margin-bottom:18px">
+      <button class="tb2 on" onclick="swSettTab('social',this)"><i class="fas fa-share-alt"></i> السوشال ميديا</button>
+      <button class="tb2"    onclick="swSettTab('services',this)"><i class="fas fa-plug"></i> الخدمات</button>
+      <button class="tb2"    onclick="swSettTab('general',this)"><i class="fas fa-sliders-h"></i> عام</button>
+    </div>
+
+    <!-- ══ السوشال ميديا ══ -->
+    <div id="stSocial">
+
+      ${_apiSection('#0088cc','fa-paper-plane',false,'Telegram','','https://t.me/BotFather','BotFather',`
         <div class="fr">
-          <div class="fg">
-            <label class="fl">رمز البوت (Bot Token)</label>
-            <input type="text" class="fc" id="tgBot" value="${CFG.telegram.bot.startsWith('YOUR')?'':CFG.telegram.bot}" placeholder="123456:ABC-DEF...">
+          <div class="fg"><label class="fl">Bot Token</label>
+            <input class="fc" id="tgBot" value="${_cfgVal(c.telegram.bot)}" placeholder="123456:ABC-DEF...">
           </div>
-          <div class="fg">
-            <label class="fl">Chat ID</label>
-            <input type="text" class="fc" id="tgChat" value="${CFG.telegram.chat.startsWith('YOUR')?'':CFG.telegram.chat}" placeholder="-100123456789">
+          <div class="fg"><label class="fl">Chat ID (الأدمن)</label>
+            <input class="fc" id="tgChat" value="${_cfgVal(c.telegram.chat)}" placeholder="-100xxxxxxxxx">
           </div>
         </div>
-        <button class="btn bg bsm" onclick="testTelegram()"><i class="fas fa-paper-plane"></i>اختبار الإرسال</button>
-      </div>
-    </div>
+        <div class="fg"><label class="fl">Channel ID (للنشر العام)</label>
+          <input class="fc" id="tgChannel" value="${c.telegram.channel||''}" placeholder="@channel_username أو -100xxxxxxxxx">
+          <div class="fh">معرّف القناة العامة التي ستُنشر فيها الوظائف تلقائياً</div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button class="btn bsm" style="background:#0088cc;color:#fff;border:none" onclick="testTelegram()">
+            <i class="fas fa-paper-plane"></i>اختبار الإرسال للأدمن
+          </button>
+          <button class="btn bsm" style="background:#229ed9;color:#fff;border:none" onclick="testTelegramChannel()">
+            <i class="fas fa-broadcast-tower"></i>اختبار نشر القناة
+          </button>
+        </div>
+      `,'tgAutoPost', c.telegram.autoPost)}
 
-    <!-- EmailJS -->
-    <div class="card" style="margin-bottom:14px">
-      <div class="ch"><div class="cht"><i class="fas fa-envelope" style="color:var(--acc)"></i> إعدادات EmailJS</div></div>
-      <div class="cp">
+      ${_apiSection('#1877f2','fa-facebook-f',true,'Facebook Page','','https://developers.facebook.com','Facebook Developers',`
+        <div class="al al-i" style="margin-bottom:10px">
+          <i class="fas fa-info-circle"></i>
+          <span>احصل على Page Access Token من: Meta Business Suite → إعدادات → الوصول للواجهة البرمجية</span>
+        </div>
+        <div class="fg"><label class="fl">Page Access Token</label>
+          <input class="fc" id="fbToken" value="${c.facebook.pageToken||''}" placeholder="EAABxxxxx...">
+        </div>
+        <div class="fg"><label class="fl">Page ID</label>
+          <input class="fc" id="fbPageId" value="${c.facebook.pageId||''}" placeholder="123456789012345">
+          <div class="fh">من صفحتك على فيسبوك → معلومات الصفحة → معرّف الصفحة</div>
+        </div>
+        <button class="btn bsm" style="background:#1877f2;color:#fff;border:none;margin-top:8px" onclick="testFacebook()">
+          <i class="fab fa-facebook-f"></i>اختبار النشر
+        </button>
+      `,'fbAutoPost', c.facebook.autoPost)}
+
+      ${_apiSection('#e1306c','fa-instagram',true,'Instagram','','https://developers.facebook.com','Meta Developers',`
+        <div class="al al-i" style="margin-bottom:10px">
+          <i class="fas fa-info-circle"></i>
+          <span>Instagram يستخدم نفس Token مال Facebook — يجب أن يكون الحساب Business أو Creator</span>
+        </div>
+        <div class="fg"><label class="fl">Access Token (نفس Facebook)</label>
+          <input class="fc" id="igToken" value="${c.instagram.token||''}" placeholder="EAABxxxxx...">
+        </div>
+        <div class="fg"><label class="fl">Instagram Account ID</label>
+          <input class="fc" id="igAccountId" value="${c.instagram.accountId||''}" placeholder="17841400000000000">
+          <div class="fh">من Graph API Explorer: /me/accounts ثم /PAGE_ID?fields=instagram_business_account</div>
+        </div>
+      `,'igAutoPost', c.instagram.autoPost)}
+
+      ${_apiSection('#1da1f2','fa-x-twitter',true,'Twitter / X','','https://developer.twitter.com','Twitter Developer',`
+        <div class="al al-w" style="margin-bottom:10px">
+          <i class="fas fa-exclamation-triangle"></i>
+          <span>Twitter API v2 مدفوع ($100/شهر للنشر). Basic Plan مطلوب للـ Write access.</span>
+        </div>
         <div class="fr">
-          <div class="fg">
-            <label class="fl">Public Key</label>
-            <input type="text" class="fc" id="ejPub" value="${CFG.emailjs.pub.startsWith('YOUR')?'':CFG.emailjs.pub}" placeholder="user_xxxxx">
+          <div class="fg"><label class="fl">API Key</label>
+            <input class="fc" id="twApiKey" value="${c.twitter.apiKey||''}" placeholder="xxxxxxxxxxxxxxxxxxxxxx">
           </div>
-          <div class="fg">
-            <label class="fl">Service ID</label>
-            <input type="text" class="fc" id="ejSvc" value="${CFG.emailjs.svc.startsWith('YOUR')?'':CFG.emailjs.svc}" placeholder="service_xxxxx">
+          <div class="fg"><label class="fl">API Secret</label>
+            <input class="fc" id="twApiSecret" value="${c.twitter.apiSecret||''}" placeholder="xxxxxxxxxxxxxxxxxx...">
           </div>
         </div>
-        <div class="fg">
-          <label class="fl">Template ID</label>
-          <input type="text" class="fc" id="ejTpl" value="${CFG.emailjs.tpl.startsWith('YOUR')?'':CFG.emailjs.tpl}" placeholder="template_xxxxx">
+        <div class="fr">
+          <div class="fg"><label class="fl">Access Token</label>
+            <input class="fc" id="twAccessToken" value="${c.twitter.accessToken||''}" placeholder="000000000-xxxxxxxx...">
+          </div>
+          <div class="fg"><label class="fl">Access Token Secret</label>
+            <input class="fc" id="twAccessSecret" value="${c.twitter.accessSecret||''}" placeholder="xxxxxxxxxxxxxxxx...">
+          </div>
         </div>
-        <div class="fg">
-          <label class="fl">إيميل المدير</label>
-          <input type="email" class="fc" id="ejAdmin" value="${CFG.emailjs.admin.startsWith('YOUR')?'':CFG.emailjs.admin}" placeholder="admin@example.com">
+      `,'twAutoPost', c.twitter.autoPost)}
+
+      ${_apiSection('#0a66c2','fa-linkedin-in',true,'LinkedIn','','https://www.linkedin.com/developers','LinkedIn Developers',`
+        <div class="al al-i" style="margin-bottom:10px">
+          <i class="fas fa-info-circle"></i>
+          <span>النشر على صفحة الشركة يحتاج OAuth 2.0 Token مع صلاحية w_organization_social</span>
+        </div>
+        <div class="fg"><label class="fl">Access Token</label>
+          <input class="fc" id="liToken" value="${c.linkedin.accessToken||''}" placeholder="AQV...">
+        </div>
+        <div class="fg"><label class="fl">Organization ID (رقم صفحة الشركة)</label>
+          <input class="fc" id="liOrgId" value="${c.linkedin.orgId||''}" placeholder="12345678">
+          <div class="fh">من رابط صفحة الشركة: linkedin.com/company/<strong>XXXXXXXX</strong>/admin</div>
+        </div>
+      `,'liAutoPost', c.linkedin.autoPost)}
+
+      ${_apiSection('#000000','fa-tiktok',true,'TikTok','','https://developers.tiktok.com','TikTok Developers',`
+        <div class="al al-w" style="margin-bottom:10px">
+          <i class="fas fa-exclamation-triangle"></i>
+          <span>TikTok Content Posting API يحتاج موافقة خاصة من TikTok — قدّم طلب Developer Account أولاً</span>
+        </div>
+        <div class="fg"><label class="fl">Access Token</label>
+          <input class="fc" id="ttAccessToken" value="${c.tiktok.accessToken||''}" placeholder="act.xxxxxxxxxx...">
+        </div>
+        <div class="fg"><label class="fl">Open ID</label>
+          <input class="fc" id="ttOpenId" value="${c.tiktok.openId||''}" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+        </div>
+      `,'ttAutoPost', c.tiktok.autoPost)}
+
+      ${_apiSection('#fffc00','fa-snapchat-ghost',true,'Snapchat','','https://ads.snapchat.com','Snapchat Business',`
+        <div class="al al-w" style="margin-bottom:10px">
+          <i class="fas fa-exclamation-triangle"></i>
+          <span>Snapchat Marketing API مخصص للإعلانات المدفوعة فقط — لا يدعم النشر العضوي</span>
+        </div>
+        <div class="fg"><label class="fl">Access Token</label>
+          <input class="fc" id="scToken" value="${c.snapchat.accessToken||''}" placeholder="xxxxxxxx-xxxx...">
+        </div>
+        <div class="fg"><label class="fl">Ad Account ID</label>
+          <input class="fc" id="scAdId" value="${c.snapchat.adAccountId||''}" placeholder="xxxxxxxx-xxxx...">
+        </div>
+      `, null, false)}
+
+      ${_apiSection('#ff0000','fa-youtube',true,'YouTube','','https://console.cloud.google.com','Google Cloud Console',`
+        <div class="al al-i" style="margin-bottom:10px">
+          <i class="fas fa-info-circle"></i>
+          <span>YouTube API يستخدم لرفع الفيديوهات فقط — لا يدعم نشر إعلانات نصية</span>
+        </div>
+        <div class="fg"><label class="fl">API Key</label>
+          <input class="fc" id="ytApiKey" value="${c.youtube.apiKey||''}" placeholder="AIzaSy...">
+        </div>
+        <div class="fg"><label class="fl">Channel ID</label>
+          <input class="fc" id="ytChannelId" value="${c.youtube.channelId||''}" placeholder="UCxxxxxxxxxxxxxxxxxx">
+        </div>
+      `, null, false)}
+
+    </div>
+
+    <!-- ══ الخدمات ══ -->
+    <div id="stServices" style="display:none">
+
+      ${_apiSection('#0088cc','fa-paper-plane',false,'Telegram — الإشعارات الداخلية','','','',`
+        <div class="fh" style="margin-bottom:10px">نفس Bot Token أعلاه — هذا Chat ID خاص بالأدمن فقط لاستقبال إشعارات النظام</div>
+        <button class="btn bsm" style="background:#0088cc;color:#fff;border:none" onclick="testTelegram()">
+          <i class="fas fa-vial"></i>اختبار إشعار الأدمن
+        </button>
+      `, null, false)}
+
+      <div class="card" style="margin-bottom:14px">
+        <div class="ch"><div class="cht"><i class="fas fa-envelope" style="color:var(--acc)"></i> EmailJS — البريد الإلكتروني</div>
+          <a href="https://www.emailjs.com" target="_blank" style="font-size:10px;color:var(--p);text-decoration:none"><i class="fas fa-external-link-alt"></i> emailjs.com</a>
+        </div>
+        <div class="cp">
+          <div class="fr">
+            <div class="fg"><label class="fl">Public Key</label>
+              <input class="fc" id="ejPub" value="${_cfgVal(c.emailjs.pub)}" placeholder="user_xxxxx">
+            </div>
+            <div class="fg"><label class="fl">Service ID</label>
+              <input class="fc" id="ejSvc" value="${_cfgVal(c.emailjs.svc)}" placeholder="service_xxxxx">
+            </div>
+          </div>
+          <div class="fr">
+            <div class="fg"><label class="fl">Template ID</label>
+              <input class="fc" id="ejTpl" value="${_cfgVal(c.emailjs.tpl)}" placeholder="template_xxxxx">
+            </div>
+            <div class="fg"><label class="fl">إيميل المدير</label>
+              <input type="email" class="fc" id="ejAdmin" value="${_cfgVal(c.emailjs.admin)}" placeholder="admin@example.com">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:14px">
+        <div class="ch"><div class="cht"><i class="fas fa-image" style="color:var(--purple)"></i> ImgBB — رفع الصور</div>
+          <a href="https://imgbb.com" target="_blank" style="font-size:10px;color:var(--p);text-decoration:none"><i class="fas fa-external-link-alt"></i> imgbb.com</a>
+        </div>
+        <div class="cp">
+          <div class="fg"><label class="fl">API Key</label>
+            <input class="fc" id="imgbbKey" value="${_cfgVal(c.imgbb.key)}" placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:14px">
+        <div class="ch"><div class="cht"><i class="fas fa-robot" style="color:var(--purple)"></i> Gemini AI — الذكاء الاصطناعي</div>
+          <a href="https://aistudio.google.com/app/apikey" target="_blank" style="font-size:10px;color:var(--p);text-decoration:none"><i class="fas fa-external-link-alt"></i> Google AI Studio</a>
+        </div>
+        <div class="cp">
+          <div class="fg"><label class="fl">Gemini API Key</label>
+            <input class="fc" id="geminiKey" value="${c.gemini?.key||''}" placeholder="AIzaSy...">
+            <div class="fh">مجاني حتى حد معين — من aistudio.google.com/app/apikey</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ══ الإعدادات العامة ══ -->
+    <div id="stGeneral" style="display:none">
+      <div class="card" style="margin-bottom:14px">
+        <div class="ch"><div class="cht"><i class="fas fa-sliders-h" style="color:var(--info)"></i> إعدادات الموقع</div></div>
+        <div class="cp">
+          <div class="fg"><label class="fl">اسم المنصة</label>
+            <input class="fc" id="siteName" value="${c.general?.siteName||'الفانوس للتوظيف'}" placeholder="الفانوس للتوظيف">
+          </div>
+          <div class="fg"><label class="fl">رابط الموقع (للمشاركة)</label>
+            <input class="fc" id="siteUrl" value="${c.general?.siteUrl||''}" placeholder="https://fanoos.app">
+          </div>
+          ${_toggleRow('maintMode', c.general?.maintenance, 'وضع الصيانة', 'يمنع المستخدمين من الدخول مؤقتاً')}
         </div>
       </div>
     </div>
 
-    <!-- ImgBB -->
-    <div class="card" style="margin-bottom:14px">
-      <div class="ch"><div class="cht"><i class="fas fa-image" style="color:var(--purple)"></i> رفع الصور (ImgBB)</div></div>
-      <div class="cp">
-        <div class="fg">
-          <label class="fl">ImgBB API Key</label>
-          <input type="text" class="fc" id="imgbbKey" value="${CFG.imgbb.key.startsWith('YOUR')?'':CFG.imgbb.key}" placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
-          <div class="fh">احصل على مفتاحك من <strong>imgbb.com</strong> → API</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- إعدادات عامة -->
-    <div class="card" style="margin-bottom:14px">
-      <div class="ch"><div class="cht"><i class="fas fa-sliders-h" style="color:var(--info)"></i> إعدادات عامة</div></div>
-      <div class="cp">
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--br)">
-          <div>
-            <div style="font-size:13px;font-weight:700;color:var(--tx)">وضع الصيانة</div>
-            <div style="font-size:11px;color:var(--tx3)">يمنع المستخدمين من الدخول مؤقتاً</div>
-          </div>
-          <label style="position:relative;display:inline-block;width:44px;height:24px;cursor:pointer">
-            <input type="checkbox" id="maintMode" style="opacity:0;width:0;height:0">
-            <span style="position:absolute;inset:0;background:var(--br);border-radius:24px;transition:.3s;cursor:pointer"
-              onclick="this.previousElementSibling.checked=!this.previousElementSibling.checked;this.style.background=this.previousElementSibling.checked?'var(--p)':'var(--br)'"></span>
-          </label>
-        </div>
-      </div>
-    </div>
-
-    <div style="display:flex;gap:10px">
-      <button class="btn bp bfu" style="flex:1" id="saveSettingsBtn" onclick="adminSaveSettings()">
+    <div style="position:sticky;bottom:0;background:var(--bg);padding:12px 0;border-top:1px solid var(--br);margin-top:8px">
+      <button class="btn bp bfu blg" style="width:100%" id="saveSettingsBtn" onclick="adminSaveSettings()">
         <i class="fas fa-save"></i>حفظ جميع الإعدادات
       </button>
     </div>`;
+}
+
+function swSettTab(tab, btn) {
+  ['Social','Services','General'].forEach(t => {
+    const el = document.getElementById('st' + t);
+    if (el) el.style.display = t.toLowerCase() === tab ? 'block' : 'none';
+  });
+  btn.closest('.tabs').querySelectorAll('.tb2').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+}
+
+async function _tgSend(bot, chatId, text) {
+  const res = await fetch(`https://api.telegram.org/bot${bot}/sendMessage`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'HTML' })
+  });
+  return res.json();
 }
 
 async function testTelegram() {
@@ -635,46 +823,113 @@ async function testTelegram() {
   const chat = document.getElementById('tgChat')?.value.trim();
   if (!bot || !chat) { notify('تنبيه', 'أدخل Bot Token و Chat ID أولاً', 'warning'); return; }
   try {
-    const res = await fetch(`https://api.telegram.org/bot${bot}/sendMessage`, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ chat_id: chat, text: '✅ الفانوس للتوظيف — اختبار إشعار ناجح!' })
-    });
-    const data = await res.json();
-    if (data.ok) notify('تم ✅', 'وصل الإشعار على Telegram', 'success');
+    const data = await _tgSend(bot, chat, '✅ <b>الفانوس للتوظيف</b> — اختبار إشعار الأدمن ناجح!');
+    if (data.ok) notify('تم ✅', 'وصل الإشعار للأدمن على Telegram', 'success');
     else notify('خطأ', data.description || 'فشل الاختبار', 'error');
   } catch(e) { notify('خطأ', 'تعذّر الاتصال بـ Telegram', 'error'); }
 }
 
+async function testTelegramChannel() {
+  const bot     = document.getElementById('tgBot')?.value.trim();
+  const channel = document.getElementById('tgChannel')?.value.trim();
+  if (!bot || !channel) { notify('تنبيه', 'أدخل Bot Token و Channel ID أولاً', 'warning'); return; }
+  try {
+    const data = await _tgSend(bot, channel, '📢 <b>الفانوس للتوظيف</b>\n\nاختبار نشر وظيفة على القناة ✅\nسيظهر هنا إعلان الوظيفة تلقائياً عند نشرها.');
+    if (data.ok) notify('تم ✅', 'وصل المنشور التجريبي للقناة', 'success');
+    else notify('خطأ', data.description || 'تأكد أن البوت مشرف في القناة', 'error');
+  } catch(e) { notify('خطأ', 'تعذّر الاتصال بـ Telegram', 'error'); }
+}
+
+async function testFacebook() {
+  const token  = document.getElementById('fbToken')?.value.trim();
+  const pageId = document.getElementById('fbPageId')?.value.trim();
+  if (!token || !pageId) { notify('تنبيه', 'أدخل Page Token و Page ID أولاً', 'warning'); return; }
+  try {
+    const res  = await fetch(`https://graph.facebook.com/v19.0/${pageId}/feed`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: '📢 الفانوس للتوظيف — اختبار نشر تلقائي ✅', access_token: token })
+    });
+    const data = await res.json();
+    if (data.id) notify('تم ✅', 'نُشر المنشور التجريبي على صفحة Facebook', 'success');
+    else notify('خطأ', data.error?.message || 'فشل النشر — تحقق من الصلاحيات', 'error');
+  } catch(e) { notify('خطأ', 'تعذّر الاتصال بـ Facebook API', 'error'); }
+}
+
+function _gv(id) { return document.getElementById(id)?.value.trim() || ''; }
+function _gc(id) { return document.getElementById(id)?.checked || false; }
+
 async function adminSaveSettings() {
   const settings = {
     telegram: {
-      bot:  document.getElementById('tgBot')?.value.trim()   || CFG.telegram.bot,
-      chat: document.getElementById('tgChat')?.value.trim()  || CFG.telegram.chat,
+      bot:      _gv('tgBot'),
+      chat:     _gv('tgChat'),
+      channel:  _gv('tgChannel'),
+      autoPost: _gc('tgAutoPost'),
+    },
+    facebook: {
+      pageToken: _gv('fbToken'),
+      pageId:    _gv('fbPageId'),
+      autoPost:  _gc('fbAutoPost'),
+    },
+    instagram: {
+      token:     _gv('igToken'),
+      accountId: _gv('igAccountId'),
+      autoPost:  _gc('igAutoPost'),
+    },
+    twitter: {
+      apiKey:      _gv('twApiKey'),
+      apiSecret:   _gv('twApiSecret'),
+      accessToken: _gv('twAccessToken'),
+      accessSecret:_gv('twAccessSecret'),
+      autoPost:    _gc('twAutoPost'),
+    },
+    linkedin: {
+      accessToken: _gv('liToken'),
+      orgId:       _gv('liOrgId'),
+      autoPost:    _gc('liAutoPost'),
+    },
+    tiktok: {
+      accessToken: _gv('ttAccessToken'),
+      openId:      _gv('ttOpenId'),
+      autoPost:    _gc('ttAutoPost'),
+    },
+    snapchat: {
+      accessToken: _gv('scToken'),
+      adAccountId: _gv('scAdId'),
+    },
+    youtube: {
+      apiKey:    _gv('ytApiKey'),
+      channelId: _gv('ytChannelId'),
     },
     emailjs: {
-      pub:   document.getElementById('ejPub')?.value.trim()   || CFG.emailjs.pub,
-      svc:   document.getElementById('ejSvc')?.value.trim()   || CFG.emailjs.svc,
-      tpl:   document.getElementById('ejTpl')?.value.trim()   || CFG.emailjs.tpl,
-      admin: document.getElementById('ejAdmin')?.value.trim() || CFG.emailjs.admin,
+      pub:   _gv('ejPub'),
+      svc:   _gv('ejSvc'),
+      tpl:   _gv('ejTpl'),
+      admin: _gv('ejAdmin'),
     },
     imgbb: {
-      key: document.getElementById('imgbbKey')?.value.trim() || CFG.imgbb.key,
+      key: _gv('imgbbKey'),
+    },
+    gemini: {
+      key: _gv('geminiKey'),
+    },
+    general: {
+      siteName:    _gv('siteName'),
+      siteUrl:     _gv('siteUrl'),
+      maintenance: _gc('maintMode'),
     },
   };
 
   // تحديث CFG في الذاكرة
-  CFG.telegram = settings.telegram;
-  CFG.emailjs  = settings.emailjs;
-  CFG.imgbb    = settings.imgbb;
+  Object.keys(settings).forEach(k => { if (CFG[k]) CFG[k] = { ...CFG[k], ...settings[k] }; });
 
-  // حفظ في Firestore
   if (!DEMO && window.db) {
     loading('saveSettingsBtn', true);
     try {
       await window.db.collection('config').doc('settings').set(settings, { merge: true });
-      notify('تم الحفظ ✅', 'تم تحديث الإعدادات وحفظها في قاعدة البيانات', 'success');
+      notify('تم الحفظ ✅', 'تم حفظ جميع الإعدادات في قاعدة البيانات', 'success');
     } catch(e) {
-      notify('خطأ', 'فشل الحفظ في قاعدة البيانات: ' + e.message, 'error');
+      notify('خطأ', 'فشل الحفظ: ' + e.message, 'error');
     } finally { loading('saveSettingsBtn', false); }
   } else {
     notify('تم ✅', 'تم تحديث الإعدادات مؤقتاً (وضع تجريبي)', 'info');

@@ -4,12 +4,21 @@
 // ╚══════════════════════════════════════════════════════╝
 
 // ═══════════════════════════════════════════════
-// إعدادات الإشعارات الخارجية (Telegram / EmailJS)
+// إعدادات المنصة (API Keys — تُحمَّل من Firestore)
 // ═══════════════════════════════════════════════
 const CFG = {
-  telegram: { bot: 'YOUR_BOT_TOKEN',    chat: 'YOUR_CHAT_ID' },
-  emailjs:  { pub: 'YOUR_PUBLIC_KEY',   svc:  'YOUR_SERVICE_ID',  tpl: 'YOUR_TEMPLATE_ID', admin: 'YOUR_ADMIN@gmail.com' },
-  imgbb:    { key: 'YOUR_IMGBB_API_KEY' },
+  telegram:  { bot: '', chat: '', channel: '', autoPost: false },
+  emailjs:   { pub: '', svc: '', tpl: '', admin: '' },
+  imgbb:     { key: '' },
+  facebook:  { pageToken: '', pageId: '', autoPost: false },
+  instagram: { token: '', accountId: '', autoPost: false },
+  twitter:   { apiKey: '', apiSecret: '', accessToken: '', accessSecret: '', autoPost: false },
+  linkedin:  { accessToken: '', orgId: '', autoPost: false },
+  tiktok:    { accessToken: '', openId: '', autoPost: false },
+  snapchat:  { accessToken: '', adAccountId: '', autoPost: false },
+  youtube:   { apiKey: '', channelId: '' },
+  gemini:    { key: '' },
+  general:   { maintenance: false, siteName: 'الفانوس للتوظيف', siteUrl: '' },
 };
 
 // ═══════════════════════════════════════════════
