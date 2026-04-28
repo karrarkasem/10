@@ -333,14 +333,13 @@ if (!DEMO && typeof firebase !== 'undefined') {
           MY_APPS = asnap.docs.map(d => ({ id: d.id, ...d.data() }));
         }
 
-        if (ROLE === 'office') {
-          // تحميل وظائف المكتب المتوقفة أيضاً (ليست في JOBS لأنها active فقط)
+        if (ROLE === 'office' || ROLE === 'employer') {
+          // تحميل وظائف المكتب/صاحب العمل المتوقفة أيضاً
           try {
             const pausedSnap = await window.db.collection('jobs')
               .where('postedBy', '==', user.uid)
               .where('status', '==', 'paused').get();
             const pausedJobs = pausedSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-            // دمج مع JOBS بدون تكرار
             const existingIds = new Set(JOBS.map(j => j.id));
             pausedJobs.forEach(j => { if (!existingIds.has(j.id)) JOBS.push(j); });
           } catch (_) {}

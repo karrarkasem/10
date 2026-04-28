@@ -470,7 +470,7 @@ function isBookmarked(id) { return BOOKMARKS.includes(id); }
 function getCompletion(p, role) {
   if (!p) return 0;
   const baseFields = ['name', 'phone', 'province', 'bio'];
-  const roleField  = role === 'office' ? 'officeName' : 'jobTitle';
+  const roleField  = role === 'office' ? 'officeName' : role === 'employer' ? 'companyName' : 'jobTitle';
   const fields     = [...baseFields, roleField];
   const filled     = fields.filter(f => p[f] && String(p[f]).trim()).length;
   const hasApps    = (role === 'seeker' && MY_APPS.length > 0) ? 1 : 0;
