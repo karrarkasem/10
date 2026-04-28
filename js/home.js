@@ -144,10 +144,10 @@ function pgSeekerHome(el) {
         <div class="qact-sub">تدرّب مع الذكاء الاصطناعي وقيّم أداءك</div>
         <i class="fas fa-arrow-left qact-arr"></i>
       </div>
-      <div class="qact-card" onclick="openAddJob()">
-        <div class="qact-ico" style="background:linear-gradient(135deg,#f59e0b,#fbbf24)"><i class="fas fa-plus-circle"></i></div>
-        <div class="qact-tit">نشر وظيفة</div>
-        <div class="qact-sub">أنشر فرصة عمل وابحث عن الشخص المناسب</div>
+      <div class="qact-card" onclick="goTo('offices')">
+        <div class="qact-ico" style="background:linear-gradient(135deg,#f59e0b,#fbbf24)"><i class="fas fa-building"></i></div>
+        <div class="qact-tit">مكاتب التوظيف</div>
+        <div class="qact-sub">تصفح مكاتب التوظيف وتواصل معها مباشرة</div>
         <i class="fas fa-arrow-left qact-arr"></i>
       </div>
       <div class="qact-card" onclick="toggleCvPublish(this)">
