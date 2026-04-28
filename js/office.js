@@ -910,18 +910,31 @@ async function saveOfficeProfile() {
     bio:        document.getElementById('eobio')?.value  || '',
     licenseNum: document.getElementById('elic')?.value.trim() || '',
   };
-  if (_pickedLat) { d.lat = _pickedLat; d.lng = _pickedLng; }
+  if (_pickedLat)       { d.lat = _pickedLat; d.lng = _pickedLng; }
+  else if (P?.lat)      { d.lat = P.lat;       d.lng = P.lng; }
 
-  // رفع صورة الواجهة إن وُجدت
+  // رفع صورة الواجهة عبر ImgBB
   const fileInput = document.getElementById('estorefrontFile');
   const file = fileInput?.files?.[0];
-  if (file && typeof firebase !== 'undefined' && firebase.storage && !DEMO) {
+  if (file) {
+    const imgKey = CFG.imgbb?.key;
+    if (!imgKey) {
+      notify('إعداد مطلوب', 'أدخل مفتاح ImgBB في الأدمن > الإعدادات أولاً', 'warning');
+      return;
+    }
     try {
       notify('جاري الرفع...', 'يتم رفع صورة الواجهة', 'info');
-      const ref = firebase.storage().ref(`storefronts/${U.uid}`);
-      await ref.put(file);
-      d.storefrontPhoto = await ref.getDownloadURL();
-    } catch(e) { console.warn('storefront upload error', e); }
+      const fd = new FormData();
+      fd.append('image', file);
+      const res  = await fetch(`https://api.imgbb.com/1/upload?key=${imgKey}`, { method: 'POST', body: fd });
+      const json = await res.json();
+      if (json.success) d.storefrontPhoto = json.data.url;
+      else throw new Error(json.error?.message || 'فشل الرفع');
+    } catch(e) {
+      notify('خطأ', 'فشل رفع صورة الواجهة', 'error');
+      console.warn('storefront upload error', e);
+      return;
+    }
   }
 
   P = { ...P, ...d };
