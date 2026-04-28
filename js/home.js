@@ -266,16 +266,17 @@ function pgAdminJobs(el) {
 
 function _adminJobCard(j) {
   const live = isJobLive(j);
-  return `<div class="jc" style="${live ? '' : 'opacity:.7;'}">
-    <div class="jch">
+  const init = (j.company || j.title || 'و').charAt(0);
+  return `<div class="jc" style="${live ? '' : 'opacity:.75;'}">
+    <div class="jch" style="cursor:pointer" onclick="openJob('${j.id}')">
       <div class="jcl">
-        <div class="jcav" style="background:${live ? 'var(--grad-p)' : '#9ca3af'}">${(j.logo||j.company||'و').charAt(0)}</div>
-        <div>
-          <div class="jct">${san(j.title)}</div>
+        <div class="av avm" style="background:${live ? 'var(--grad-p)' : 'linear-gradient(135deg,#9ca3af,#6b7280)'};color:#fff;font-size:16px;font-weight:900;flex-shrink:0">${init}</div>
+        <div style="flex:1;min-width:0">
+          <div class="jct" style="margin-bottom:2px">${san(j.title)}</div>
           <div class="jcco">${san(j.company)} • ${san(j.province)}</div>
         </div>
       </div>
-      <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
+      <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;flex-shrink:0">
         ${live
           ? `<span class="b b-gr" style="font-size:11px"><i class="fas fa-circle" style="font-size:7px"></i>نشطة</span>`
           : `<span class="b b-rd" style="font-size:11px"><i class="fas fa-clock"></i>منتهية</span>`}
@@ -283,6 +284,12 @@ function _adminJobCard(j) {
       </div>
     </div>
     <div class="jcf" style="display:flex;gap:7px;flex-wrap:wrap;padding:10px 14px;border-top:1px solid var(--br)">
+      <button class="btn bp bsm" onclick="openJob('${j.id}')">
+        <i class="fas fa-eye"></i> عرض
+      </button>
+      <button class="btn bsm" style="background:var(--info);color:#fff" onclick="adminJobApps('${j.id}','${san(j.title)}')">
+        <i class="fas fa-users"></i> المتقدمون
+      </button>
       ${j.adminPinned
         ? `<button class="btn bsm" style="background:#7c3aed;color:#fff" onclick="adminPinJob('${j.id}',false,'${san(j.title)}')">
              <i class="fas fa-thumbtack"></i> إلغاء التثبيت
@@ -321,6 +328,61 @@ async function adminDeleteJob(jobId, title) {
     notify('تم الحذف', `وظيفة "${title}" حُذفت`, 'info');
     pgAdminJobs(document.getElementById('pcon'));
   } catch(e) { notify('خطأ', 'فشل الحذف', 'error'); }
+}
+
+async function adminJobApps(jobId, title) {
+  const mo = document.getElementById('moConfirm');
+  const mb = document.getElementById('moConfirmB');
+  if (!mo || !mb) return;
+  mb.innerHTML = `<div style="text-align:center;padding:20px"><i class="fas fa-circle-notch spin" style="color:var(--p);font-size:24px"></i></div>`;
+  mo.style.display = 'flex';
+
+  let apps = [];
+  if (!DEMO && window.db) {
+    try {
+      const snap = await window.db.collection('applications').where('jobId', '==', jobId).get();
+      apps = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    } catch(e) { console.warn('adminJobApps:', e); }
+  }
+
+  const STAT_L = { pending:'انتظار', interview:'مقابلة', hired:'قُبل', rejected:'مرفوض' };
+  const STAT_C = { pending:'b-am', interview:'b-pu', hired:'b-gr', rejected:'b-rd' };
+
+  mb.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div style="font-size:15px;font-weight:800;color:var(--tx)"><i class="fas fa-users" style="color:var(--p)"></i> متقدمو: ${title}</div>
+      <span class="b b-tl">${apps.length} طلب</span>
+    </div>
+    ${!apps.length
+      ? `<div style="text-align:center;padding:30px;color:var(--tx3)"><i class="fas fa-inbox" style="font-size:32px;opacity:.3;display:block;margin-bottom:10px"></i>لا يوجد متقدمون بعد</div>`
+      : `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead><tr style="background:var(--bgc2);text-align:right">
+            <th style="padding:8px 10px">الاسم</th>
+            <th style="padding:8px 10px">الهاتف</th>
+            <th style="padding:8px 10px">الإيميل</th>
+            <th style="padding:8px 10px">التاريخ</th>
+            <th style="padding:8px 10px">الحالة</th>
+          </tr></thead>
+          <tbody>${apps.map(a => `
+            <tr style="border-bottom:1px solid var(--br)">
+              <td style="padding:8px 10px;font-weight:700">${san(a.name||'—')}</td>
+              <td style="padding:8px 10px">
+                <a href="tel:${a.phone||''}" style="color:var(--p);font-weight:700;text-decoration:none">
+                  <i class="fas fa-phone"></i> ${a.phone||'—'}
+                </a>
+              </td>
+              <td style="padding:8px 10px">
+                <a href="mailto:${a.email||''}" style="color:var(--info);text-decoration:none">
+                  <i class="fas fa-envelope"></i> ${a.email||'—'}
+                </a>
+              </td>
+              <td style="padding:8px 10px;color:var(--tx3)">${(a.appliedAt||'').slice?.(0,10)||'—'}</td>
+              <td style="padding:8px 10px"><span class="b ${STAT_C[a.status]||'b-am'}">${STAT_L[a.status]||'انتظار'}</span></td>
+            </tr>`).join('')}
+          </tbody>
+        </table></div>`}
+    <button class="btn bg bsm bfu" style="margin-top:14px" onclick="cMo('moConfirm')">إغلاق</button>`;
+}
 }
 
 // ════════════════════════════════════════════
