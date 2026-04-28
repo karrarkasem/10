@@ -113,9 +113,16 @@ function _buildPagination(pages, cur, onPage) {
   html += btn(cur + 1, '<i class="fas fa-chevron-left"></i>', cur >= pages, false);
   return html;
 }
+function tsMs(d) {
+  if (!d) return 0;
+  if (d?.toMillis) return d.toMillis();           // Firestore Timestamp
+  if (d?.seconds)  return d.seconds * 1000;       // raw {seconds,nanoseconds}
+  const n = new Date(d).getTime();
+  return isNaN(n) ? 0 : n;
+}
 function ago(d)  {
   if (!d) return '';
-  const s = Math.floor((Date.now() - new Date(d)) / 1000);
+  const s = Math.floor((Date.now() - tsMs(d)) / 1000);
   if (s < 3600)   return `منذ ${Math.floor(s/60)||1} دقيقة`;
   if (s < 86400)  return `منذ ${Math.floor(s/3600)} ساعة`;
   if (s < 604800) return `منذ ${Math.floor(s/86400)} يوم`;
@@ -553,8 +560,9 @@ function openNotifs() {
 // ═══════════════════════════════════════════════
 function daysLeft(deadline) {
   if (!deadline) return null;
-  const diff = Math.ceil((new Date(deadline) - Date.now()) / 86400000);
-  return diff;
+  const ms = tsMs(deadline) || new Date(deadline).getTime();
+  if (!ms) return null;
+  return Math.ceil((ms - Date.now()) / 86400000);
 }
 
 function daysLeftBadge(deadline) {
@@ -584,14 +592,14 @@ function isJobLive(j) {
   if (j.adminPinned) return true;
   // وظيفة دائمة أو بدون expiresAt
   if (!j.expiresAt) return true;
-  return new Date(j.expiresAt) > new Date();
+  return tsMs(j.expiresAt) > Date.now();
 }
 
 // التسمية المرئية لعمر الوظيفة
 function jobExpiryLabel(j) {
   if (j.adminPinned) return `<span class="b b-pu" style="font-size:11px"><i class="fas fa-thumbtack"></i> مثبّت من الأدمن</span>`;
   if (!j.expiresAt)  return `<span class="b b-gr" style="font-size:11px"><i class="fas fa-infinity"></i> دائمي</span>`;
-  const ms   = new Date(j.expiresAt) - Date.now();
+  const ms   = tsMs(j.expiresAt) - Date.now();
   if (ms <= 0) return `<span class="b b-rd" style="font-size:11px"><i class="fas fa-clock"></i> منتهية</span>`;
   const mins = Math.floor(ms / 60000);
   const hrs  = Math.floor(ms / 3600000);
@@ -599,7 +607,7 @@ function jobExpiryLabel(j) {
   if (mins < 60)  return `<span class="b b-am" style="font-size:11px"><i class="fas fa-clock"></i> تنتهي خلال ${mins} دقيقة</span>`;
   if (hrs  < 24)  return `<span class="b b-am" style="font-size:11px"><i class="fas fa-clock"></i> تنتهي خلال ${hrs} ساعة</span>`;
   if (days < 30)  return `<span class="b b-tl" style="font-size:11px"><i class="fas fa-calendar"></i> تنتهي خلال ${days} يوم</span>`;
-  return `<span class="b b-gr" style="font-size:11px"><i class="fas fa-calendar-check"></i> تنتهي ${new Date(j.expiresAt).toLocaleDateString('ar-IQ')}</span>`;
+  return `<span class="b b-gr" style="font-size:11px"><i class="fas fa-calendar-check"></i> تنتهي ${new Date(tsMs(j.expiresAt)).toLocaleDateString('ar-IQ')}</span>`;
 }
 
 // حساب expiresAt من قيمة duration

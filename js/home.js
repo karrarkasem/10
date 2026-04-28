@@ -31,7 +31,7 @@ async function toggleCvPublish(btn) {
 // ════════════════════════════════════════════
 function pgSeekerHome(el) {
   const nm       = P?.name?.split(' ')[0] || 'مستخدم';
-  const newJ     = JOBS.filter(j => (Date.now() - new Date(j.postedAt)) < 86400000 * 3).length;
+  const newJ     = JOBS.filter(j => (Date.now() - tsMs(j.postedAt)) < 86400000 * 3).length;
   const matchedJ = JOBS.filter(j => P?.province && j.province === P.province).length;
   const pct      = getCompletion(P, 'seeker');
   const pColor   = completionColor(pct);
@@ -177,24 +177,49 @@ async function pgAdminHome(el) {
   el.innerHTML = `<div class="es"><div class="es-ico"><i class="fas fa-circle-notch spin" style="color:var(--p)"></i></div><div class="es-desc">جارٍ تحميل البيانات...</div></div>`;
 
   let totalUsers = 0, totalOffices = 0, totalApps = 0, newThisWeek = 0;
+  let recentJobs = JOBS.slice(0, 4);
 
   if (!DEMO && window.db) {
-    try {
-      const [usersSnap, appsSnap] = await Promise.all([
-        window.db.collection('users').get(),
-        window.db.collection('applications').get(),
-      ]);
-      totalUsers   = usersSnap.size;
-      totalOffices = usersSnap.docs.filter(d => d.data().role === 'office').length;
-      totalApps    = appsSnap.size;
-      newThisWeek  = usersSnap.docs.filter(d => {
-        const t = d.data().createdAt?.toMillis?.() || 0;
-        return (Date.now() - t) < 86400000 * 7;
-      }).length;
-    } catch(e) { console.warn('Admin stats:', e); }
+    const queries = [];
+
+    // محاولة تحميل إحصاءات المستخدمين
+    queries.push(
+      window.db.collection('users').get()
+        .then(snap => {
+          totalUsers   = snap.size;
+          totalOffices = snap.docs.filter(d => d.data().role === 'office').length;
+          newThisWeek  = snap.docs.filter(d => {
+            const t = d.data().createdAt?.toMillis?.() || 0;
+            return (Date.now() - t) < 86400000 * 7;
+          }).length;
+        })
+        .catch(e => console.warn('Admin users stats:', e.message))
+    );
+
+    // محاولة تحميل إجمالي الطلبات
+    queries.push(
+      window.db.collection('applications').get()
+        .then(snap => { totalApps = snap.size; })
+        .catch(e => console.warn('Admin apps stats:', e.message))
+    );
+
+    // تحميل الوظائف إذا كان المصفوفة فارغة
+    if (JOBS.length === 0) {
+      queries.push(
+        window.db.collection('jobs').orderBy('postedAt', 'desc').limit(10).get()
+          .then(snap => {
+            recentJobs = snap.docs.map(d => ({ id: d.id, ...d.data() })).slice(0, 4);
+            if (JOBS.length === 0) JOBS.push(...recentJobs);
+          })
+          .catch(e => console.warn('Admin jobs load:', e.message))
+      );
+    }
+
+    await Promise.all(queries);
   }
 
-  const newJobs = JOBS.filter(j => (Date.now() - new Date(j.postedAt)) < 86400000 * 7).length;
+  const newJobs = JOBS.filter(j => (Date.now() - tsMs(j.postedAt)) < 86400000 * 7).length;
+  if (recentJobs.length === 0) recentJobs = JOBS.slice(0, 4);
 
   el.innerHTML = `
     <div class="hero-banner fade-up">
@@ -231,15 +256,20 @@ async function pgAdminHome(el) {
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:20px" class="fade-up del2">
       ${[
         { ico:'fa-plus-circle', l:'نشر وظيفة جديدة',  c:'var(--success)', a:"openAddJob()" },
-        { ico:'fa-user-plus',   l:'دعوة مستخدم',       c:'var(--p)',       a:"openInviteUser()" },
         { ico:'fa-briefcase',   l:'الوظائف',            c:'var(--acc)',     a:"goTo('alljobs')" },
         { ico:'fa-building',    l:'مكاتب التوظيف',     c:'var(--purple)',  a:"goTo('alloffices')" },
         { ico:'fa-users',       l:'المستخدمون',          c:'var(--info)',    a:"goTo('allusers')" },
+        { ico:'fa-bullhorn',    l:'حملات التواصل',      c:'var(--p)',       a:"goTo('campaigns')" },
         { ico:'fa-cog',         l:'الإعدادات',           c:'var(--tx3)',     a:"goTo('settings')" },
       ].map(a => '<div class="cat-item" onclick="' + a.a + '"><div class="cat-ico" style="color:' + a.c + ';background:' + a.c + '18"><i class="fas ' + a.ico + '"></i></div><div class="cat-label">' + a.l + '</div></div>').join('')}
     </div>
-    <div class="sh fade-up del3"><div class="st"><div class="st-ico"><i class="fas fa-briefcase"></i></div>أحدث الوظائف</div></div>
-    <div class="jg fade-up del3">${JOBS.slice(0,3).map(j=>jCard(j)).join('')}</div>`;
+    <div class="sh fade-up del3"><div class="st"><div class="st-ico"><i class="fas fa-briefcase"></i></div>أحدث الوظائف</div>
+      <span class="b b-tl" onclick="goTo('alljobs')" style="cursor:pointer">${JOBS.length} وظيفة</span>
+    </div>
+    ${recentJobs.length
+      ? `<div class="jg fade-up del3">${recentJobs.map(j => _adminJobCard(j)).join('')}</div>`
+      : `<div class="es" style="padding:28px"><div class="es-ico"><i class="fas fa-briefcase" style="color:var(--tx3)"></i></div><div class="es-desc">لا توجد وظائف بعد — <span style="color:var(--p);cursor:pointer" onclick="openAddJob()">أضف أول وظيفة</span></div></div>`
+    }`;
 }
 
 // ════════════════════════════════════════════
