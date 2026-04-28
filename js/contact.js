@@ -8,10 +8,18 @@ let CONTACT_CAMPAIGNS = [];
 async function loadContactCampaigns() {
   if (DEMO || !window.db) return;
   try {
-    const snap = await window.db.collection('campaigns')
-      .where('active', '==', true).get();
-    CONTACT_CAMPAIGNS = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  } catch(e) { console.warn('campaigns load:', e.message); }
+    const [campSnap, cfgDoc] = await Promise.all([
+      window.db.collection('campaigns').where('active', '==', true).get(),
+      window.db.collection('config').doc('settings').get(),
+    ]);
+    CONTACT_CAMPAIGNS = campSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    if (cfgDoc.exists) {
+      const s = cfgDoc.data();
+      ['telegram','emailjs','imgbb','facebook','instagram','twitter','linkedin','tiktok','snapchat','youtube','gemini','general'].forEach(k => {
+        if (s[k]) CFG[k] = { ...CFG[k], ...s[k] };
+      });
+    }
+  } catch(e) { console.warn('boot config load:', e.message); }
 }
 
 // ── هل يحق للمستخدم رؤية أرقام التواصل؟ ──
