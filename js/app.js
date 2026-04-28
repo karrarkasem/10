@@ -414,6 +414,7 @@ function updateUserUI() {
 }
 
 function bootApp() {
+  document.getElementById('onboarding').style.display = 'none';
   document.getElementById('authScreen').style.display = 'none';
   document.getElementById('app').style.display        = 'flex';
   initTheme();

@@ -9,13 +9,21 @@
 let obCurrent = 0;
 const OB_TOTAL = 3;
 
+function showAuth() {
+  document.getElementById('app').style.display        = 'none';
+  document.getElementById('onboarding').style.display = 'none';
+  document.getElementById('authScreen').style.display = 'flex';
+  mainSwitchTab('login');
+}
+
 function initApp() {
   const seen = localStorage.getItem('fanoos_onboarded');
   if (!seen) {
+    document.getElementById('app').style.display        = 'none';
+    document.getElementById('authScreen').style.display = 'none';
     document.getElementById('onboarding').style.display = 'flex';
   } else {
-    document.getElementById('authScreen').style.display = 'flex';
-    mainSwitchTab('login');
+    showAuth();
   }
 }
 
@@ -37,9 +45,7 @@ function obNext() {
 
 function skipOnboarding() {
   localStorage.setItem('fanoos_onboarded', '1');
-  document.getElementById('onboarding').style.display  = 'none';
-  document.getElementById('authScreen').style.display  = 'flex';
-  mainSwitchTab('login');
+  showAuth();
 }
 
 // ═══════════════════════════════════════════════
@@ -236,9 +242,7 @@ async function doLogout() {
   const run = async () => {
     if (!DEMO && window.auth) await window.auth.signOut();
     U = null; P = null; ROLE = null;
-    document.getElementById('app').style.display        = 'none';
-    document.getElementById('authScreen').style.display = 'flex';
-    mainSwitchTab('login');
+    showAuth();
     SEL_ROLE = 'seeker';
     if (!isGuest) notify('وداعاً!', 'تم تسجيل الخروج بنجاح', 'info');
   };
