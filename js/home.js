@@ -361,11 +361,14 @@ async function adminDeleteJob(jobId, title) {
 }
 
 async function adminJobApps(jobId, title) {
-  const mo = document.getElementById('moConfirm');
-  const mb = document.getElementById('moConfirmB');
-  if (!mo || !mb) return;
-  mb.innerHTML = `<div style="text-align:center;padding:20px"><i class="fas fa-circle-notch spin" style="color:var(--p);font-size:24px"></i></div>`;
-  mo.style.display = 'flex';
+  const mb = document.getElementById('moJobB');
+  if (!mb) return;
+
+  const mhTitle = document.querySelector('#moJob .mt');
+  if (mhTitle) mhTitle.innerHTML = `<i class="fas fa-users" style="color:var(--p)"></i> متقدمو الوظيفة`;
+
+  mb.innerHTML = `<div style="text-align:center;padding:30px"><i class="fas fa-circle-notch spin" style="color:var(--p);font-size:28px"></i></div>`;
+  oMo('moJob');
 
   let apps = [];
   if (!DEMO && window.db) {
@@ -379,40 +382,41 @@ async function adminJobApps(jobId, title) {
   const STAT_C = { pending:'b-am', interview:'b-pu', hired:'b-gr', rejected:'b-rd' };
 
   mb.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-      <div style="font-size:15px;font-weight:800;color:var(--tx)"><i class="fas fa-users" style="color:var(--p)"></i> متقدمو: ${title}</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+      <div style="font-size:14px;font-weight:800;color:var(--tx)">${san(title)}</div>
       <span class="b b-tl">${apps.length} طلب</span>
     </div>
     ${!apps.length
-      ? `<div style="text-align:center;padding:30px;color:var(--tx3)"><i class="fas fa-inbox" style="font-size:32px;opacity:.3;display:block;margin-bottom:10px"></i>لا يوجد متقدمون بعد</div>`
+      ? `<div style="text-align:center;padding:40px;color:var(--tx3)"><i class="fas fa-inbox" style="font-size:36px;opacity:.3;display:block;margin-bottom:12px"></i>لا يوجد متقدمون بعد</div>`
       : `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">
           <thead><tr style="background:var(--bgc2);text-align:right">
-            <th style="padding:8px 10px">الاسم</th>
-            <th style="padding:8px 10px">الهاتف</th>
-            <th style="padding:8px 10px">الإيميل</th>
-            <th style="padding:8px 10px">التاريخ</th>
-            <th style="padding:8px 10px">الحالة</th>
+            <th style="padding:9px 12px;white-space:nowrap">الاسم</th>
+            <th style="padding:9px 12px;white-space:nowrap">الهاتف</th>
+            <th style="padding:9px 12px;white-space:nowrap">الإيميل</th>
+            <th style="padding:9px 12px;white-space:nowrap">التاريخ</th>
+            <th style="padding:9px 12px;white-space:nowrap">الحالة</th>
           </tr></thead>
-          <tbody>${apps.map(a => `
-            <tr style="border-bottom:1px solid var(--br)">
-              <td style="padding:8px 10px;font-weight:700">${san(a.name||'—')}</td>
-              <td style="padding:8px 10px">
-                <a href="tel:${a.phone||''}" style="color:var(--p);font-weight:700;text-decoration:none">
+          <tbody>${apps.map(a => {
+            const dateMs = tsMs(a.appliedAt);
+            const dateStr = dateMs ? new Date(dateMs).toLocaleDateString('ar-IQ') : '—';
+            return `<tr style="border-bottom:1px solid var(--br)">
+              <td style="padding:9px 12px;font-weight:700">${san(a.name||'—')}</td>
+              <td style="padding:9px 12px">
+                <a href="tel:${a.phone||''}" style="color:var(--p);font-weight:700;text-decoration:none;white-space:nowrap">
                   <i class="fas fa-phone"></i> ${a.phone||'—'}
                 </a>
               </td>
-              <td style="padding:8px 10px">
-                <a href="mailto:${a.email||''}" style="color:var(--info);text-decoration:none">
-                  <i class="fas fa-envelope"></i> ${a.email||'—'}
+              <td style="padding:9px 12px">
+                <a href="mailto:${a.email||''}" style="color:var(--info);text-decoration:none;white-space:nowrap">
+                  <i class="fas fa-envelope"></i> ${san(a.email||'—')}
                 </a>
               </td>
-              <td style="padding:8px 10px;color:var(--tx3)">${(a.appliedAt||'').slice?.(0,10)||'—'}</td>
-              <td style="padding:8px 10px"><span class="b ${STAT_C[a.status]||'b-am'}">${STAT_L[a.status]||'انتظار'}</span></td>
-            </tr>`).join('')}
+              <td style="padding:9px 12px;color:var(--tx3);white-space:nowrap">${dateStr}</td>
+              <td style="padding:9px 12px"><span class="b ${STAT_C[a.status]||'b-am'}">${STAT_L[a.status]||'انتظار'}</span></td>
+            </tr>`;
+          }).join('')}
           </tbody>
-        </table></div>`}
-    <button class="btn bg bsm bfu" style="margin-top:14px" onclick="cMo('moConfirm')">إغلاق</button>`;
-}
+        </table></div>`}`;
 }
 
 // ════════════════════════════════════════════
@@ -728,7 +732,7 @@ function adminChangeRole(uid, currentRole, name) {
     </div>
     <div class="role-opts">${opts}</div>
     <div class="mf" style="border:none;padding:0;margin-top:12px">
-      <button class="btn bo" onclick="cmo('moConfirm')">إلغاء</button>
+      <button class="btn bo" onclick="cmo('_adminModal')">إلغاء</button>
       <button class="btn bp bfu" onclick="_doChangeRole('${uid}','${san(name)}')">
         <i class="fas fa-check"></i>تأكيد التغيير
       </button>
