@@ -4,5 +4,6 @@
   {"collectionGroup":"applications","queryScope":"COLLECTION","fields":[{"fieldPath":"applicantId","order":"ASCENDING"},{"fieldPath":"appliedAt","order":"DESCENDING"}]},
   {"collectionGroup":"applications","queryScope":"COLLECTION","fields":[{"fieldPath":"jobId","order":"ASCENDING"},{"fieldPath":"appliedAt","order":"DESCENDING"}]},
   {"collectionGroup":"users","queryScope":"COLLECTION","fields":[{"fieldPath":"role","order":"ASCENDING"},{"fieldPath":"createdAt","order":"DESCENDING"}]},
-  {"collectionGroup":"payments","queryScope":"COLLECTION","fields":[{"fieldPath":"userId","order":"ASCENDING"},{"fieldPath":"createdAt","order":"DESCENDING"}]}
+  {"collectionGroup":"payments","queryScope":"COLLECTION","fields":[{"fieldPath":"userId","order":"ASCENDING"},{"fieldPath":"createdAt","order":"DESCENDING"}]},
+  {"collectionGroup":"users","queryScope":"COLLECTION","fields":[{"fieldPath":"role","order":"ASCENDING"},{"fieldPath":"cvPublished","order":"ASCENDING"}]}
 ],"fieldOverrides":[]}

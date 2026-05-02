@@ -276,6 +276,7 @@ const NAV_EMPLOYER = [
   { id:'emp_home',    icon:'fa-tachometer-alt', label:'لوحة التحكم',  btm:true  },
   { id:'emp_jobs',    icon:'fa-briefcase',       label:'وظائفي',        btm:true  },
   { id:'emp_apps',    icon:'fa-users',           label:'المتقدمون',     btm:true  },
+  { id:'emp_seekers', icon:'fa-address-card',    label:'ملفات الباحثين', btm:false },
   { id:'emp_profile', icon:'fa-building',        label:'ملف الشركة',   btm:true  },
 ];
 const NAV_GUEST = [
@@ -367,6 +368,7 @@ function renderPage(pg) {
     if (pg === 'emp_home')    return pgEmployerHome(el);
     if (pg === 'emp_jobs')    return pgEmployerJobs(el);
     if (pg === 'emp_apps')    return pgEmployerApps(el);
+    if (pg === 'emp_seekers') return pgEmployerSeekers(el);
     if (pg === 'emp_profile') return pgEmployerProfile(el);
     return pgEmployerHome(el);
   }

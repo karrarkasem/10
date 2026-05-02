@@ -542,7 +542,16 @@ async function saveCV() {
     loading('saveCvBtn', true);
     try {
       await window.db.collection('cvs').doc(U.uid).set({ ...data, userId: U.uid }, { merge: true });
-      notify('تم الحفظ ✅', 'تم حفظ سيرتك الذاتية', 'success');
+
+      // إذا كان الملف منشوراً → إلغاء النشر تلقائياً بعد التعديل
+      const wasPublished = P?.cvPublished;
+      if (wasPublished) {
+        await window.db.collection('users').doc(U.uid).update({ cvPublished: false });
+        P = { ...P, cvPublished: false };
+        notify('تم الحفظ ✅', 'تم حفظ السيرة — ملفك يحتاج إعادة نشر بعد التعديل', 'info');
+      } else {
+        notify('تم الحفظ ✅', 'تم حفظ سيرتك الذاتية', 'success');
+      }
     } catch(e) {
       console.warn('cv save:', e.message);
       notify('خطأ', 'فشل الحفظ: ' + e.message, 'error');

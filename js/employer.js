@@ -237,6 +237,56 @@ function empFilterAppsByStatus(st) {
   if (el) el.innerHTML = renderEmpAppRows(list);
 }
 
+// ── تصفح ملفات الباحثين المنشورة ──
+async function pgEmployerSeekers(el) {
+  el.innerHTML = `<div class="sh"><div class="st"><div class="st-ico" style="background:linear-gradient(135deg,var(--p),var(--pl))"><i class="fas fa-address-card"></i></div>ملفات الباحثين</div></div>
+    <div style="text-align:center;padding:40px 0;color:var(--tx3)"><i class="fas fa-circle-notch spin" style="font-size:24px"></i></div>`;
+
+  let seekers = [];
+  if (!DEMO && window.db) {
+    try {
+      const snap = await window.db.collection('users')
+        .where('role', '==', 'seeker')
+        .where('cvPublished', '==', true)
+        .get();
+      seekers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    } catch(e) { console.warn('pgEmployerSeekers:', e.message); }
+  }
+
+  el.innerHTML = `
+    <div class="sh">
+      <div class="st"><div class="st-ico" style="background:linear-gradient(135deg,var(--p),var(--pl))"><i class="fas fa-address-card"></i></div>ملفات الباحثين</div>
+      <span class="b b-tl">${seekers.length} ملف منشور</span>
+    </div>
+    <div class="card" style="padding:12px 14px;margin-bottom:14px">
+      <div class="sb">
+        <i class="fas fa-search"></i>
+        <input type="text" placeholder="ابحث بالاسم أو المسمى أو المحافظة..." oninput="_empFilterSeekers(this.value)" class="fc" style="border:none;outline:none;background:transparent;width:100%;font-family:Cairo,sans-serif;font-size:13px;color:var(--tx)">
+      </div>
+    </div>
+    ${!seekers.length
+      ? emptyState('📋', 'لا توجد ملفات منشورة بعد', 'يظهر هنا الباحثون الذين نشروا ملفاتهم')
+      : `<div id="empSeekersList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px">
+          ${seekers.map(s => publishedSeekerCard(s)).join('')}
+        </div>`}`;
+
+  window._empSeekers = seekers;
+}
+
+function _empFilterSeekers(q) {
+  const list = window._empSeekers || [];
+  const filtered = q ? list.filter(s =>
+    (s.name || '').includes(q) ||
+    (s.jobTitle || s.title || '').includes(q) ||
+    (s.province || '').includes(q) ||
+    (s.bio || '').includes(q)
+  ) : list;
+  const el = document.getElementById('empSeekersList');
+  if (el) el.innerHTML = filtered.length
+    ? filtered.map(s => publishedSeekerCard(s)).join('')
+    : emptyState('🔍', 'لا توجد نتائج', '');
+}
+
 // ── ملف الشركة ──
 function pgEmployerProfile(el) {
   const p = P;

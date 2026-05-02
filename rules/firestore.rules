@@ -55,9 +55,11 @@ service cloud.firestore {
     // ══════════════════════════════════════
     match /users/{userId} {
       // أي مستخدم مسجّل يقرأ ملفات المكاتب وأصحاب العمل العامة
+      // المكاتب وأصحاب العمل يقرؤون ملفات الباحثين المنشورة فقط
       allow read: if isOwner(userId) || isAdmin()
         || (isLoggedIn() && (resource.data.role == 'office' || resource.data.role == 'employer')
-            && resource.data.status == 'active');
+            && resource.data.status == 'active')
+        || (isJobPoster() && resource.data.role == 'seeker' && resource.data.cvPublished == true);
       allow create: if isOwner(userId) && validSize(request.resource.data)
         && hasFields(request.resource.data, ['name', 'email', 'role'])
         && validStr(request.resource.data.name, 2, 80)
