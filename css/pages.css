@@ -238,6 +238,103 @@
 @keyframes floatWord { 0%{transform:translateY(0);opacity:0} 8%{opacity:1} 90%{opacity:1} 100%{transform:translateY(-110vh);opacity:0} }
 .fw { position: absolute; bottom: -5%; color: rgba(255,255,255,.055); font-size: 13px; font-weight: 800; animation: floatWord linear infinite; pointer-events: none; white-space: nowrap; letter-spacing: .5px; }
 
+/* ── Landing Page New (lnd-*) ── */
+.lnd-topbar {
+  position: sticky; top: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 13px 18px;
+  background: rgba(6,13,26,.82); backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255,255,255,.07);
+}
+.lnd-logo { font-size: 17px; font-weight: 900; color: #fff; display: flex; align-items: center; gap: 6px; }
+.lnd-logo span { font-size: 14px; color: rgba(255,255,255,.7); font-weight: 700; }
+.lnd-login-btn {
+  padding: 8px 16px; border-radius: 10px; border: 1px solid rgba(13,148,136,.5);
+  background: rgba(13,148,136,.15); color: #2dd4bf;
+  font-family: 'Cairo', sans-serif; font-size: 12px; font-weight: 800;
+  cursor: pointer; transition: all .2s; display: flex; align-items: center; gap: 6px;
+}
+.lnd-login-btn:hover { background: rgba(13,148,136,.28); border-color: var(--p); color: #fff; }
+
+.lnd-hero {
+  text-align: center; padding: 38px 22px 22px;
+  position: relative; z-index: 1;
+}
+.lnd-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(13,148,136,.15); border: 1px solid rgba(13,148,136,.3);
+  border-radius: 99px; padding: 5px 14px;
+  font-size: 11px; font-weight: 700; color: #2dd4bf;
+  margin-bottom: 16px;
+}
+.lnd-title {
+  font-size: 34px; font-weight: 900; line-height: 1.2;
+  color: #fff; margin: 0 0 10px; letter-spacing: -.5px;
+}
+.lnd-title-hl {
+  background: linear-gradient(135deg, #2dd4bf, #f59e0b);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.lnd-tagline { font-size: 13px; color: rgba(255,255,255,.45); font-weight: 600; line-height: 1.6; margin-bottom: 20px; }
+
+.lnd-stats-bar {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0;
+  background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.09);
+  border-radius: 16px; padding: 12px 22px; margin: 0 auto;
+}
+.lnd-stat { display: flex; flex-direction: column; align-items: center; padding: 0 16px; }
+.lnd-stat-n { font-size: 20px; font-weight: 900; color: #fff; line-height: 1; }
+.lnd-stat-l { font-size: 10px; color: rgba(255,255,255,.4); font-weight: 700; margin-top: 2px; }
+.lnd-stat-sep { width: 1px; height: 32px; background: rgba(255,255,255,.1); flex-shrink: 0; }
+
+.lnd-section { padding: 6px 16px 20px; position: relative; z-index: 1; max-width: 600px; margin: 0 auto; width: 100%; }
+.lnd-sec-head {
+  font-size: 13px; font-weight: 800; color: rgba(255,255,255,.65);
+  margin-bottom: 12px; display: flex; align-items: center; gap: 7px;
+}
+.lnd-skel {
+  height: 72px; border-radius: 14px;
+  background: linear-gradient(90deg, rgba(255,255,255,.04) 25%, rgba(255,255,255,.07) 50%, rgba(255,255,255,.04) 75%);
+  background-size: 200% 100%; margin-bottom: 10px;
+  animation: skelShimmer 1.4s ease-in-out infinite;
+}
+@keyframes skelShimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+.lnd-cta-section { text-align: center; padding-top: 4px; padding-bottom: 40px; }
+.lnd-cta-lbl { font-size: 11px; font-weight: 800; color: rgba(255,255,255,.3); margin-bottom: 14px; letter-spacing: 1px; }
+.lnd-roles-mini { display: flex; gap: 10px; margin-bottom: 14px; justify-content: center; }
+.lnd-role-mini {
+  flex: 1; max-width: 140px; display: flex; flex-direction: column; align-items: center; gap: 5px;
+  border-radius: 16px; padding: 14px 10px; cursor: pointer;
+  font-family: 'Cairo', sans-serif; border: 1px solid rgba(255,255,255,.07);
+  background: rgba(255,255,255,.04); transition: all .22s;
+}
+.lnd-role-mini:active { transform: scale(.96); }
+.lnd-rm-s:hover { border-color: rgba(13,148,136,.5); background: rgba(13,148,136,.1); box-shadow: 0 6px 22px rgba(13,148,136,.2); }
+.lnd-rm-e:hover { border-color: rgba(245,158,11,.4); background: rgba(245,158,11,.08); box-shadow: 0 6px 22px rgba(245,158,11,.18); }
+.lnd-rm-o:hover { border-color: rgba(139,92,246,.4); background: rgba(139,92,246,.1); box-shadow: 0 6px 22px rgba(139,92,246,.18); }
+.lnd-rm-ico  { font-size: 26px; }
+.lnd-rm-name { font-size: 12px; font-weight: 800; color: #fff; }
+.lnd-rm-desc { font-size: 10px; color: rgba(255,255,255,.35); font-weight: 600; }
+
+.lnd-browse-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 12px 26px; border-radius: 13px;
+  background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);
+  color: rgba(255,255,255,.55); font-family: 'Cairo', sans-serif;
+  font-size: 13px; font-weight: 700; cursor: pointer; transition: all .22s;
+}
+.lnd-browse-btn:hover { background: rgba(255,255,255,.11); color: #fff; border-color: rgba(255,255,255,.2); }
+.lnd-browse-btn i { color: rgba(13,148,136,.85); }
+
+@media (max-width: 400px) {
+  .lnd-title { font-size: 28px; }
+  .lnd-roles-mini { gap: 7px; }
+  .lnd-role-mini { padding: 11px 7px; max-width: 110px; }
+  .lnd-rm-ico { font-size: 22px; }
+  .lnd-stat { padding: 0 10px; }
+}
+
 /* ── Office Profile Banner ── */
 .prof-banner { height: 110px; background: linear-gradient(135deg, var(--pd), var(--p)); position: relative; border-radius: var(--r) var(--r) 0 0; overflow: hidden; }
 .prof-banner::before { content: '🪔'; position: absolute; left: -8px; top: -8px; font-size: 80px; opacity: .08; }

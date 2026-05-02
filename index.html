@@ -47,104 +47,70 @@
 <div class="ov" id="ov" onclick="closeSidebar()" style="display:none"></div>
 
 <!-- ══════════════════════════════════════════════
-     شاشة الترحيب (Onboarding) — تظهر مرة واحدة
+     الصفحة الرئيسية العامة (Landing)
 ══════════════════════════════════════════════ -->
-<div id="onboarding" class="auth-bg" style="display:none;overflow:hidden">
+<div id="onboarding" style="display:none;min-height:100vh;background:linear-gradient(160deg,#060d1a 0%,#0d1b35 60%,#060d1a 100%);overflow-y:auto;overflow-x:hidden;position:relative">
 
-  <!-- أورب خلفية متحركة ملونة -->
+  <!-- أورب خلفية -->
   <div class="land-orb land-orb-1"></div>
   <div class="land-orb land-orb-2"></div>
   <div class="land-orb land-orb-3"></div>
 
-  <!-- كلمات وظائف عائمة في الخلفية -->
-  <span class="fw" style="right:6%;animation-duration:15s;animation-delay:0s">محاسب</span>
-  <span class="fw" style="right:24%;animation-duration:19s;animation-delay:2s;font-size:11px">مهندس برمجيات</span>
-  <span class="fw" style="right:54%;animation-duration:12s;animation-delay:4s">طبيب</span>
-  <span class="fw" style="right:73%;animation-duration:17s;animation-delay:1s;font-size:11px">مدير مبيعات</span>
-  <span class="fw" style="right:41%;animation-duration:21s;animation-delay:6s">مصمم جرافيك</span>
-  <span class="fw" style="right:14%;animation-duration:14s;animation-delay:8s">سائق</span>
-  <span class="fw" style="right:63%;animation-duration:18s;animation-delay:3s">ممرضة</span>
-  <span class="fw" style="right:86%;animation-duration:16s;animation-delay:7s">محامي</span>
-  <span class="fw" style="right:34%;animation-duration:20s;animation-delay:5s">مدرّس</span>
-  <span class="fw" style="right:51%;animation-duration:11s;animation-delay:9.5s">كاشير</span>
-  <span class="fw" style="right:79%;animation-duration:23s;animation-delay:0.8s;font-size:11px">مهندس مدني</span>
-  <span class="fw" style="right:4%;animation-duration:17s;animation-delay:11s">صيدلاني</span>
-  <span class="fw" style="right:90%;animation-duration:13s;animation-delay:4.5s">مبرمج</span>
-  <span class="fw" style="right:44%;animation-duration:16s;animation-delay:13s">سكرتيرة</span>
+  <!-- شريط علوي ثابت -->
+  <div class="lnd-topbar">
+    <div class="lnd-logo">🪔 <span>الفانوس للتوظيف</span></div>
+    <button class="lnd-login-btn" onclick="landingLogin()"><i class="fas fa-sign-in-alt"></i> دخول / تسجيل</button>
+  </div>
 
-  <!-- المحتوى الرئيسي -->
-  <div class="land-wrap">
-
-    <!-- قسم الهيرو -->
-    <div class="land-hero">
-      <div class="land-lamp-wrap">
-        <span class="land-lamp">🪔</span>
-        <div class="land-lamp-ring"></div>
-        <div class="land-lamp-ring2"></div>
-      </div>
-      <h1 class="land-title">الفانوس للتوظيف</h1>
-      <p class="land-sub">نور طريقك نحو فرصتك في كل محافظات العراق</p>
+  <!-- هيرو -->
+  <div class="lnd-hero">
+    <div class="lnd-badge"><i class="fas fa-map-marker-alt"></i> منصة التوظيف الأولى في العراق</div>
+    <h1 class="lnd-title">نور طريقك<br>نحو <span class="lnd-title-hl">فرصتك</span></h1>
+    <p class="lnd-tagline">آلاف الوظائف في كل محافظات العراق — قدّم طلبك في ثوانٍ</p>
+    <div class="lnd-stats-bar">
+      <div class="lnd-stat"><span class="lnd-stat-n">+1000</span><span class="lnd-stat-l">وظيفة</span></div>
+      <div class="lnd-stat-sep"></div>
+      <div class="lnd-stat"><span class="lnd-stat-n">18</span><span class="lnd-stat-l">محافظة</span></div>
+      <div class="lnd-stat-sep"></div>
+      <div class="lnd-stat"><span class="lnd-stat-n">+5000</span><span class="lnd-stat-l">مستخدم</span></div>
     </div>
+  </div>
 
-    <!-- إحصائيات -->
-    <div class="land-stats">
-      <div class="land-stat-item">
-        <span class="land-stat-num">+1000</span>
-        <span class="land-stat-lbl">وظيفة</span>
-      </div>
-      <div class="land-stat-div"></div>
-      <div class="land-stat-item">
-        <span class="land-stat-num">18</span>
-        <span class="land-stat-lbl">محافظة</span>
-      </div>
-      <div class="land-stat-div"></div>
-      <div class="land-stat-item">
-        <span class="land-stat-num">+5000</span>
-        <span class="land-stat-lbl">مستخدم</span>
-      </div>
+  <!-- أحدث الوظائف -->
+  <div class="lnd-section">
+    <div class="lnd-sec-head"><i class="fas fa-fire" style="color:#f59e0b"></i> أحدث الوظائف</div>
+    <div id="landingJobsList">
+      <div class="lnd-skel"></div>
+      <div class="lnd-skel"></div>
+      <div class="lnd-skel"></div>
     </div>
+  </div>
 
-    <!-- اختر دورك -->
-    <p class="land-q">— ابدأ رحلتك —</p>
-
-    <div class="land-roles">
-      <button class="land-role land-role-s" onclick="landingChooseRole('seeker')">
-        <div class="land-role-icon" style="background:linear-gradient(135deg,#0d9488,#0f766e)">🎓</div>
-        <div class="land-role-txt">
-          <span class="land-role-name">أبحث عن وظيفة</span>
-          <span class="land-role-desc">تصفح الوظائف وقدّم طلبك بثوانٍ</span>
-        </div>
-        <i class="fas fa-chevron-left land-role-arr"></i>
+  <!-- ابدأ رحلتك -->
+  <div class="lnd-section lnd-cta-section">
+    <p class="lnd-cta-lbl">— ابدأ رحلتك —</p>
+    <div class="lnd-roles-mini">
+      <button class="lnd-role-mini lnd-rm-s" onclick="landingChooseRole('seeker')">
+        <span class="lnd-rm-ico">🎓</span>
+        <span class="lnd-rm-name">باحث عن عمل</span>
+        <span class="lnd-rm-desc">سجّل وقدّم على الوظائف</span>
       </button>
-      <button class="land-role land-role-e" onclick="landingChooseRole('employer')">
-        <div class="land-role-icon" style="background:linear-gradient(135deg,#d97706,#b45309)">🏢</div>
-        <div class="land-role-txt">
-          <span class="land-role-name">أنا صاحب عمل</span>
-          <span class="land-role-desc">انشر وظيفتك واختر أفضل المرشحين</span>
-        </div>
-        <i class="fas fa-chevron-left land-role-arr"></i>
+      <button class="lnd-role-mini lnd-rm-e" onclick="landingChooseRole('employer')">
+        <span class="lnd-rm-ico">🏢</span>
+        <span class="lnd-rm-name">صاحب عمل</span>
+        <span class="lnd-rm-desc">انشر وظيفتك الآن</span>
       </button>
-      <button class="land-role land-role-o" onclick="landingChooseRole('office')">
-        <div class="land-role-icon" style="background:linear-gradient(135deg,#7c3aed,#6d28d9)">🏛️</div>
-        <div class="land-role-txt">
-          <span class="land-role-name">مكتب توظيف</span>
-          <span class="land-role-desc">أدر مرشحيك وشركاءك من مكان واحد</span>
-        </div>
-        <i class="fas fa-chevron-left land-role-arr"></i>
+      <button class="lnd-role-mini lnd-rm-o" onclick="landingChooseRole('office')">
+        <span class="lnd-rm-ico">🏛️</span>
+        <span class="lnd-rm-name">مكتب توظيف</span>
+        <span class="lnd-rm-desc">أدر عملاءك ومرشحيك</span>
       </button>
     </div>
-
-    <!-- تصفح بدون حساب -->
-    <button class="land-browse" onclick="landingBrowse()">
+    <button class="lnd-browse-btn" onclick="landingBrowse()">
       <i class="fas fa-compass"></i> تصفح الوظائف بدون حساب
     </button>
-
-    <!-- رابط الدخول -->
-    <button class="land-login-link" onclick="landingLogin()">
-      عندك حساب؟ <span>سجّل دخولك</span>
-    </button>
-
   </div>
+
 </div>
 
 <!-- ══════════════════════════════════════════════
