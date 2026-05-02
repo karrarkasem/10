@@ -239,38 +239,73 @@ function empFilterAppsByStatus(st) {
 
 // ── تصفح ملفات الباحثين المنشورة ──
 async function pgEmployerSeekers(el) {
-  el.innerHTML = `<div class="sh"><div class="st"><div class="st-ico" style="background:linear-gradient(135deg,var(--p),var(--pl))"><i class="fas fa-address-card"></i></div>ملفات الباحثين</div></div>
-    <div style="text-align:center;padding:40px 0;color:var(--tx3)"><i class="fas fa-circle-notch spin" style="font-size:24px"></i></div>`;
+  el.innerHTML = `<div style="text-align:center;padding:40px 0;color:var(--tx3)"><i class="fas fa-circle-notch spin" style="font-size:24px"></i></div>`;
 
-  let seekers = [];
+  let selfSeekers = [], managedSeekers = [];
   if (!DEMO && window.db) {
     try {
-      const snap = await window.db.collection('users')
-        .where('role', '==', 'seeker')
-        .where('cvPublished', '==', true)
-        .get();
-      seekers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const [s1, s2] = await Promise.all([
+        window.db.collection('users').where('role','==','seeker').where('cvPublished','==',true).get(),
+        window.db.collection('managed_seekers').where('published','==',true).limit(60).get(),
+      ]);
+      selfSeekers    = s1.docs.map(d => ({ id: d.id, _type: 'self',    ...d.data() }));
+      managedSeekers = s2.docs.map(d => ({ id: d.id, _type: 'managed', ...d.data() }));
     } catch(e) { console.warn('pgEmployerSeekers:', e.message); }
   }
+  const all = [...managedSeekers, ...selfSeekers];
 
   el.innerHTML = `
-    <div class="sh">
+    <div class="sh fade-up">
       <div class="st"><div class="st-ico" style="background:linear-gradient(135deg,var(--p),var(--pl))"><i class="fas fa-address-card"></i></div>ملفات الباحثين</div>
-      <span class="b b-tl">${seekers.length} ملف منشور</span>
+      <span class="b b-tl">${all.length} ملف</span>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+      <span class="b b-pu"><i class="fas fa-certificate"></i>${managedSeekers.length} موثّق من مكتب</span>
+      <span class="b b-tl"><i class="fas fa-user-check"></i>${selfSeekers.length} ذاتي</span>
     </div>
     <div class="card" style="padding:12px 14px;margin-bottom:14px">
       <div class="sb">
         <i class="fas fa-search"></i>
-        <input type="text" placeholder="ابحث بالاسم أو المسمى أو المحافظة..." oninput="_empFilterSeekers(this.value)" class="fc" style="border:none;outline:none;background:transparent;width:100%;font-family:Cairo,sans-serif;font-size:13px;color:var(--tx)">
+        <input type="text" placeholder="ابحث بالاسم أو المسمى أو المحافظة أو المهارة..." oninput="_empFilterSeekers(this.value)" style="border:none;outline:none;background:transparent;width:100%;font-family:Cairo,sans-serif;font-size:13px;color:var(--tx)">
       </div>
     </div>
-    ${!seekers.length
-      ? emptyState('📋', 'لا توجد ملفات منشورة بعد', 'يظهر هنا الباحثون الذين نشروا ملفاتهم')
+    ${!all.length
+      ? emptyState('📋', 'لا توجد ملفات بعد', 'يظهر هنا الباحثون الموثّقون من المكاتب والذاتيون')
       : `<div id="empSeekersList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px">
-          ${seekers.map(s => publishedSeekerCard(s)).join('')}
+          ${all.map(s => s._type === 'managed' ? managedSeekerCardEmp(s) : publishedSeekerCard(s)).join('')}
         </div>`}`;
 
-  window._empSeekers = seekers;
+  window._empSeekers = all;
+}
+
+function managedSeekerCardEmp(s) {
+  const name = s.name || 'باحث عن عمل';
+  return `<div class="card cp fade-up" style="border-color:rgba(139,92,246,.2);background:linear-gradient(135deg,var(--bgc),rgba(139,92,246,.03))">
+    <div style="display:flex;align-items:flex-start;gap:11px;margin-bottom:10px">
+      ${s.photoURL
+        ? `<img src="${s.photoURL}" class="av avl" style="object-fit:cover;flex-shrink:0">`
+        : `<div class="av avl" style="background:linear-gradient(135deg,var(--purple),#a78bfa);color:#fff;font-size:16px;font-weight:900;flex-shrink:0">${name.charAt(0)}</div>`}
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:900;color:var(--tx);margin-bottom:3px">${san(name)}</div>
+        <span class="managed-badge"><i class="fas fa-certificate"></i>موثّق من: ${san(s.officeName||'مكتب توظيف')}</span>
+        <div style="font-size:11px;color:var(--p);font-weight:700;margin-top:4px">${san(s.specialization||s.jobTitle||'')}</div>
+        <div style="font-size:11px;color:var(--tx3);margin-top:2px">${s.province?`<i class="fas fa-map-marker-alt"></i> ${san(s.province)}`:''}</div>
+      </div>
+    </div>
+    ${s.bio?`<div style="font-size:11px;color:var(--tx2);line-height:1.6;margin-bottom:9px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${san(s.bio)}</div>`:''}
+    ${s.skills?.length?`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px">${s.skills.map(sk=>`<span class="b skill-chip" style="font-size:9px">${san(sk)}</span>`).join('')}</div>`:''}
+    <div class="al al-s" style="font-size:10px;padding:6px 10px;margin-bottom:10px">
+      <i class="fas fa-shield-alt"></i>
+      <span>هذا الباحث موثّق ومضمون من قِبل المكتب وفق قانون العمل</span>
+    </div>
+    <button class="btn bp bsm bfu" onclick="contactManagedSeeker('${s.id}','${san(name)}','${san(s.officeName||'')}')">
+      <i class="fas fa-comments"></i> تواصل مع المكتب
+    </button>
+  </div>`;
+}
+
+function contactManagedSeeker(id, name, officeName) {
+  notify('تواصل مع المكتب', `تواصل مع مكتب "${officeName}" للحصول على بيانات الباحث "${name}"`, 'info');
 }
 
 function _empFilterSeekers(q) {

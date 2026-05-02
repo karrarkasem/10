@@ -31,14 +31,45 @@ function pgSeekerProfile(el) {
               ${p?.jobTitle ? '<i class="fas fa-briefcase" style="color:var(--p)"></i> ' + p.jobTitle : ''}
               ${p?.province ? ' • <i class="fas fa-map-marker-alt" style="color:var(--tx3)"></i> ' + p.province : ''}
             </div>
-            <span class="b b-tl" style="margin-top:7px;display:inline-flex"><i class="fas fa-user"></i>باحث عن عمل</span>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:7px;align-items:center">
+              <span class="b b-tl"><i class="fas fa-user"></i>باحث عن عمل</span>
+              ${(()=>{ const hasIV=(p?.ivScore||0)>=60; const hasCV=!!(p?.cvUrl||p?.cvBuilt); return pct>=80&&hasIV&&hasCV ? '<span class="verified-badge"><i class="fas fa-certificate"></i>موثّق وجاهز</span>' : ''; })()}
+            </div>
           </div>
-          <div style="text-align:left"><div style="font-size:24px;font-weight:900;color:${pc}">${pct}%</div><div style="font-size:10px;color:var(--tx3)">اكتمال الملف</div></div>
+          <div style="text-align:left">
+            <div style="font-size:24px;font-weight:900;color:${pc}">${pct}%</div>
+            <div style="font-size:10px;color:var(--tx3)">اكتمال الملف</div>
+          </div>
         </div>
         <div style="margin-bottom:20px">
           <div class="comp-bar-wrap" style="height:8px"><div class="comp-bar" style="--w:${pct}%;background:${pc}"></div></div>
           <div style="font-size:11px;color:var(--tx3);margin-top:5px">${pct<100 ? 'أكمل ملفك للوصول إلى 100% وزيادة فرصك' : '✅ ملفك مكتمل بالكامل'}</div>
         </div>
+        <!-- حالة التوفر للعمل -->
+        <div class="availability-toggle-card">
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:800;color:var(--tx)"><i class="fas fa-circle" style="color:${p?.seekerAvailable?'var(--success)':'var(--tx3)'}"></i> ${p?.seekerAvailable ? 'أنت متاح للعمل الآن' : 'غير متاح للعمل حالياً'}</div>
+            <div style="font-size:11px;color:var(--tx3);margin-top:3px">${p?.seekerAvailable ? 'ملفك مرئي للمكاتب وأصحاب العمل' : 'فعّل لتظهر في نتائج البحث'}</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="seekerAvailableToggle" ${p?.seekerAvailable ? 'checked' : ''} onchange="toggleSeekerAvailability(this.checked)">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <!-- خطوات التوثيق -->
+        <div class="readiness-steps">
+          ${[
+            { ok: pct >= 80,                         label: 'الملف الشخصي مكتمل (80%+)',  ico: 'fa-user-check' },
+            { ok: (p?.ivScore||0) >= 60,             label: 'اجتاز المقابلة الافتراضية',  ico: 'fa-comments' },
+            { ok: !!(p?.cvUrl || p?.cvBuilt),        label: 'سيرة ذاتية مرفوعة أو منشأة', ico: 'fa-file-alt' },
+          ].map(s => `<div class="readiness-step ${s.ok?'ok':''}">
+            <i class="fas ${s.ok?'fa-check-circle':'fa-circle'} step-ico"></i>
+            <span>${s.label}</span>
+            ${!s.ok ? `<button class="btn bsm" style="margin-right:auto;font-size:10px;padding:3px 9px;background:var(--bgc2);border:1px solid var(--br)" onclick="goTo('${s.ico==='fa-comments'?'interview':s.ico==='fa-file-alt'?'cv':'profile'}')">أكمل</button>` : ''}
+          </div>`).join('')}
+        </div>
+
         <div style="font-size:13px;font-weight:800;color:var(--tx);margin-bottom:14px;display:flex;align-items:center;gap:6px"><i class="fas fa-pencil-alt" style="color:var(--p)"></i>تعديل المعلومات</div>
         <div class="fr">
           <div class="fg"><label class="fl req">الاسم الكامل</label><input type="text" id="en" class="fc" value="${p?.name||''}"></div>
@@ -187,6 +218,15 @@ async function uploadAvatar(file) {
   } catch(e) {
     notify('خطأ', 'فشل رفع الصورة، تحقق من مفتاح ImgBB', 'error');
   }
+}
+
+async function toggleSeekerAvailability(val) {
+  P = { ...P, seekerAvailable: val };
+  if (!DEMO && window.db && U) {
+    try { await window.db.collection('users').doc(U.uid).update({ seekerAvailable: val }); }
+    catch(e) { console.warn('toggleSeekerAvailability:', e.message); }
+  }
+  notify(val ? 'أنت متاح الآن ✅' : 'تم الإخفاء', val ? 'ملفك مرئي للمكاتب وأصحاب العمل' : 'ملفك مخفي عن نتائج البحث', val ? 'success' : 'info');
 }
 
 async function saveProfile() {

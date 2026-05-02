@@ -319,6 +319,26 @@ service cloud.firestore {
     }
 
 
+    // ══════════════════════════════════════
+    // MANAGED SEEKERS — باحثون مُدارون من المكاتب
+    // ══════════════════════════════════════
+    match /managed_seekers/{seekerId} {
+      // المكتب يرى ملفاته، أصحاب العمل يرون المنشورة، الأدمن يرى الكل
+      allow read: if isAdmin()
+        || (isOffice() && resource.data.officeId == request.auth.uid)
+        || (isJobPoster() && resource.data.published == true);
+      allow create: if isOffice() && isActive()
+        && request.resource.data.officeId == request.auth.uid
+        && validSize(request.resource.data)
+        && hasFields(request.resource.data, ['name', 'phone', 'officeId']);
+      allow update: if isAdmin()
+        || (isOffice() && resource.data.officeId == request.auth.uid
+            && validSize(request.resource.data));
+      allow delete: if isAdmin()
+        || (isOffice() && resource.data.officeId == request.auth.uid);
+    }
+
+
     // منع أي وصول غير محدد
     match /{document=**} {
       allow read, write: if false;

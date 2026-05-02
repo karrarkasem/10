@@ -37,6 +37,18 @@ let SEL_ROLE    = 'seeker';
 
 const CATS  = { tech:'تقنية', biz:'أعمال', med:'طب', edu:'تعليم', eng:'هندسة', other:'أخرى' };
 const PROVS = ['بغداد','كربلاء','النجف','البصرة','نينوى','أربيل','كركوك','بابل','ذي قار','ميسان','القادسية','واسط','المثنى','الأنبار','صلاح الدين','ديالى','دهوك','السليمانية'];
+
+// تخصص صاحب العمل → التصنيفات المسموحة لنشر الوظائف
+const EMP_CAT_MAP = {
+  'شركة تقنية':     ['tech'],
+  'محل تجاري':      ['biz', 'other'],
+  'مطعم / كافيه':   ['other'],
+  'مستشفى / عيادة': ['med'],
+  'مدرسة / معهد':   ['edu'],
+  'مصنع / مستودع':  ['eng', 'other'],
+  'مؤسسة حكومية':   ['biz', 'edu', 'eng', 'other'],
+  'أخرى':           ['tech', 'biz', 'med', 'edu', 'eng', 'other'],
+};
 const STAT  = {
   pending  : { l:'قيد المراجعة',     c:'b-am', ico:'fa-hourglass-half' },
   reviewed : { l:'تمت المراجعة',     c:'b-bl', ico:'fa-eye' },
@@ -293,12 +305,13 @@ const NAV_SEEKER = [
   { id:'profile',   icon:'fa-user-circle',     label:'حسابي',             btm:true  },
 ];
 const NAV_OFFICE = [
-  { id:'home',       icon:'fa-tachometer-alt', label:'لوحة التحكم',      btm:true  },
-  { id:'myjobs',     icon:'fa-briefcase',      label:'وظائفي',            btm:true  },
-  { id:'candidates', icon:'fa-users',          label:'المتقدمون',         btm:true  },
-  { id:'bookings',   icon:'fa-lock',           label:'الحجوزات',          btm:false },
-  { id:'pipeline',   icon:'fa-columns',        label:'خط التوظيف',       btm:false },
-  { id:'profile',    icon:'fa-building',       label:'ملف المكتب',       btm:true  },
+  { id:'home',            icon:'fa-tachometer-alt', label:'لوحة التحكم',      btm:true  },
+  { id:'myjobs',          icon:'fa-briefcase',      label:'وظائفي',            btm:true  },
+  { id:'candidates',      icon:'fa-users',          label:'المتقدمون',         btm:true  },
+  { id:'managed_seekers', icon:'fa-id-card',        label:'باحثون مُدارون',    btm:false },
+  { id:'bookings',        icon:'fa-lock',           label:'الحجوزات',          btm:false },
+  { id:'pipeline',        icon:'fa-columns',        label:'خط التوظيف',       btm:false },
+  { id:'profile',         icon:'fa-building',       label:'ملف المكتب',       btm:true  },
 ];
 const NAV_ADMIN = [
   { id:'home',        icon:'fa-tachometer-alt', label:'لوحة التحكم',     btm:true  },
@@ -373,12 +386,13 @@ function renderPage(pg) {
     return pgEmployerHome(el);
   }
   if (ROLE === 'office') {
-    if (pg === 'home')       return pgOfficeHome(el);
-    if (pg === 'myjobs')     return pgOfficeJobs(el);
-    if (pg === 'candidates') return pgCandidates(el);
-    if (pg === 'bookings')   return pgBookings(el);
-    if (pg === 'pipeline')   return pgPipeline(el);
-    if (pg === 'profile')    return pgOfficeProfile(el);
+    if (pg === 'home')            return pgOfficeHome(el);
+    if (pg === 'myjobs')          return pgOfficeJobs(el);
+    if (pg === 'candidates')      return pgCandidates(el);
+    if (pg === 'managed_seekers') return pgOfficeManagedSeekers(el);
+    if (pg === 'bookings')        return pgBookings(el);
+    if (pg === 'pipeline')        return pgPipeline(el);
+    if (pg === 'profile')         return pgOfficeProfile(el);
     return pgOfficeHome(el); // catch-all — لا يسقط لصفحات الباحث
   }
   if (ROLE === 'admin') {

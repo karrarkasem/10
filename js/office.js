@@ -955,7 +955,8 @@ function openAddJob() {
     return;
   }
   document.getElementById('moAddJobB').innerHTML = `
-    <!-- ── قسم الاستيراد الذكي ── -->
+    <!-- ── قسم الاستيراد الذكي (للمكاتب فقط) ── -->
+    ${ROLE !== 'employer' ? `
     <div id="importJobSection" style="background:linear-gradient(135deg,#f0f4ff,#faf5ff);border:1.5px dashed var(--p);border-radius:14px;padding:14px 16px;margin-bottom:16px">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
         <i class="fas fa-magic" style="color:var(--p);font-size:16px"></i>
@@ -975,11 +976,18 @@ function openAddJob() {
         </button>
       </div>
       <div id="importStatus" style="display:none;margin-top:8px;font-size:12px;color:var(--tx3)"></div>
-    </div>
+    </div>` : `
+    <!-- إشعار صاحب العمل -->
+    <div class="al al-i" style="margin-bottom:14px">
+      <i class="fas fa-building" style="color:var(--acc)"></i>
+      <span>تنشر هذه الوظيفة باسم <strong>${san(P?.companyName||P?.name||'شركتك')}</strong> ضمن تخصص نشاطك التجاري فقط</span>
+    </div>`}
 
     <div class="fr">
-      <div class="fg"><label class="fl req">المسمى الوظيفي</label><input type="text" id="jt" class="fc" placeholder="مثال: مبرمج ويب React.js"></div>
-      <div class="fg"><label class="fl req">الشركة / المكتب</label><input type="text" id="jco2" class="fc" value="${P?.companyName||P?.officeName||P?.name||''}"></div>
+      <div class="fg"><label class="fl req">المسمى الوظيفي</label><input type="text" id="jt" class="fc" placeholder="مثال: كاشير، طباخ، محاسب..."></div>
+      <div class="fg"><label class="fl req">الشركة / المحل</label>
+        <input type="text" id="jco2" class="fc" value="${san(P?.companyName||P?.officeName||P?.name||'')}" ${ROLE==='employer'?'readonly style="opacity:.7;background:var(--bgc2);cursor:default"':''}>
+      </div>
     </div>
     <div class="fr">
       <div class="fg"><label class="fl req">نوع الدوام</label>
@@ -991,9 +999,10 @@ function openAddJob() {
       </div>
       <div class="fg"><label class="fl req">التخصص</label>
         <select id="jca" class="fc">
-          <option value="tech">تقنية</option><option value="biz">أعمال</option>
-          <option value="med">طب</option><option value="edu">تعليم</option>
-          <option value="eng">هندسة</option><option value="other">أخرى</option>
+          ${(()=>{
+            const allowed = ROLE==='employer' ? (EMP_CAT_MAP[P?.empType||P?.businessType]||Object.keys(CATS)) : Object.keys(CATS);
+            return Object.entries(CATS).filter(([v])=>allowed.includes(v)).map(([v,l])=>`<option value="${v}">${l}</option>`).join('');
+          })()}
         </select>
       </div>
     </div>
@@ -1084,6 +1093,24 @@ function openAddJob() {
       <div class="fg"><label class="fl">رقم الهاتف للتواصل</label><input type="tel" id="jph" class="fc" value="${P?.phone||''}" placeholder="07X XXXX XXXX"></div>
       <div class="fg"><label class="fl">معرّف تيليجرام (اختياري)</label><input type="text" id="jtg" class="fc" placeholder="@username أو رابط"></div>
     </div>
+
+    <!-- إقرار قانون العمل (إلزامي لأصحاب العمل) -->
+    ${ROLE === 'employer' ? `
+    <div class="labor-agreement-box">
+      <div style="font-size:12px;font-weight:800;color:var(--p);margin-bottom:10px;display:flex;align-items:center;gap:6px">
+        <i class="fas fa-balance-scale"></i> إقرار قانوني إلزامي
+      </div>
+      <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer">
+        <input type="checkbox" id="jlla" style="width:17px;height:17px;accent-color:var(--p);flex-shrink:0;margin-top:2px">
+        <span style="font-size:12px;color:var(--tx2);line-height:1.7;font-weight:600">
+          أقر بأن هذه الفرصة ضمن تخصص نشاطي التجاري
+          <strong style="color:var(--tx)">(${san(P?.empType||P?.businessType||'نشاطي')})</strong>
+          وأن شروطها متوافقة مع
+          <strong style="color:var(--p)">قانون العمل العراقي رقم 37 لسنة 2015</strong>
+          من حيث الأجر والساعات والعقد والتأمين الاجتماعي
+        </span>
+      </label>
+    </div>` : ''}
 
     <div class="mf" style="padding:0;border:none;margin-top:12px">
       <button class="btn bo" onclick="cmo('moAddJob')"><i class="fas fa-times"></i>إلغاء</button>
@@ -1317,6 +1344,9 @@ async function submitJob() {
   if (!title)  { notify('خطأ', 'أدخل المسمى الوظيفي', 'error'); return; }
   if (!co)     { notify('خطأ', 'أدخل اسم الشركة أو المكتب', 'error'); return; }
   if (!desc || desc.length < 20) { notify('خطأ', 'أدخل وصفاً للوظيفة (20 حرفاً على الأقل)', 'error'); return; }
+  if (ROLE === 'employer' && !document.getElementById('jlla')?.checked) {
+    notify('إقرار مطلوب', 'يجب الإقرار بالامتثال لقانون العمل العراقي قبل نشر الوظيفة', 'error'); return;
+  }
   if (salMin && salMax && salMin > salMax) { notify('خطأ', 'الراتب الأدنى لا يمكن أن يكون أكبر من الأعلى', 'error'); return; }
   if (deadline && new Date(deadline) < new Date()) { notify('خطأ', 'تاريخ انتهاء التقديم يجب أن يكون في المستقبل', 'error'); return; }
 
@@ -1333,9 +1363,10 @@ async function submitJob() {
     desc,
     reqs: (document.getElementById('jr')?.value||'').split(',').map(s=>s.trim()).filter(Boolean),
     bens: (document.getElementById('jb')?.value||'').split(',').map(s=>s.trim()).filter(Boolean),
-    skills:         window._jobSkillsList || [],
-    contractType:   document.getElementById('jcon')?.value || 'permanent',
+    skills:          window._jobSkillsList || [],
+    contractType:    document.getElementById('jcon')?.value || 'permanent',
     socialInsurance: document.getElementById('jsi')?.checked || false,
+    laborLawAgreed:  ROLE === 'employer' ? (document.getElementById('jlla')?.checked || false) : true,
     deadline:  deadline || null,
     phone:     document.getElementById('jph')?.value.trim() || null,
     telegram:  document.getElementById('jtg')?.value.trim() || null,
@@ -1688,3 +1719,178 @@ openAddJob = function() {
   window._jobSkillsList = [];
   _origOpenAddJob();
 };
+
+// ══════════════════════════════════════════════════════
+// الباحثون المُدارون من المكتب
+// ══════════════════════════════════════════════════════
+async function pgOfficeManagedSeekers(el) {
+  el.innerHTML = `<div style="text-align:center;padding:40px"><div class="spin2"></div></div>`;
+  let seekers = [];
+  if (!DEMO && window.db) {
+    try {
+      const snap = await window.db.collection('managed_seekers')
+        .where('officeId', '==', U?.uid)
+        .limit(60).get();
+      seekers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    } catch(e) { console.warn('pgOfficeManagedSeekers:', e.message); }
+  }
+
+  el.innerHTML = `
+    <div class="sh fade-up">
+      <div class="st"><div class="st-ico" style="background:linear-gradient(135deg,var(--p),var(--pl))"><i class="fas fa-id-card"></i></div>باحثون مُدارون</div>
+      <button class="btn bp bsm" onclick="openAddManagedSeeker()"><i class="fas fa-plus"></i>إضافة باحث</button>
+    </div>
+    <div class="al al-i fade-up del1" style="margin-bottom:14px">
+      <i class="fas fa-certificate" style="color:var(--p)"></i>
+      <span>هؤلاء تحت ضمان مكتبك — يظهرون لأصحاب العمل بشارة <strong>"موثّق من ${san(P?.officeName||P?.name||'مكتبك')}"</strong></span>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+      <span class="b b-tl"><i class="fas fa-eye"></i>${seekers.filter(s=>s.published).length} ظاهر</span>
+      <span class="b b-gy"><i class="fas fa-eye-slash"></i>${seekers.filter(s=>!s.published).length} مخفي</span>
+    </div>
+    ${seekers.length
+      ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px">
+           ${seekers.map(s => managedSeekerCard(s)).join('')}
+         </div>`
+      : emptyState('👥', 'لا يوجد باحثون مُدارون بعد', 'أضف باحثين تحت ضمان مكتبك ليظهروا لأصحاب العمل',
+          '<button class="btn bp bsm" style="margin-top:8px" onclick="openAddManagedSeeker()"><i class="fas fa-plus"></i>إضافة أول باحث</button>')}`;
+}
+
+function managedSeekerCard(s) {
+  const name = s.name || 'باحث عن عمل';
+  return `<div class="card cp fade-up">
+    <div style="display:flex;align-items:flex-start;gap:11px;margin-bottom:10px">
+      ${s.photoURL
+        ? `<img src="${s.photoURL}" class="av avl" style="object-fit:cover;flex-shrink:0">`
+        : `<div class="av avl" style="background:var(--grad-p);color:#fff;font-size:16px;font-weight:900;flex-shrink:0">${name.charAt(0)}</div>`}
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
+          <div style="font-size:13px;font-weight:900;color:var(--tx)">${san(name)}</div>
+          <span class="managed-badge"><i class="fas fa-certificate"></i>ضمان المكتب</span>
+        </div>
+        <div style="font-size:11px;color:var(--p);font-weight:700;margin-top:2px">${san(s.specialization||s.jobTitle||'')}</div>
+        <div style="font-size:11px;color:var(--tx3);margin-top:2px">${s.province?`<i class="fas fa-map-marker-alt"></i> ${san(s.province)}`:''}</div>
+      </div>
+      <label class="toggle-switch" title="${s.published?'ظاهر':'مخفي'}">
+        <input type="checkbox" ${s.published?'checked':''} onchange="toggleManagedSeekerPublish('${s.id}',this.checked)">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+    ${s.bio?`<div style="font-size:11px;color:var(--tx2);line-height:1.6;margin-bottom:9px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${san(s.bio)}</div>`:''}
+    ${s.skills?.length?`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:9px">${s.skills.slice(0,3).map(sk=>`<span class="b b-am" style="font-size:9px">${san(sk)}</span>`).join('')}</div>`:''}
+    <div style="display:flex;gap:7px">
+      <button class="btn bo bsm" style="flex:1" onclick="openAddManagedSeeker(${JSON.stringify(s).replace(/"/g,'&quot;')})"><i class="fas fa-edit"></i>تعديل</button>
+      <button class="btn bda bsm" onclick="deleteManagedSeeker('${s.id}','${san(name)}')"><i class="fas fa-trash"></i></button>
+    </div>
+  </div>`;
+}
+
+function openAddManagedSeeker(existing = null) {
+  const isEdit = !!existing;
+  document.getElementById('moApplyB').innerHTML = `
+    <div style="font-size:14px;font-weight:900;color:var(--tx);margin-bottom:16px;display:flex;align-items:center;gap:7px">
+      <i class="fas fa-id-card" style="color:var(--p)"></i>
+      ${isEdit ? 'تعديل بيانات الباحث' : 'إضافة باحث مُدار'}
+    </div>
+    <div class="fg"><label class="fl req">الاسم الكامل</label>
+      <input type="text" id="ms_name" class="fc" value="${san(existing?.name||'')}" placeholder="الاسم الكامل للباحث">
+    </div>
+    <div class="fr">
+      <div class="fg"><label class="fl req">رقم الهاتف</label>
+        <input type="tel" id="ms_phone" class="fc" value="${san(existing?.phone||'')}" placeholder="07X XXXX XXXX">
+      </div>
+      <div class="fg"><label class="fl req">المحافظة</label>
+        <select id="ms_prov" class="fc">
+          ${PROVS.map(p=>`<option ${existing?.province===p?'selected':''}>${p}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label class="fl req">التخصص</label>
+        <select id="ms_cat" class="fc">
+          ${Object.entries(CATS).map(([v,l])=>`<option value="${v}" ${existing?.cat===v?'selected':''}>${l}</option>`).join('')}
+        </select>
+      </div>
+      <div class="fg"><label class="fl">المسمى الوظيفي</label>
+        <input type="text" id="ms_title" class="fc" value="${san(existing?.specialization||existing?.jobTitle||'')}" placeholder="محاسب، مبرمج، طبيب...">
+      </div>
+    </div>
+    <div class="fg"><label class="fl">نبذة عن الباحث</label>
+      <textarea id="ms_bio" class="fc" rows="3" placeholder="خبرات ومهارات الباحث...">${san(existing?.bio||'')}</textarea>
+    </div>
+    <div class="fg"><label class="fl">المهارات <span class="fh" style="display:inline">(افصل بفاصلة)</span></label>
+      <input type="text" id="ms_skills" class="fc" value="${(existing?.skills||[]).join(', ')}" placeholder="Excel, محاسبة, إدارة...">
+    </div>
+    <div class="fg"><label class="fl">رابط صورة شخصية (اختياري)</label>
+      <input type="url" id="ms_photo" class="fc" value="${san(existing?.photoURL||'')}" placeholder="https://...">
+    </div>
+    <div class="al al-i" style="margin-top:4px">
+      <i class="fas fa-balance-scale"></i>
+      <span style="font-size:11px">بإضافة هذا الباحث تتعهد بصحة بياناته وامتثاله لتخصصات <strong>قانون العمل العراقي رقم 37 لسنة 2015</strong></span>
+    </div>
+    <div class="mf" style="border:none;padding:12px 0 0">
+      <button class="btn bo" onclick="cmo('moApply')"><i class="fas fa-times"></i>إلغاء</button>
+      <button class="btn bp blg" id="msSaveBtn" onclick="submitManagedSeeker('${isEdit?existing.id:''}')">
+        <i class="fas fa-save"></i>${isEdit ? 'حفظ التعديل' : 'إضافة الباحث'}
+      </button>
+    </div>`;
+  oMo('moApply');
+}
+
+async function submitManagedSeeker(editId) {
+  const name  = document.getElementById('ms_name')?.value.trim();
+  const phone = document.getElementById('ms_phone')?.value.trim();
+  if (!name)  { notify('خطأ', 'أدخل اسم الباحث', 'error'); return; }
+  if (!phone) { notify('خطأ', 'أدخل رقم الهاتف', 'error'); return; }
+
+  const data = {
+    name,
+    phone,
+    province:      document.getElementById('ms_prov')?.value  || '',
+    cat:           document.getElementById('ms_cat')?.value   || 'other',
+    specialization: document.getElementById('ms_title')?.value.trim() || '',
+    bio:           document.getElementById('ms_bio')?.value.trim()    || '',
+    skills:        (document.getElementById('ms_skills')?.value||'').split(',').map(s=>s.trim()).filter(Boolean),
+    photoURL:      document.getElementById('ms_photo')?.value.trim()  || null,
+    officeId:      U?.uid,
+    officeName:    P?.officeName || P?.name || '',
+    published:     editId ? undefined : false,
+  };
+  if (!editId) data.createdAt = new Date().toISOString();
+  if (data.published === undefined) delete data.published;
+
+  loading('msSaveBtn', true);
+  if (!DEMO && window.db) {
+    try {
+      if (editId) {
+        await window.db.collection('managed_seekers').doc(editId).update(data);
+      } else {
+        await window.db.collection('managed_seekers').add(data);
+      }
+    } catch(e) {
+      loading('msSaveBtn', false);
+      notify('خطأ', 'فشل الحفظ: ' + e.message, 'error'); return;
+    }
+  }
+  cmo('moApply');
+  notify('تم ✅', editId ? 'تم تحديث بيانات الباحث' : 'تمت إضافة الباحث بنجاح', 'success');
+  goTo('managed_seekers');
+}
+
+async function toggleManagedSeekerPublish(id, published) {
+  if (!DEMO && window.db) {
+    try { await window.db.collection('managed_seekers').doc(id).update({ published }); }
+    catch(e) { console.warn('toggleManagedSeekerPublish:', e.message); }
+  }
+  notify(published ? 'ظاهر الآن ✅' : 'تم الإخفاء', published ? 'ملف الباحث مرئي لأصحاب العمل' : 'ملف الباحث مخفي', published ? 'success' : 'info');
+}
+
+async function deleteManagedSeeker(id, name) {
+  if (!confirm(`هل تريد حذف ملف "${name}"؟`)) return;
+  if (!DEMO && window.db) {
+    try { await window.db.collection('managed_seekers').doc(id).delete(); }
+    catch(e) { notify('خطأ', 'فشل الحذف', 'error'); return; }
+  }
+  notify('تم الحذف', `تم حذف ملف ${name}`, 'info');
+  goTo('managed_seekers');
+}
