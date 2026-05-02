@@ -52,11 +52,34 @@
 .ndot      { position: absolute; top: 8px; right: 8px; width: 7px; height: 7px; border-radius: 50%; background: var(--danger); border: 2px solid var(--bgc); }
 
 /* ── Bottom Nav (mobile) ── */
-.bnav { display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 300; background: var(--bgc); border-top: 1px solid var(--br); padding: 7px 0 calc(7px + env(safe-area-inset-bottom)); box-shadow: 0 -4px 16px rgba(0,0,0,.07); }
+.bnav {
+  display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 300;
+  background: var(--bgc); border-top: 1px solid var(--br);
+  padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px));
+  box-shadow: 0 -6px 24px rgba(0,0,0,.08);
+}
 @media (max-width: 768px) { .bnav { display: flex; } }
-.bni    { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 3px; cursor: pointer; color: var(--tx3); transition: all .2s; font-size: 9px; font-weight: 700; touch-action: manipulation; }
-.bni.on { color: var(--p); }
-.bni i  { font-size: 17px; }
+.bni {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 5px 3px; cursor: pointer; color: var(--tx3);
+  transition: color .18s, background .18s, transform .18s;
+  font-size: 9px; font-weight: 700; touch-action: manipulation;
+  border-radius: 12px; margin: 0 2px; position: relative;
+}
+.bni.on {
+  color: var(--p);
+  background: rgba(13,148,136,.09);
+}
+.bni.on::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 50%; transform: translateX(-50%);
+  width: 28px; height: 3px;
+  background: var(--p);
+  border-radius: 0 0 3px 3px;
+}
+.bni i  { font-size: 18px; transition: transform .18s cubic-bezier(.34,1.56,.64,1); }
+.bni.on i { transform: translateY(-1px); }
 
 /* ── Page Header ── */
 .sh  { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; flex-wrap: wrap; gap: 10px; }
@@ -616,3 +639,151 @@
 
 /* ── Contact Locked (Plus gate) ── */
 .contact-locked { padding: 14px; background: rgba(245,158,11,.06); border: 1px dashed rgba(245,158,11,.4); border-radius: 14px; }
+
+/* ═══════════════════════════════════════════════════════
+   تحسينات Native App — جوال مثالي كالتطبيق الأصلي
+═══════════════════════════════════════════════════════ */
+
+/* ── منع iOS zoom عند التركيز على الإدخال ── */
+@media (max-width: 768px) {
+  input, textarea, select { font-size: 16px !important; }
+}
+
+/* ── Safe area — الـ notch والـ home indicator ── */
+.tb {
+  padding-top: env(safe-area-inset-top, 0px);
+  height: calc(62px + env(safe-area-inset-top, 0px));
+}
+.bnav {
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 8px);
+  height: calc(60px + env(safe-area-inset-bottom, 0px));
+}
+.auth-bg  { padding-top: max(env(safe-area-inset-top, 0px), 18px); padding-bottom: max(env(safe-area-inset-bottom, 0px), 18px); }
+#onboarding .land-wrap { padding-top: max(env(safe-area-inset-top, 0px), 32px); padding-bottom: max(env(safe-area-inset-bottom, 0px), 26px); }
+
+/* ── Bottom nav تحسين شكل ── */
+.bni { min-height: 46px; border-radius: 12px; margin: 0 2px; transition: color .18s, background .18s; }
+.bni.on { background: rgba(13,148,136,.1); }
+.bni.on i { transform: translateY(-1px); transition: transform .18s cubic-bezier(.34,1.56,.64,1); }
+.bni i { transition: transform .18s ease; font-size: 18px; }
+
+/* ── Touch active states — لمس فوري ── */
+.btn:active        { transform: scale(0.96) !important; opacity: .88; transition: transform .08s ease, opacity .08s ease !important; }
+.card:active       { transform: scale(0.99); transition: transform .08s ease !important; }
+.jc:active         { transform: scale(0.98); transition: transform .08s ease !important; }
+.ni:active         { opacity: .65; transition: opacity .08s ease !important; }
+.bni:active        { opacity: .55; transform: scale(.93); transition: transform .08s ease, opacity .08s ease !important; }
+.land-role:active  { transform: translateX(-5px) scale(.97) !important; }
+.sc:active         { transform: scale(0.97); transition: transform .08s ease !important; }
+.qact-card:active  { transform: scale(0.97); transition: transform .08s ease !important; }
+
+/* ── Modal: swipe indicator شريط السحب ── */
+@media (max-width: 480px) {
+  .md::before {
+    content: '';
+    display: block;
+    width: 38px; height: 4px;
+    background: var(--br2);
+    border-radius: 2px;
+    margin: -4px auto 14px;
+    flex-shrink: 0;
+  }
+  .md { display: flex; flex-direction: column; }
+  .mb { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+}
+
+/* ── Scrollable containers ── */
+.pc, .mb, .tw { -webkit-overflow-scrolling: touch; }
+.tabs { -webkit-overflow-scrolling: touch; }
+
+/* ── Landing page على الهاتف الصغير ── */
+@media (max-height: 720px) and (max-width: 480px) {
+  .land-lamp       { font-size: 54px; }
+  .land-lamp-ring  { inset: -9px; }
+  .land-lamp-ring2 { inset: -19px; }
+  .land-title      { font-size: 22px; }
+  .land-sub        { font-size: 11.5px; }
+  .land-hero       { margin-bottom: 12px; }
+  .land-stats      { padding: 11px 16px; margin: 12px 0 16px; }
+  .land-stat-num   { font-size: 17px; }
+  .land-stat-lbl   { font-size: 10px; }
+  .land-q          { margin-bottom: 7px; font-size: 10px; }
+  .land-roles      { gap: 7px; margin-bottom: 9px; }
+  .land-role       { padding: 11px 13px; border-radius: 13px; }
+  .land-role-icon  { width: 40px; height: 40px; font-size: 20px; border-radius: 11px; }
+  .land-role-name  { font-size: 13px; }
+  .land-browse     { padding: 11px; }
+}
+@media (max-width: 360px) {
+  .land-wrap       { padding-right: 16px; padding-left: 16px; }
+  .land-title      { font-size: 21px; }
+  .land-role-name  { font-size: 12.5px; }
+  .land-role-desc  { font-size: 10.5px; }
+}
+
+/* ── Hero banner على الهاتف ── */
+@media (max-width: 480px) {
+  .hero-banner  { border-radius: 18px; padding: 18px 18px 16px; }
+  .hero-lamp    { font-size: 32px; }
+  .hero-name    { font-size: 19px; }
+  .hero-label   { font-size: 11px; }
+  .hero-sub     { font-size: 11.5px; line-height: 1.7; }
+}
+
+/* ── بطاقات الوظائف على الهاتف ── */
+@media (max-width: 480px) {
+  .jc     { border-radius: 16px; padding: 14px; }
+  .jtit   { font-size: 13.5px; }
+  .jsal   { font-size: 12px; }
+  .jlo    { width: 40px; height: 40px; border-radius: 11px; font-size: 17px; }
+}
+
+/* ── Stat cards: أكثر اندماجاً على الهاتف ── */
+@media (max-width: 480px) {
+  .sg { grid-template-columns: repeat(2, 1fr); gap: 9px; }
+  .sc { padding: 13px 12px; border-radius: 14px; }
+  .si { width: 38px; height: 38px; font-size: 15px; border-radius: 10px; }
+  .sl { font-size: 10.5px; }
+  .sv { font-size: 20px; }
+  .sc-trend { font-size: 9.5px; }
+}
+
+/* ── Quick action cards ── */
+@media (max-width: 480px) {
+  .qact-grid { gap: 9px; }
+  .qact-card { padding: 14px 12px; border-radius: 15px; }
+  .qact-ico  { width: 40px; height: 40px; border-radius: 12px; font-size: 16px; margin-bottom: 9px; }
+  .qact-tit  { font-size: 12px; }
+  .qact-sub  { font-size: 10px; }
+}
+
+/* ── Page header على الهاتف ── */
+@media (max-width: 480px) {
+  .sh  { margin-bottom: 12px; }
+  .st  { font-size: 15px; }
+  .st-ico { width: 30px; height: 30px; font-size: 13px; border-radius: 8px; }
+}
+
+/* ── Topbar على الهاتف ── */
+@media (max-width: 480px) {
+  .tb       { padding: 0 14px; padding-top: env(safe-area-inset-top, 0px); }
+  .tb-title { font-size: 15px; font-weight: 800; }
+  .ibtn     { width: 36px; height: 36px; font-size: 13px; border-radius: 9px; }
+}
+
+/* ── Completion card ── */
+@media (max-width: 480px) {
+  .comp-card { padding: 14px; border-radius: 16px; }
+  .comp-val  { font-size: 24px; }
+}
+
+/* ── فلاتر التصفح ── */
+@media (max-width: 480px) {
+  .fc2 { font-size: 10.5px; padding: 5px 10px; border-radius: 8px; }
+  .sort-select { font-size: 12px; padding: 7px 10px; }
+}
+
+/* ── Notification panel ── */
+@media (max-width: 480px) {
+  .notif-panel { border-radius: 20px 20px 0 0; }
+}
