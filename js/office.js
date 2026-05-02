@@ -806,7 +806,9 @@ function pgOfficeProfile(el) {
           </div>
         </div>
 
-        <button class="btn bp" onclick="saveOfficeProfile()"><i class="fas fa-save"></i>حفظ التغييرات</button>
+        <div class="save-bar">
+          <button class="btn bp bfu" onclick="saveOfficeProfile()" style="flex:1;max-width:320px"><i class="fas fa-save"></i>حفظ التغييرات</button>
+        </div>
       </div>
     </div>
 

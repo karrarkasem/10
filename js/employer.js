@@ -322,7 +322,9 @@ function pgEmployerProfile(el) {
       <div class="fg"><label class="fl">السجل التجاري <span class="fh" style="display:inline">(اختياري)</span></label>
         <input type="text" id="emp_reg_edit" class="fc" value="${san(p?.commercialReg||'')}" placeholder="رقم السجل التجاري">
       </div>
-      <button class="btn bp" onclick="saveEmployerProfile()"><i class="fas fa-save"></i>حفظ التغييرات</button>
+      <div class="save-bar">
+        <button class="btn bp bfu" onclick="saveEmployerProfile()" style="flex:1;max-width:320px"><i class="fas fa-save"></i>حفظ التغييرات</button>
+      </div>
     </div>
 
     <!-- الأمان -->

@@ -7,7 +7,19 @@
 .main    { flex: 1; margin-right: 256px; min-height: 100vh; display: flex; flex-direction: column; }
 .pc      { padding: 22px; flex: 1; }
 @media (min-width: 769px) and (max-width: 1024px) { .main { margin-right: 210px; } .pc { padding: 16px; } }
-@media (max-width: 768px) { .main { margin-right: 0; } .pc { padding: 14px; padding-bottom: 74px; } }
+@media (max-width: 768px) { .main { margin-right: 0; } .pc { padding: 14px; padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px)); } }
+
+/* ── Save Bar — ثابت في أسفل صفحة الإعدادات ── */
+.save-bar {
+  position: sticky; bottom: 0; left: 0; right: 0;
+  background: var(--bgc); border-top: 1px solid var(--br);
+  padding: 12px 0 calc(12px + env(safe-area-inset-bottom, 0px));
+  margin: 16px -18px -18px; /* تمتد لحواف الكارد */
+  padding-left: 18px; padding-right: 18px;
+  display: flex; justify-content: center;
+  z-index: 10; box-shadow: 0 -4px 16px rgba(0,0,0,.06);
+}
+@media (min-width: 769px) { .save-bar { position: static; margin: 16px 0 0; border-top: none; padding: 0; box-shadow: none; background: none; } }
 
 /* ── Sidebar ── */
 .sidebar {

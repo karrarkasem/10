@@ -55,7 +55,9 @@ function pgSeekerProfile(el) {
           <textarea id="ebio" class="fc" rows="3" placeholder="اكتب نبذة مختصرة عن خبرتك...">${p?.bio||''}</textarea>
           <div class="fh">تظهر للمكاتب عند مراجعة ملفك</div>
         </div>
-        <button class="btn bp" onclick="saveProfile()"><i class="fas fa-save"></i>حفظ التغييرات</button>
+        <div class="save-bar">
+          <button class="btn bp bfu" onclick="saveProfile()" style="flex:1;max-width:320px"><i class="fas fa-save"></i>حفظ التغييرات</button>
+        </div>
       </div>
     </div>
 
