@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <title>🪔 الفانوس — بناء البيانات</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #0f172a; color: #e2e8f0; padding: 24px; }
+    h1  { color: #f59e0b; margin-bottom: 20px; font-size: 20px; }
+    #log { background: #1e293b; border-radius: 10px; padding: 16px; font-size: 13px; line-height: 2; min-height: 80px; }
+    .ok   { color: #4ade80; }
+    .err  { color: #f87171; }
+    .inf  { color: #60a5fa; }
+    .warn { color: #fbbf24; }
+    .box  { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 20px; margin-top: 16px; }
+    .box h3 { color: #f59e0b; margin-bottom: 14px; font-size: 15px; }
+    .row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #1e293b; font-size: 13px; }
+    .row:last-child { border: none; }
+    .lbl { color: #94a3b8; }
+    .val { color: #e2e8f0; font-family: monospace; background: #0f172a; padding: 3px 8px; border-radius: 5px; }
+  </style>
+</head>
+<body>
+  <h1>🪔 الفانوس للتوظيف — بناء البيانات التجريبية</h1>
+  <div id="log">⏳ جارٍ التحضير...</div>
+  <div id="result"></div>
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script>
+    firebase.initializeApp({
+      apiKey    : "AIzaSyBKlAEuk3QQJBqWqR1zmBdHGwasIW86Y-I",
+      authDomain: "karbala-b4884.firebaseapp.com",
+      projectId : "karbala-b4884",
+    });
+    const auth = firebase.auth();
+    const db   = firebase.firestore();
+    const TS   = () => firebase.firestore.FieldValue.serverTimestamp();
+
+    const logEl = document.getElementById('log');
+    logEl.innerHTML = '';
+    function log(msg, cls = 'inf') {
+      logEl.innerHTML += `<div class="${cls}">${msg}</div>`;
+    }
+
+    // ══════════════════════════════
+    // الحسابات التجريبية
+    // ══════════════════════════════
+    const ACCOUNTS = [
+      {
+        email: 'admin@fanoos.iq',
+        pass : 'Admin@1234',
+        data : {
+          name    : 'مدير النظام',
+          email   : 'admin@fanoos.iq',
+          role    : 'admin',
+          status  : 'active',
+          province: 'كربلاء',
+        }
+      },
+      {
+        email: 'office@fanoos.iq',
+        pass : 'Office@1234',
+        data : {
+          name      : 'مكتب الفانوس للتوظيف',
+          officeName: 'مكتب الفانوس للتوظيف',
+          email     : 'office@fanoos.iq',
+          role      : 'office',
+          status    : 'active',
+          province  : 'كربلاء',
+          phone     : '07801234567',
+          bio       : 'مكتب توظيف متخصص في كربلاء المقدسة، نربط أصحاب العمل بأفضل الكفاءات العراقية.',
+        }
+      },
+      {
+        email: 'employer@fanoos.iq',
+        pass : 'Employer@1234',
+        data : {
+          name       : 'مطعم الكرم الكربلائي',
+          companyName: 'مطعم الكرم الكربلائي',
+          email      : 'employer@fanoos.iq',
+          role       : 'employer',
+          status     : 'active',
+          province   : 'كربلاء',
+          phone      : '07811234567',
+          bio        : 'مطعم شعبي في كربلاء المقدسة نقدم أشهى المأكولات العراقية الأصيلة، نبحث دائماً عن كوادر متميزة للانضمام لفريقنا.',
+          businessType: 'مطاعم وضيافة',
+        }
+      },
+      {
+        email: 'seeker@fanoos.iq',
+        pass : 'Seeker@1234',
+        data : {
+          name    : 'أحمد علي محمد',
+          email   : 'seeker@fanoos.iq',
+          role    : 'seeker',
+          status  : 'active',
+          province: 'كربلاء',
+          phone   : '07901234567',
+          jobTitle: 'مهندس برمجيات',
+          bio     : 'مهندس برمجيات بخبرة 3 سنوات في تطوير تطبيقات الويب والموبايل.',
+        }
+      }
+    ];
+
+    // ══════════════════════════════
+    // الوظائف التجريبية
+    // ══════════════════════════════
+    const JOBS = [
+      {
+        title  : 'مطور واجهات أمامية',
+        company: 'شركة التقنية المتقدمة',
+        desc   : 'نبحث عن مطور واجهات أمامية محترف لتطوير تطبيقات الويب الحديثة. يشترط إتقان HTML وCSS وJavaScript وأحد الفريمووركس مثل React أو Vue.',
+        province: 'كربلاء', type: 'full', cat: 'tech',
+        salary: 500000, salaryMax: 800000, currency: 'IQD', exp: '1-3 سنوات',
+        status: 'active', applicants: 0,
+      },
+      {
+        title  : 'محاسب مالي',
+        company: 'مجموعة النجمة التجارية',
+        desc   : 'مطلوب محاسب مالي ذو خبرة في إعداد التقارير المالية والميزانيات. يشترط حمل شهادة بكالوريوس محاسبة ومعرفة ببرامج المحاسبة الحديثة.',
+        province: 'النجف', type: 'full', cat: 'biz',
+        salary: 400000, salaryMax: 600000, currency: 'IQD', exp: '2-5 سنوات',
+        status: 'active', applicants: 0,
+      },
+      {
+        title  : 'مسؤول مبيعات',
+        company: 'شركة الهلال للتجارة العامة',
+        desc   : 'نحتاج مسؤول مبيعات نشط لتطوير قاعدة العملاء وتحقيق أهداف المبيعات الشهرية. يفضل من لديه خبرة في المبيعات الميدانية وإدارة العملاء.',
+        province: 'بابل', type: 'full', cat: 'biz',
+        salary: 350000, salaryMax: 500000, currency: 'IQD', exp: '1-2 سنوات',
+        status: 'active', applicants: 0,
+      },
+      {
+        title  : 'ممرض/ممرضة',
+        company: 'مستشفى الرسالة الطبي',
+        desc   : 'مطلوب ممرض أو ممرضة مؤهل للعمل في قسم الطوارئ. يشترط حمل شهادة التمريض والتسجيل في نقابة التمريض العراقية.',
+        province: 'كربلاء', type: 'full', cat: 'med',
+        salary: 450000, salaryMax: 650000, currency: 'IQD', exp: '1-3 سنوات',
+        status: 'active', applicants: 0,
+      },
+      {
+        title  : 'مدرس رياضيات',
+        company: 'المجمع التربوي الأهلي',
+        desc   : 'مطلوب مدرس رياضيات لتدريس المرحلة الإعدادية. يشترط حمل شهادة بكالوريوس رياضيات أو تربية رياضيات وخبرة في التدريس.',
+        province: 'كربلاء', type: 'full', cat: 'edu',
+        salary: 300000, salaryMax: 450000, currency: 'IQD', exp: '2-4 سنوات',
+        status: 'active', applicants: 0,
+      }
+    ];
+
+    // وظائف أصحاب العمل المباشر (مطاعم، محلات، شركات)
+    const EMPLOYER_JOBS = [
+      {
+        title  : 'نادل / نادلة',
+        company: 'مطعم الكرم الكربلائي',
+        desc   : 'مطلوب نادل أو نادلة للعمل في مطعمنا. يشترط اللباقة وحسن التعامل مع الزبائن والقدرة على العمل بوتيرة سريعة. يوفر المطعم وجبة يومية وبدل انتقال.',
+        province: 'كربلاء', type: 'full', cat: 'other',
+        salary: 250000, salaryMax: 350000, currency: 'IQD', exp: 'بدون خبرة',
+        status: 'active', applicants: 0,
+      },
+      {
+        title  : 'طباخ متخصص بالمشاوي',
+        company: 'مطعم الكرم الكربلائي',
+        desc   : 'نبحث عن طباخ محترف متخصص في المشاوي العراقية والتنور. يشترط خبرة لا تقل عن سنتين في نفس المجال. الراتب قابل للتفاوض حسب الخبرة.',
+        province: 'كربلاء', type: 'full', cat: 'other',
+        salary: 400000, salaryMax: 600000, currency: 'IQD', exp: '2+ سنوات',
+        status: 'active', applicants: 0,
+      },
+      {
+        title  : 'كاشير (أمين صندوق)',
+        company: 'مطعم الكرم الكربلائي',
+        desc   : 'مطلوب كاشير للعمل في الاستقبال واستلام الطلبات والدفع. يشترط إجادة استخدام الحاسوب والأمانة والدقة في التعامل مع النقود.',
+        province: 'كربلاء', type: 'full', cat: 'biz',
+        salary: 280000, salaryMax: 380000, currency: 'IQD', exp: 'بدون خبرة',
+        status: 'active', applicants: 0,
+      },
+      {
+        title  : 'عامل توصيل (ديلفري)',
+        company: 'مطعم الكرم الكربلائي',
+        desc   : 'مطلوب سائق دراجة نارية لتوصيل الطلبات داخل كربلاء. يشترط امتلاك دراجة نارية وإجازة سوق سارية. يوفر المطعم تأمين الدراجة.',
+        province: 'كربلاء', type: 'gig', cat: 'other',
+        salary: 200000, salaryMax: 400000, currency: 'IQD', exp: 'بدون خبرة',
+        status: 'active', applicants: 0,
+      },
+      {
+        title  : 'موظف محل ملابس',
+        company: 'بوتيك الأناقة',
+        desc   : 'مطلوب موظف أو موظفة لمحل ملابس نسائية في السوق التجاري. يشترط الأناقة وحسن المظهر وإجادة التعامل مع الزبائن. دوام كامل مع إجازة يوم أسبوعياً.',
+        province: 'كربلاء', type: 'full', cat: 'biz',
+        salary: 250000, salaryMax: 350000, currency: 'IQD', exp: 'بدون خبرة',
+        status: 'active', applicants: 0,
+      },
+      {
+        title  : 'حارس أمن',
+        company: 'مجمع الكرار التجاري',
+        desc   : 'مطلوب حراس أمن للعمل في مجمع تجاري. يشترط اللياقة البدنية والجدية في العمل. يوفر المجمع الزي الرسمي والتأمين الصحي.',
+        province: 'كربلاء', type: 'full', cat: 'other',
+        salary: 300000, salaryMax: 400000, currency: 'IQD', exp: 'بدون خبرة',
+        status: 'active', applicants: 0,
+      },
+      {
+        title  : 'سكرتير / سكرتيرة',
+        company: 'عيادة الدكتور حيدر التخصصية',
+        desc   : 'مطلوب سكرتير أو سكرتيرة لعيادة طبية متخصصة. المهام: استقبال المرضى، تنظيم المواعيد، المتابعة الهاتفية. يشترط إجادة الحاسوب وحسن التعامل.',
+        province: 'كربلاء', type: 'full', cat: 'med',
+        salary: 280000, salaryMax: 400000, currency: 'IQD', exp: 'بدون خبرة',
+        status: 'active', applicants: 0,
+      },
+    ];
+
+    // ══════════════════════════════
+    // دالة إنشاء الحساب
+    // ══════════════════════════════
+    async function createAccount(acc) {
+      log(`⏳ إنشاء حساب: ${acc.email}`);
+      let uid;
+      try {
+        const cred = await auth.createUserWithEmailAndPassword(acc.email, acc.pass);
+        uid = cred.user.uid;
+        log(`✅ حساب جديد: ${acc.email}`, 'ok');
+      } catch (e) {
+        if (e.code === 'auth/email-already-in-use') {
+          const cred = await auth.signInWithEmailAndPassword(acc.email, acc.pass);
+          uid = cred.user.uid;
+          log(`⚠️ موجود مسبقاً: ${acc.email}`, 'warn');
+        } else throw e;
+      }
+      await db.collection('users').doc(uid).set({ ...acc.data, uid, createdAt: TS() }, { merge: true });
+      log(`✅ Firestore: ${acc.data.role} — ${acc.data.name}`, 'ok');
+      await auth.signOut();
+      return uid;
+    }
+
+    // ══════════════════════════════
+    // التشغيل الرئيسي
+    // ══════════════════════════════
+    async function seed() {
+      // ── الخطوة ١: الحسابات ──
+      log('━━━ الخطوة ١: إنشاء الحسابات ━━━', 'inf');
+      const uids = {};
+      for (const acc of ACCOUNTS) {
+        try {
+          uids[acc.data.role] = await createAccount(acc);
+        } catch (e) {
+          log(`❌ فشل ${acc.email}: ${e.message}`, 'err');
+        }
+      }
+
+      // ── الخطوة ٢: الوظائف (بحساب المكتب) ──
+      log('━━━ الخطوة ٢: إنشاء الوظائف ━━━', 'inf');
+      try {
+        const cred = await auth.signInWithEmailAndPassword('office@fanoos.iq', 'Office@1234');
+        const offUid = cred.user.uid;
+        for (const j of JOBS) {
+          await db.collection('jobs').add({ ...j, postedBy: offUid, postedAt: TS() });
+          log(`✅ وظيفة: ${j.title}`, 'ok');
+        }
+        await auth.signOut();
+      } catch (e) {
+        log(`❌ فشل إنشاء الوظائف: ${e.message}`, 'err');
+      }
+
+      // ── الخطوة ٢ب: وظائف صاحب العمل ──
+      log('━━━ الخطوة ٢ب: وظائف أصحاب العمل ━━━', 'inf');
+      try {
+        const cred2 = await auth.signInWithEmailAndPassword('employer@fanoos.iq', 'Employer@1234');
+        const empUid = cred2.user.uid;
+        for (const j of EMPLOYER_JOBS) {
+          await db.collection('jobs').add({ ...j, postedBy: empUid, postedAt: TS() });
+          log(`✅ وظيفة: ${j.title} — ${j.company}`, 'ok');
+        }
+        await auth.signOut();
+      } catch (e) {
+        log(`❌ فشل وظائف صاحب العمل: ${e.message}`, 'err');
+      }
+
+      // ── الخطوة ٣: الإعدادات والحملات (بحساب الأدمن) ──
+      log('━━━ الخطوة ٣: الإعدادات والحملات ━━━', 'inf');
+      try {
+        await auth.signInWithEmailAndPassword('admin@fanoos.iq', 'Admin@1234');
+
+        await db.collection('config').doc('settings').set({
+          general : { siteName: 'الفانوس للتوظيف', siteUrl: 'https://karbala-b4884.web.app', maintenance: false },
+          telegram: { bot: '', chat: '', channel: '', autoPost: false },
+          emailjs : { serviceId: '', templateId: '', userId: '' },
+          imgbb   : { key: '' },
+          gemini  : { key: '' },
+          facebook: { pageToken: '', pageId: '' },
+          instagram:{ token: '' },
+          twitter : { bearerToken: '' },
+          linkedin: { token: '' },
+          tiktok  : { token: '' },
+          snapchat: { token: '' },
+          youtube : { apiKey: '' },
+        });
+        log('✅ config/settings', 'ok');
+
+        await db.collection('campaigns').doc('main').set({
+          name       : 'حملة التوظيف الرئيسية',
+          active     : true,
+          phone      : '07701234567',
+          telegram   : 'https://t.me/fanoos_jobs',
+          description: 'تواصل معنا للحصول على فرص عمل في كربلاء والمحافظات',
+          createdAt  : TS(),
+        });
+        log('✅ campaigns/main', 'ok');
+
+        await auth.signOut();
+      } catch (e) {
+        log(`❌ فشل الإعدادات: ${e.message}`, 'err');
+      }
+
+      // ── النتيجة ──
+      log('', 'inf');
+      log('✅✅✅ اكتمل بناء قاعدة البيانات ✅✅✅', 'ok');
+
+      document.getElementById('result').innerHTML = `
+        <div class="box">
+          <h3>🔑 بيانات الدخول التجريبية</h3>
+          <div class="row"><span class="lbl">👑 الأدمن</span><span class="val">admin@fanoos.iq &nbsp;|&nbsp; Admin@1234</span></div>
+          <div class="row"><span class="lbl">🏢 مكتب التوظيف</span><span class="val">office@fanoos.iq &nbsp;|&nbsp; Office@1234</span></div>
+          <div class="row"><span class="lbl">🍽️ صاحب العمل (مطعم)</span><span class="val">employer@fanoos.iq &nbsp;|&nbsp; Employer@1234</span></div>
+          <div class="row"><span class="lbl">👤 الباحث</span><span class="val">seeker@fanoos.iq &nbsp;|&nbsp; Seeker@1234</span></div>
+        </div>
+        <div class="box">
+          <h3>📊 ما تم إنشاؤه</h3>
+          <div class="row"><span class="lbl">المستخدمون</span><span class="val">3 حسابات (أدمن + مكتب + باحث)</span></div>
+          <div class="row"><span class="lbl">الوظائف</span><span class="val">12 وظيفة (5 مكتب + 7 أصحاب عمل)</span></div>
+          <div class="row"><span class="lbl">الإعدادات</span><span class="val">config/settings ✅</span></div>
+          <div class="row"><span class="lbl">الحملات</span><span class="val">1 حملة ✅</span></div>
+        </div>
+        <p style="margin-top:14px;color:#64748b;font-size:12px">أغلق هذه الصفحة والدخول للموقع بأي حساب من الأعلى.</p>
+      `;
+    }
+
+    seed().catch(e => log(`❌ خطأ: ${e.message}`, 'err'));
+  </script>
+</body>
+</html>

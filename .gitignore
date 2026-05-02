@@ -1,3 +1,6 @@
+# Claude Code internal files
+.claude/
+
 # أسرار وإعدادات محلية — لا تُرفع أبداً
 .env
 .env.local
