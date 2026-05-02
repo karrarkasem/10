@@ -27,12 +27,13 @@ function jCard(j) {
   const match = jobMatchScore(j);
   const isOfficeView = ROLE === 'office';
 
-  return `<div class="jc" onclick="openJob('${j.id}')">
+  return `<div class="jc${j.featured ? ' jc-featured' : ''}" onclick="openJob('${j.id}')">
     <div class="jc-top">
       <div class="jlo">${j.logo || j.company?.charAt(0) || '🏢'}</div>
       <div class="ji" style="flex:1;min-width:0">
         <div style="display:flex;align-items:flex-start;gap:6px;flex-wrap:wrap;margin-bottom:3px">
           <div class="jtit">${j.title}</div>
+          ${j.featured ? `<span class="b" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;font-size:10px;border-radius:10px;padding:2px 8px"><i class="fas fa-star"></i> مميزة</span>` : ''}
           ${isHot ? `<span class="hot-badge"><i class="fas fa-fire"></i>عاجل</span>` : ''}
           ${match === 'high' ? `<span class="match-badge match-high"><i class="fas fa-map-marker-alt"></i>محافظتك</span>` : ''}
         </div>
@@ -167,11 +168,25 @@ function fJobs() {
 }
 
 function fSortJobs(list) {
-  const copy = [...list];
-  if (JSORT === 'salary_high') return copy.sort((a,b) => (b.salaryMax || b.salary || 0) - (a.salaryMax || a.salary || 0));
-  if (JSORT === 'salary_low')  return copy.sort((a,b) => (a.salary || 0) - (b.salary || 0));
-  if (JSORT === 'applicants')  return copy.sort((a,b) => (b.applicants || 0) - (a.applicants || 0));
-  return copy.sort((a,b) => new Date(b.postedAt) - new Date(a.postedAt));
+  let sortFn;
+  if (JSORT === 'salary_high') sortFn = (a,b) => (b.salaryMax || b.salary || 0) - (a.salaryMax || a.salary || 0);
+  else if (JSORT === 'salary_low') sortFn = (a,b) => (a.salary || 0) - (b.salary || 0);
+  else if (JSORT === 'applicants') sortFn = (a,b) => (b.applicants || 0) - (a.applicants || 0);
+  else sortFn = (a,b) => tsMs(b.postedAt) - tsMs(a.postedAt);
+
+  // المثبّتة أولاً، ثم المميزة، ثم الباقي
+  const featured = list.filter(j =>  j.featured && !j.adminPinned).sort(sortFn);
+  const pinned   = list.filter(j =>  j.adminPinned).sort(sortFn);
+  const rest     = list.filter(j => !j.featured && !j.adminPinned);
+
+  // عند الترتيب بالأحدث: وظائف محافظة المستخدم تظهر أولاً ضمن الباقي
+  const userProv = P?.province;
+  if (userProv && JSORT === 'newest') {
+    const local  = rest.filter(j => j.province === userProv).sort(sortFn);
+    const remote = rest.filter(j => j.province !== userProv).sort(sortFn);
+    return [...pinned, ...featured, ...local, ...remote];
+  }
+  return [...pinned, ...featured, ...rest.sort(sortFn)];
 }
 
 function rJobs() {
@@ -367,14 +382,30 @@ function openApply(id, quizScore = null, quizFeedback = '') {
       <input type="url" id="ap_url" class="fc" placeholder="https://drive.google.com/...">
     </div>
 
-    ${quizScore !== null ? `
-    <div style="background:linear-gradient(135deg,rgba(13,148,136,.08),rgba(13,148,136,.03));border:1px solid rgba(13,148,136,.2);border-radius:12px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:12px">
-      <div style="font-size:24px;font-weight:900;color:${quizScore >= 80 ? 'var(--success)' : quizScore >= 55 ? 'var(--acc)' : 'var(--danger)'}">${quizScore}</div>
-      <div>
-        <div style="font-size:11px;color:var(--tx3)"><i class="fas fa-robot"></i> نتيجة الاختبار الذكي</div>
-        <div style="font-size:12px;color:var(--tx);font-weight:600">${san(quizFeedback)}</div>
-      </div>
-    </div>` : ''}
+    ${(() => {
+      const ivSc = U?.uid ? parseInt(localStorage.getItem('iv_last_score_' + U.uid) || '0') : 0;
+      const rows = [];
+      if (quizScore !== null) rows.push(`
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="font-size:22px;font-weight:900;color:${quizScore >= 80 ? 'var(--success)' : quizScore >= 55 ? 'var(--acc)' : 'var(--danger)'}">${quizScore}</div>
+          <div>
+            <div style="font-size:11px;color:var(--tx3)"><i class="fas fa-puzzle-piece"></i> اختبار المعرفة</div>
+            <div style="font-size:12px;color:var(--tx);font-weight:600">${san(quizFeedback)}</div>
+          </div>
+        </div>`);
+      if (ivSc > 0) rows.push(`
+        <div style="display:flex;align-items:center;gap:12px${quizScore !== null ? ';border-top:1px solid rgba(13,148,136,.15);padding-top:10px;margin-top:10px' : ''}">
+          <div style="font-size:22px;font-weight:900;color:${ivSc >= 80 ? 'var(--success)' : ivSc >= 60 ? 'var(--acc)' : 'var(--danger)'}">${ivSc}%</div>
+          <div>
+            <div style="font-size:11px;color:var(--tx3)"><i class="fas fa-robot"></i> المقابلة الذكية</div>
+            <div style="font-size:12px;color:var(--tx);font-weight:600">${ivSc >= 80 ? 'ممتاز' : ivSc >= 60 ? 'جيد جداً' : 'يحتاج تحسين'}</div>
+          </div>
+        </div>`);
+      return rows.length ? `
+        <div style="background:linear-gradient(135deg,rgba(13,148,136,.08),rgba(13,148,136,.03));border:1px solid rgba(13,148,136,.2);border-radius:12px;padding:12px 14px;margin-bottom:14px">
+          ${rows.join('')}
+        </div>` : '';
+    })()}
 
     <div class="mf" style="padding:0;border:none;margin-top:14px">
       <button class="btn bo" onclick="cmo('moApply')"><i class="fas fa-times"></i>إلغاء</button>
@@ -416,6 +447,7 @@ async function submitApply(quizScore = null, quizFeedback = '') {
   }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { notify('خطأ', 'البريد الإلكتروني غير صحيح', 'error'); return; }
   if (url && !url.startsWith('http')) { notify('خطأ', 'رابط السيرة الذاتية يجب أن يبدأ بـ http', 'error'); return; }
+  const ivScore = U?.uid ? parseInt(localStorage.getItem('iv_last_score_' + U.uid) || '0') : null;
   const app = {
     jobId: j.id, jobTitle: j.title, company: j.company,
     postedBy: j.postedBy || null,
@@ -423,6 +455,7 @@ async function submitApply(quizScore = null, quizFeedback = '') {
     cover: cv, exp, cvUrl: url || null,
     quizScore: quizScore !== null ? quizScore : null,
     quizFeedback: quizFeedback || null,
+    ivScore: ivScore || null,
     status: 'pending', appliedAt: new Date().toISOString()
   };
   loading('applyBtn', true);

@@ -24,10 +24,11 @@ async function loadContactCampaigns() {
 
 // ── هل يحق للمستخدم رؤية أرقام التواصل؟ ──
 function isContactVisible() {
-  // المشترك Plus يرى دائماً
-  if (P?.plus) return true;
   // الأدمن يرى دائماً
   if (ROLE === 'admin') return true;
+  // المشترك بأي خطة مدفوعة يرى أرقام التواصل
+  const plan = typeof getUserPlan === 'function' ? getUserPlan() : (P?.plan || 'free');
+  if (P?.plus || plan === 'standard' || plan === 'premium') return true;
 
   const now  = Date.now();
   const prov = P?.province || '';

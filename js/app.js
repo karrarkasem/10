@@ -386,6 +386,7 @@ function renderPage(pg) {
     if (pg === 'allusers')    return pgAdminUsers(el);
     if (pg === 'settings')    return pgAdminSettings(el);
     if (pg === 'campaigns')   return pgAdminCampaigns(el);
+    if (pg === 'payments')    return pgAdminPayments(el);
     return pgAdminHome(el); // catch-all
   }
   // seeker (default)

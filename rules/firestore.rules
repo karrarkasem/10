@@ -20,12 +20,20 @@ service cloud.firestore {
       return r == 'user' ? 'seeker' : r;
     }
 
-    function isAdmin()  { return userRole() == 'admin'; }
-    function isOffice() { return userRole() == 'office'; }
+    function isAdmin()    { return userRole() == 'admin'; }
+    function isOffice()   { return userRole() == 'office'; }
+    function isEmployer() { return userRole() == 'employer'; }
+
+    // صاحب وظيفة: مكتب أو صاحب عمل
+    function isJobPoster() { return isOffice() || isEmployer() || isAdmin(); }
 
     // يدعم المستخدمين القدامى الذين ليس لديهم status
     function isActive() {
-      return isLoggedIn() && (userData().status == 'active' || userData().status == 'approved' || userData().status == null);
+      return isLoggedIn() && (
+        userData().status == 'active' ||
+        userData().status == 'approved' ||
+        userData().status == null
+      );
     }
 
     // تحقق من حجم الوثيقة (حماية من الحقول الزائدة)
@@ -46,14 +54,17 @@ service cloud.firestore {
     // USERS
     // ══════════════════════════════════════
     match /users/{userId} {
+      // أي مستخدم مسجّل يقرأ ملفات المكاتب وأصحاب العمل العامة
       allow read: if isOwner(userId) || isAdmin()
-        || (isLoggedIn() && resource.data.role == 'office' && resource.data.status == 'active');
+        || (isLoggedIn() && (resource.data.role == 'office' || resource.data.role == 'employer')
+            && resource.data.status == 'active');
       allow create: if isOwner(userId) && validSize(request.resource.data)
         && hasFields(request.resource.data, ['name', 'email', 'role'])
         && validStr(request.resource.data.name, 2, 80)
         && validStr(request.resource.data.email, 5, 120);
-      allow update: if isOwner(userId) && validSize(request.resource.data)
-        && (resource.data.role == null || request.resource.data.role == resource.data.role);
+      allow update: if isAdmin()
+        || (isOwner(userId) && validSize(request.resource.data)
+            && (resource.data.role == null || request.resource.data.role == resource.data.role));
       allow delete: if isAdmin();
     }
 
@@ -66,7 +77,7 @@ service cloud.firestore {
         || isAdmin()
         || (isLoggedIn() && resource.data.postedBy == request.auth.uid);
 
-      allow create: if (isOffice() || userRole() == 'employer' || isAdmin()) && isActive()
+      allow create: if isJobPoster() && isActive()
         && request.resource.data.postedBy == request.auth.uid
         && validSize(request.resource.data)
         && hasFields(request.resource.data, ['title', 'company', 'desc', 'province', 'postedBy', 'postedAt'])
@@ -78,7 +89,6 @@ service cloud.firestore {
       allow update: if isAdmin()
         || (isLoggedIn() && resource.data.postedBy == request.auth.uid
             && validSize(request.resource.data)
-            // السماح فقط بتحديث حقول محددة (ليس postedBy)
             && request.resource.data.postedBy == resource.data.postedBy);
 
       allow delete: if isAdmin()
@@ -90,26 +100,26 @@ service cloud.firestore {
     // APPLICATIONS — مع Rate Limiting
     // ══════════════════════════════════════
     match /applications/{appId} {
+      // المتقدم يرى طلبه، الأدمن يرى الكل، صاحب الوظيفة (مكتب أو صاحب عمل) يرى طلبات وظيفته
       allow read: if isAdmin()
         || (isLoggedIn() && resource.data.applicantId == request.auth.uid)
-        || (isOffice() && get(/databases/$(database)/documents/jobs/$(resource.data.jobId)).data.postedBy == request.auth.uid);
+        || (isJobPoster()
+            && get(/databases/$(database)/documents/jobs/$(resource.data.jobId)).data.postedBy == request.auth.uid);
 
       allow create: if isLoggedIn() && isActive()
         && request.resource.data.applicantId == request.auth.uid
         && validSize(request.resource.data)
-        // الحقول المطلوبة
         && hasFields(request.resource.data, ['jobId', 'applicantId', 'name', 'phone', 'email', 'cover', 'status'])
-        // تحقق من القيم
         && validStr(request.resource.data.name,  2, 80)
         && validStr(request.resource.data.cover, 30, 3000)
         && validStr(request.resource.data.phone,  9, 20)
         && validStr(request.resource.data.email,  5, 120)
-        // الحالة لا بد أن تكون pending عند الإنشاء
         && request.resource.data.status == 'pending';
 
+      // صاحب الوظيفة (مكتب أو صاحب عمل) يستطيع تحديث حالة الطلب
       allow update: if isAdmin()
-        || (isOffice() && get(/databases/$(database)/documents/jobs/$(resource.data.jobId)).data.postedBy == request.auth.uid
-            // المكتب يستطيع فقط تحديث الحالة وبيانات المقابلة والرفض
+        || (isJobPoster()
+            && get(/databases/$(database)/documents/jobs/$(resource.data.jobId)).data.postedBy == request.auth.uid
             && request.resource.data.applicantId == resource.data.applicantId
             && request.resource.data.jobId       == resource.data.jobId);
 
@@ -118,12 +128,15 @@ service cloud.firestore {
 
 
     // ══════════════════════════════════════
-    // CVS
+    // CVS — سيرة الباحث / ملف الشركة
     // ══════════════════════════════════════
     match /cvs/{cvId} {
+      // الأدمن يرى الكل
+      // المستخدم يرى ملفه فقط
+      // المكاتب وأصحاب العمل يرون سير الباحثين (type=resume) لا ملفات الشركات (type=company)
       allow read: if isAdmin()
         || (isLoggedIn() && resource.data.userId == request.auth.uid)
-        || isOffice();
+        || (isJobPoster() && resource.data.type != 'company');
       allow create: if isLoggedIn() && isActive()
         && request.resource.data.userId == request.auth.uid
         && validSize(request.resource.data);
@@ -150,11 +163,11 @@ service cloud.firestore {
     match /notifications/{notifId} {
       allow read, update, delete: if isLoggedIn()
         && resource.data.userId == request.auth.uid;
-      // المكاتب والنظام يستطيعون إنشاء إشعارات للمستخدمين
+      // المكاتب وأصحاب العمل والأدمن يستطيعون إنشاء إشعارات للمتقدمين
       allow create: if isLoggedIn() && isActive()
         && validSize(request.resource.data)
         && hasFields(request.resource.data, ['userId', 'type', 'title', 'body'])
-        && (isAdmin() || isOffice());
+        && isJobPoster();
     }
 
 
@@ -214,7 +227,7 @@ service cloud.firestore {
 
 
     // ══════════════════════════════════════
-    // BOOKINGS — الحجوزات الحصرية 12 ساعة
+    // BOOKINGS — الحجوزات الحصرية (مكاتب التوظيف فقط)
     // ══════════════════════════════════════
     match /bookings/{bookingId} {
       allow read: if isLoggedIn()
@@ -228,7 +241,6 @@ service cloud.firestore {
         && request.resource.data.status == 'active';
       allow update: if isAdmin()
         || (isOffice() && resource.data.officeId == request.auth.uid
-            // يسمح فقط بتحديث الحالة
             && request.resource.data.officeId    == resource.data.officeId
             && request.resource.data.candidateId == resource.data.candidateId);
       allow delete: if isAdmin();
@@ -236,7 +248,7 @@ service cloud.firestore {
 
 
     // ══════════════════════════════════════
-    // RATINGS — تقييمات المكاتب
+    // RATINGS — تقييمات المكاتب وأصحاب العمل
     // ══════════════════════════════════════
     match /ratings/{ratingId} {
       allow read: if true;
@@ -255,9 +267,11 @@ service cloud.firestore {
     // QUIZ RESULTS — نتائج الاختبارات الذكية
     // ══════════════════════════════════════
     match /quizResults/{resultId} {
+      // صاحب الوظيفة يرى نتائج متقدميه
       allow read: if isAdmin()
         || (isLoggedIn() && resource.data.applicantId == request.auth.uid)
-        || isOffice();
+        || (isJobPoster()
+            && get(/databases/$(database)/documents/jobs/$(resource.data.jobId)).data.postedBy == request.auth.uid);
       allow create: if isLoggedIn() && isActive()
         && request.resource.data.applicantId == request.auth.uid
         && validSize(request.resource.data)
@@ -286,6 +300,20 @@ service cloud.firestore {
     match /campaigns/{campId} {
       allow read: if true;
       allow write: if isAdmin();
+    }
+
+
+    // ══════════════════════════════════════
+    // PAYMENTS — طلبات الاشتراك
+    // ══════════════════════════════════════
+    match /payments/{payId} {
+      allow read: if isAdmin()
+        || (isLoggedIn() && resource.data.userId == request.auth.uid);
+      allow create: if isLoggedIn() && isActive()
+        && request.resource.data.userId == request.auth.uid
+        && hasFields(request.resource.data, ['userId', 'plan', 'amount', 'status'])
+        && request.resource.data.status == 'pending';
+      allow update, delete: if isAdmin();
     }
 
 

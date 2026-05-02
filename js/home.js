@@ -189,11 +189,14 @@ async function pgAdminHome(el) {
           totalUsers   = snap.size;
           totalOffices = snap.docs.filter(d => d.data().role === 'office').length;
           newThisWeek  = snap.docs.filter(d => {
-            const t = d.data().createdAt?.toMillis?.() || 0;
-            return (Date.now() - t) < 86400000 * 7;
+            const t = tsMs(d.data().createdAt);
+            return t && (Date.now() - t) < 86400000 * 7;
           }).length;
         })
-        .catch(e => console.warn('Admin users stats:', e.message))
+        .catch(e => {
+          console.error('Admin users stats:', e);
+          notify('تنبيه', 'تعذّر تحميل بيانات المستخدمين: ' + e.message, 'warning');
+        })
     );
 
     // محاولة تحميل إجمالي الطلبات
@@ -259,6 +262,7 @@ async function pgAdminHome(el) {
         { ico:'fa-briefcase',   l:'الوظائف',            c:'var(--acc)',     a:"goTo('alljobs')" },
         { ico:'fa-building',    l:'مكاتب التوظيف',     c:'var(--purple)',  a:"goTo('alloffices')" },
         { ico:'fa-users',       l:'المستخدمون',          c:'var(--info)',    a:"goTo('allusers')" },
+        { ico:'fa-credit-card', l:'الاشتراكات',          c:'#f59e0b',       a:"goTo('payments')" },
         { ico:'fa-bullhorn',    l:'حملات التواصل',      c:'var(--p)',       a:"goTo('campaigns')" },
         { ico:'fa-cog',         l:'الإعدادات',           c:'var(--tx3)',     a:"goTo('settings')" },
       ].map(a => '<div class="cat-item" onclick="' + a.a + '"><div class="cat-ico" style="color:' + a.c + ';background:' + a.c + '18"><i class="fas ' + a.ico + '"></i></div><div class="cat-label">' + a.l + '</div></div>').join('')}
@@ -320,6 +324,13 @@ function _adminJobCard(j) {
       <button class="btn bsm" style="background:var(--info);color:#fff" onclick="adminJobApps('${j.id}','${san(j.title)}')">
         <i class="fas fa-users"></i> المتقدمون
       </button>
+      ${j.featured
+        ? `<button class="btn bsm" style="background:#b45309;color:#fff" onclick="adminFeatureJob('${j.id}',false,'${san(j.title)}')">
+             <i class="fas fa-star"></i> إلغاء التمييز
+           </button>`
+        : `<button class="btn bsm" style="background:#f59e0b;color:#fff" onclick="adminFeatureJob('${j.id}',true,'${san(j.title)}')">
+             <i class="fas fa-star"></i> تمييز ⭐
+           </button>`}
       ${j.adminPinned
         ? `<button class="btn bsm" style="background:#7c3aed;color:#fff" onclick="adminPinJob('${j.id}',false,'${san(j.title)}')">
              <i class="fas fa-thumbtack"></i> إلغاء التثبيت
@@ -332,6 +343,21 @@ function _adminJobCard(j) {
       </button>
     </div>
   </div>`;
+}
+
+async function adminFeatureJob(jobId, feature, title) {
+  const action = feature ? 'تمييز' : 'إلغاء تمييز';
+  confirm2(`${action} الوظيفة`, `هل تريد ${action} وظيفة "${title}"؟\nالوظائف المميزة تظهر أولاً مع شارة ⭐`, async () => {
+    try {
+      if (!DEMO && window.db) {
+        await window.db.collection('jobs').doc(jobId).update({ featured: feature });
+      }
+      const job = JOBS.find(j => j.id === jobId);
+      if (job) job.featured = feature;
+      notify(feature ? 'تم التمييز ⭐' : 'تم إلغاء التمييز', `وظيفة "${title}" ${feature ? 'مميزة وستظهر في الصدارة' : 'عادت للترتيب الطبيعي'}`, 'success');
+      pgAdminJobs(document.getElementById('pcon'));
+    } catch(e) { notify('خطأ', 'فشلت العملية', 'error'); }
+  });
 }
 
 async function adminPinJob(jobId, pin, title) {
@@ -543,9 +569,13 @@ async function pgAdminUsers(el) {
   let users = [];
   if (!DEMO && window.db) {
     try {
-      const snap = await window.db.collection('users').orderBy('createdAt', 'desc').get();
-      users = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    } catch(e) { console.warn('Admin users:', e); }
+      const snap = await window.db.collection('users').get();
+      users = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+        .sort((a, b) => tsMs(b.createdAt) - tsMs(a.createdAt));
+    } catch(e) {
+      console.error('Admin users:', e);
+      notify('خطأ', 'تعذّر تحميل المستخدمين: ' + e.message, 'error');
+    }
   }
   if (!users.length) {
     el.innerHTML = `
@@ -595,7 +625,8 @@ async function pgAdminUsers(el) {
             onchange="_usersRoleFilter=this.value;renderAdminUsersList()">
             <option value="">جميع الأدوار</option>
             <option value="seeker">باحث</option>
-            <option value="office">مكتب</option>
+            <option value="office">مكتب توظيف</option>
+            <option value="employer">صاحب عمل</option>
             <option value="admin">أدمن</option>
           </select>
         </div>
@@ -607,7 +638,7 @@ async function pgAdminUsers(el) {
               <th style="padding:10px 12px;text-align:right;color:var(--tx3);font-weight:700">المستخدم</th>
               <th style="padding:10px 12px;text-align:right;color:var(--tx3);font-weight:700">الدور</th>
               <th style="padding:10px 12px;text-align:right;color:var(--tx3);font-weight:700">المحافظة</th>
-              <th style="padding:10px 12px;text-align:right;color:var(--tx3);font-weight:700">Plus</th>
+              <th style="padding:10px 12px;text-align:right;color:var(--tx3);font-weight:700">الخطة</th>
               <th style="padding:10px 12px;text-align:right;color:var(--tx3);font-weight:700">الحالة</th>
               <th style="padding:10px 12px;text-align:right;color:var(--tx3);font-weight:700">إجراء</th>
             </tr>
@@ -672,13 +703,14 @@ function renderAdminUsersList() {
       </td>
       <td style="padding:10px 12px;color:var(--tx2)">${san(u.province||'—')}</td>
       <td style="padding:10px 12px">
-        ${u.plus
-          ? `<span class="b b-am" style="cursor:pointer" title="إلغاء Plus" onclick="adminToggleUserPlus('${u.id}',false,'${san(u.name||'')}')">
-               <i class="fas fa-crown" style="color:#f59e0b"></i>Plus
-             </span>`
-          : `<button class="btn bo bsm" onclick="adminToggleUserPlus('${u.id}',true,'${san(u.name||'')}')">
-               <i class="fas fa-crown"></i>تفعيل
-             </button>`}
+        ${(()=>{
+            const plan = u.plan || (u.plus ? 'standard' : 'free');
+            const expired = plan !== 'free' && u.planExpiry && new Date(u.planExpiry) < new Date();
+            const PCOLOR = { free:'#6b7280', standard:'#3b82f6', premium:'#f59e0b' };
+            const PNAME  = { free:'مجاني', standard:'قياسي', premium:'مميز ⭐' };
+            return `<span class="b" style="background:${PCOLOR[plan]||'#888'}18;color:${PCOLOR[plan]||'#888'};${expired?'opacity:.5;text-decoration:line-through':''}"
+              title="${expired?'منتهية الصلاحية':''}">${PNAME[plan]||plan}</span>`;
+          })()}
       </td>
       <td style="padding:10px 12px"><span class="b ${isActive?'b-gr':'b-rd'}"><i class="fas ${isActive?'fa-check-circle':'fa-times-circle'}"></i>${isActive?'نشط':'موقوف'}</span></td>
       <td style="padding:10px 12px">

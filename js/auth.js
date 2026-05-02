@@ -4,10 +4,8 @@
 // ╚══════════════════════════════════════════════════════╝
 
 // ═══════════════════════════════════════════════
-// Onboarding — يظهر مرة واحدة للمستخدم الجديد
+// Landing — شاشة البداية
 // ═══════════════════════════════════════════════
-let obCurrent = 0;
-const OB_TOTAL = 3;
 
 function showAuth() {
   document.getElementById('app').style.display        = 'none';
@@ -27,23 +25,22 @@ function initApp() {
   }
 }
 
-function obNext() {
-  obCurrent++;
-  for (let i = 0; i < OB_TOTAL; i++) {
-    document.getElementById('obs' + i).style.display = i === obCurrent ? 'block' : 'none';
-    const dot = document.getElementById('od' + i);
-    if (dot) {
-      dot.style.width   = i === obCurrent ? '22px' : '6px';
-      dot.style.background = i === obCurrent ? '#fff' : 'rgba(255,255,255,.3)';
-    }
-  }
-  if (obCurrent >= OB_TOTAL - 1) {
-    document.getElementById('obNextBtn').style.display  = 'none';
-    document.getElementById('obStartBtn').style.display = 'block';
-  }
+function landingChooseRole(role) {
+  localStorage.setItem('fanoos_onboarded', '1');
+  document.getElementById('onboarding').style.display = 'none';
+  document.getElementById('authScreen').style.display = 'flex';
+  mainSwitchTab('register');
+  chooseRole(role);
 }
 
-function skipOnboarding() {
+function landingBrowse() {
+  localStorage.setItem('fanoos_onboarded', '1');
+  document.getElementById('onboarding').style.display = 'none';
+  document.getElementById('authScreen').style.display = 'flex';
+  mainSwitchTab('login');
+}
+
+function landingLogin() {
   localStorage.setItem('fanoos_onboarded', '1');
   showAuth();
 }

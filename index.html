@@ -49,96 +49,101 @@
 <!-- ══════════════════════════════════════════════
      شاشة الترحيب (Onboarding) — تظهر مرة واحدة
 ══════════════════════════════════════════════ -->
-<div id="onboarding" class="auth-bg" style="display:none">
-  <div style="width:100%;max-width:400px;margin:auto;padding:24px 20px;display:flex;flex-direction:column;min-height:100vh;justify-content:center">
+<div id="onboarding" class="auth-bg" style="display:none;overflow:hidden">
 
-    <!-- الشرائح -->
-    <div id="obSlides">
+  <!-- أورب خلفية متحركة ملونة -->
+  <div class="land-orb land-orb-1"></div>
+  <div class="land-orb land-orb-2"></div>
+  <div class="land-orb land-orb-3"></div>
 
-      <!-- شريحة 1 -->
-      <div class="ob-slide" id="obs0">
-        <div style="text-align:center;margin-bottom:32px">
-          <div style="font-size:80px;margin-bottom:16px;filter:drop-shadow(0 8px 24px rgba(0,0,0,.3))">🪔</div>
-          <h2 style="font-size:26px;font-weight:900;color:#fff;margin-bottom:10px">الفانوس للتوظيف</h2>
-          <p style="font-size:15px;color:rgba(255,255,255,.7);line-height:1.7">منصة التوظيف الأولى في العراق<br>وظائف حقيقية في 18 محافظة</p>
-        </div>
-        <div class="resp-g3" style="margin-bottom:32px">
-          <div style="background:rgba(255,255,255,.08);border-radius:12px;padding:12px 8px;text-align:center;border:1px solid rgba(255,255,255,.1)"><div style="font-size:22px">🏙️</div><div style="font-size:11px;color:rgba(255,255,255,.7);margin-top:4px;font-weight:600">بغداد</div></div>
-          <div style="background:rgba(255,255,255,.08);border-radius:12px;padding:12px 8px;text-align:center;border:1px solid rgba(255,255,255,.1)"><div style="font-size:22px">🕌</div><div style="font-size:11px;color:rgba(255,255,255,.7);margin-top:4px;font-weight:600">كربلاء</div></div>
-          <div style="background:rgba(255,255,255,.08);border-radius:12px;padding:12px 8px;text-align:center;border:1px solid rgba(255,255,255,.1)"><div style="font-size:22px">🌿</div><div style="font-size:11px;color:rgba(255,255,255,.7);margin-top:4px;font-weight:600">النجف</div></div>
-          <div style="background:rgba(255,255,255,.08);border-radius:12px;padding:12px 8px;text-align:center;border:1px solid rgba(255,255,255,.1)"><div style="font-size:22px">🌊</div><div style="font-size:11px;color:rgba(255,255,255,.7);margin-top:4px;font-weight:600">البصرة</div></div>
-          <div style="background:rgba(255,255,255,.08);border-radius:12px;padding:12px 8px;text-align:center;border:1px solid rgba(255,255,255,.1)"><div style="font-size:22px">⚙️</div><div style="font-size:11px;color:rgba(255,255,255,.7);margin-top:4px;font-weight:600">أربيل</div></div>
-          <div style="background:rgba(255,255,255,.08);border-radius:12px;padding:12px 8px;text-align:center;border:1px solid rgba(255,255,255,.1)"><div style="font-size:22px">🏔️</div><div style="font-size:11px;color:rgba(255,255,255,.7);margin-top:4px;font-weight:600">نينوى</div></div>
-        </div>
+  <!-- كلمات وظائف عائمة في الخلفية -->
+  <span class="fw" style="right:6%;animation-duration:15s;animation-delay:0s">محاسب</span>
+  <span class="fw" style="right:24%;animation-duration:19s;animation-delay:2s;font-size:11px">مهندس برمجيات</span>
+  <span class="fw" style="right:54%;animation-duration:12s;animation-delay:4s">طبيب</span>
+  <span class="fw" style="right:73%;animation-duration:17s;animation-delay:1s;font-size:11px">مدير مبيعات</span>
+  <span class="fw" style="right:41%;animation-duration:21s;animation-delay:6s">مصمم جرافيك</span>
+  <span class="fw" style="right:14%;animation-duration:14s;animation-delay:8s">سائق</span>
+  <span class="fw" style="right:63%;animation-duration:18s;animation-delay:3s">ممرضة</span>
+  <span class="fw" style="right:86%;animation-duration:16s;animation-delay:7s">محامي</span>
+  <span class="fw" style="right:34%;animation-duration:20s;animation-delay:5s">مدرّس</span>
+  <span class="fw" style="right:51%;animation-duration:11s;animation-delay:9.5s">كاشير</span>
+  <span class="fw" style="right:79%;animation-duration:23s;animation-delay:0.8s;font-size:11px">مهندس مدني</span>
+  <span class="fw" style="right:4%;animation-duration:17s;animation-delay:11s">صيدلاني</span>
+  <span class="fw" style="right:90%;animation-duration:13s;animation-delay:4.5s">مبرمج</span>
+  <span class="fw" style="right:44%;animation-duration:16s;animation-delay:13s">سكرتيرة</span>
+
+  <!-- المحتوى الرئيسي -->
+  <div class="land-wrap">
+
+    <!-- قسم الهيرو -->
+    <div class="land-hero">
+      <div class="land-lamp-wrap">
+        <span class="land-lamp">🪔</span>
+        <div class="land-lamp-ring"></div>
+        <div class="land-lamp-ring2"></div>
       </div>
+      <h1 class="land-title">الفانوس للتوظيف</h1>
+      <p class="land-sub">نور طريقك نحو فرصتك في كل محافظات العراق</p>
+    </div>
 
-      <!-- شريحة 2 -->
-      <div class="ob-slide" id="obs1" style="display:none">
-        <div style="text-align:center;margin-bottom:28px">
-          <div style="font-size:72px;margin-bottom:16px">🚀</div>
-          <h2 style="font-size:24px;font-weight:900;color:#fff;margin-bottom:10px">قدّم بنقرة واحدة</h2>
-          <p style="font-size:14px;color:rgba(255,255,255,.7);line-height:1.8">ابحث عن وظيفتك، قدّم طلبك،<br>وتابع حالته لحظة بلحظة</p>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:32px">
-          <div style="display:flex;align-items:center;gap:14px;background:rgba(13,148,136,.3);border-radius:14px;padding:14px 16px">
-            <div style="width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fas fa-search" style="color:var(--p);font-size:16px"></i></div>
-            <div><div style="font-size:14px;font-weight:800;color:#fff">ابحث</div><div style="font-size:12px;color:rgba(255,255,255,.65)">آلاف الوظائف في كل التخصصات</div></div>
-          </div>
-          <div style="display:flex;align-items:center;gap:14px;background:rgba(245,158,11,.3);border-radius:14px;padding:14px 16px">
-            <div style="width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fas fa-paper-plane" style="color:var(--acc);font-size:16px"></i></div>
-            <div><div style="font-size:14px;font-weight:800;color:#fff">قدّم</div><div style="font-size:12px;color:rgba(255,255,255,.65)">أرسل طلبك في ثوانٍ بدون تعقيد</div></div>
-          </div>
-          <div style="display:flex;align-items:center;gap:14px;background:rgba(139,92,246,.3);border-radius:14px;padding:14px 16px">
-            <div style="width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fas fa-bell" style="color:#a78bfa;font-size:16px"></i></div>
-            <div><div style="font-size:14px;font-weight:800;color:#fff">تابع</div><div style="font-size:12px;color:rgba(255,255,255,.65)">إشعار فوري عند تغيير حالة طلبك</div></div>
-          </div>
-        </div>
+    <!-- إحصائيات -->
+    <div class="land-stats">
+      <div class="land-stat-item">
+        <span class="land-stat-num">+1000</span>
+        <span class="land-stat-lbl">وظيفة</span>
       </div>
-
-      <!-- شريحة 3 -->
-      <div class="ob-slide" id="obs2" style="display:none">
-        <div style="text-align:center;margin-bottom:28px">
-          <div style="font-size:72px;margin-bottom:16px">🤖</div>
-          <h2 style="font-size:24px;font-weight:900;color:#fff;margin-bottom:10px">ذكاء اصطناعي يساعدك</h2>
-          <p style="font-size:14px;color:rgba(255,255,255,.7);line-height:1.8">ميزات حصرية تميّزك عن المنافسين</p>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:32px">
-          <div style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.07);border-radius:13px;padding:13px 16px;border:1px solid rgba(255,255,255,.1)">
-            <span style="font-size:26px">🎯</span>
-            <div><div style="font-size:13px;font-weight:800;color:#fff">مقابلة ذكية</div><div style="font-size:11px;color:rgba(255,255,255,.6)">تدرّب مع AI قبل المقابلة الحقيقية</div></div>
-            <i class="fas fa-check-circle" style="color:var(--p);margin-right:auto;font-size:14px"></i>
-          </div>
-          <div style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.07);border-radius:13px;padding:13px 16px;border:1px solid rgba(255,255,255,.1)">
-            <span style="font-size:26px">📄</span>
-            <div><div style="font-size:13px;font-weight:800;color:#fff">سيرة ذاتية</div><div style="font-size:11px;color:rgba(255,255,255,.6)">AI يحسّن سيرتك ويرفع فرص قبولك</div></div>
-            <i class="fas fa-check-circle" style="color:var(--p);margin-right:auto;font-size:14px"></i>
-          </div>
-          <div style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.07);border-radius:13px;padding:13px 16px;border:1px solid rgba(255,255,255,.1)">
-            <span style="font-size:26px">💡</span>
-            <div><div style="font-size:13px;font-weight:800;color:#fff">توصيات</div><div style="font-size:11px;color:rgba(255,255,255,.6)">وظائف مناسبة لمحافظتك وتخصصك</div></div>
-            <i class="fas fa-check-circle" style="color:var(--p);margin-right:auto;font-size:14px"></i>
-          </div>
-        </div>
+      <div class="land-stat-div"></div>
+      <div class="land-stat-item">
+        <span class="land-stat-num">18</span>
+        <span class="land-stat-lbl">محافظة</span>
+      </div>
+      <div class="land-stat-div"></div>
+      <div class="land-stat-item">
+        <span class="land-stat-num">+5000</span>
+        <span class="land-stat-lbl">مستخدم</span>
       </div>
     </div>
 
-    <!-- النقاط والأزرار -->
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-      <div style="display:flex;gap:7px" id="obDots">
-        <div style="width:22px;height:6px;border-radius:3px;background:#fff;transition:all .3s" id="od0"></div>
-        <div style="width:6px;height:6px;border-radius:3px;background:rgba(255,255,255,.3);transition:all .3s" id="od1"></div>
-        <div style="width:6px;height:6px;border-radius:3px;background:rgba(255,255,255,.3);transition:all .3s" id="od2"></div>
-      </div>
-      <button onclick="skipOnboarding()" style="background:none;border:none;color:rgba(255,255,255,.5);font-size:13px;font-family:Cairo,sans-serif;cursor:pointer;font-weight:600">
-        تخطّي <i class="fas fa-forward"></i>
+    <!-- اختر دورك -->
+    <p class="land-q">— ابدأ رحلتك —</p>
+
+    <div class="land-roles">
+      <button class="land-role land-role-s" onclick="landingChooseRole('seeker')">
+        <div class="land-role-icon" style="background:linear-gradient(135deg,#0d9488,#0f766e)">🎓</div>
+        <div class="land-role-txt">
+          <span class="land-role-name">أبحث عن وظيفة</span>
+          <span class="land-role-desc">تصفح الوظائف وقدّم طلبك بثوانٍ</span>
+        </div>
+        <i class="fas fa-chevron-left land-role-arr"></i>
+      </button>
+      <button class="land-role land-role-e" onclick="landingChooseRole('employer')">
+        <div class="land-role-icon" style="background:linear-gradient(135deg,#d97706,#b45309)">🏢</div>
+        <div class="land-role-txt">
+          <span class="land-role-name">أنا صاحب عمل</span>
+          <span class="land-role-desc">انشر وظيفتك واختر أفضل المرشحين</span>
+        </div>
+        <i class="fas fa-chevron-left land-role-arr"></i>
+      </button>
+      <button class="land-role land-role-o" onclick="landingChooseRole('office')">
+        <div class="land-role-icon" style="background:linear-gradient(135deg,#7c3aed,#6d28d9)">🏛️</div>
+        <div class="land-role-txt">
+          <span class="land-role-name">مكتب توظيف</span>
+          <span class="land-role-desc">أدر مرشحيك وشركاءك من مكان واحد</span>
+        </div>
+        <i class="fas fa-chevron-left land-role-arr"></i>
       </button>
     </div>
-    <button id="obNextBtn" onclick="obNext()" class="btn bp blg bfu" style="font-size:15px;padding:14px">
-      التالي <i class="fas fa-arrow-left"></i>
+
+    <!-- تصفح بدون حساب -->
+    <button class="land-browse" onclick="landingBrowse()">
+      <i class="fas fa-compass"></i> تصفح الوظائف بدون حساب
     </button>
-    <button id="obStartBtn" onclick="skipOnboarding()" class="btn blg bfu" style="display:none;font-size:15px;padding:14px;background:linear-gradient(135deg,var(--acc),#f59e0b);color:#fff;border:none">
-      <i class="fas fa-rocket"></i> ابدأ الآن
+
+    <!-- رابط الدخول -->
+    <button class="land-login-link" onclick="landingLogin()">
+      عندك حساب؟ <span>سجّل دخولك</span>
     </button>
+
   </div>
 </div>
 
@@ -386,6 +391,12 @@
   <div class="mb" id="moQuizB"></div>
 </div></div>
 
+<!-- خطط الاشتراك والدفع -->
+<div class="mo" id="moPay"><div class="md md-lg">
+  <div class="mh"><div class="mt"><i class="fas fa-crown" style="color:#f59e0b"></i> خطط الاشتراك</div><div class="mc" onclick="cmo('moPay')"><i class="fas fa-times"></i></div></div>
+  <div class="mb" id="moPayB"></div>
+</div></div>
+
 <!-- تأكيد -->
 <div class="mo" id="moConfirm"><div class="md" style="max-width:380px">
   <div class="mh"><div class="mt" id="moConTitle">تأكيد</div><div class="mc" onclick="cmo('moConfirm')"><i class="fas fa-times"></i></div></div>
@@ -430,6 +441,8 @@
 <script src="js/profile.js"></script>
 <!-- 13. نظام التواصل الخارجي + حملات Plus -->
 <script src="js/contact.js"></script>
+<!-- 14. نظام الاشتراكات والدفع -->
+<script src="js/payment.js"></script>
 
 <!-- اختيار موقع المكتب على الخارطة -->
 <div class="mo" id="moMapPicker">

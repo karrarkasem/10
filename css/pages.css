@@ -84,6 +84,8 @@
 .jc::before { content: ''; position: absolute; right: 0; top: 0; bottom: 0; width: 4px; background: var(--grad-p); border-radius: 0 4px 4px 0; opacity: 0; transition: opacity .25s; }
 .jc:hover::before { opacity: 1; }
 .jc:hover   { transform: translateY(-3px); box-shadow: var(--shxl); border-color: rgba(13,148,136,.3); }
+.jc-featured { border-color: #f59e0b; background: linear-gradient(135deg, var(--bgc) 85%, rgba(245,158,11,.06)); }
+.jc-featured::before { opacity: 1; background: linear-gradient(180deg, #f59e0b, #d97706); }
 .jc-top    { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 10px; }
 .jc-meta   { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--br); }
 .jc-actions { display: flex; align-items: center; gap: 7px; }
@@ -104,6 +106,137 @@
 
 /* ── Auth Screen Enhanced ── */
 .auth-bg::after { content: ''; position: fixed; bottom: 0; left: 0; right: 0; height: 200px; background: radial-gradient(ellipse 60% 50% at 50% 100%, rgba(245,158,11,.1) 0%, transparent 70%); pointer-events: none; }
+
+/* ═══════════════════════════════════════════
+   صفحة الهبوط — Landing Page (احترافية)
+═══════════════════════════════════════════ */
+
+/* الغلاف الرئيسي */
+.land-wrap {
+  width: 100%; max-width: 400px; margin: auto;
+  padding: 32px 22px 26px;
+  display: flex; flex-direction: column; align-items: center;
+  min-height: 100vh; justify-content: center;
+  position: relative; z-index: 1;
+}
+
+/* أورب الخلفية المتحركة */
+.land-orb { position: fixed; border-radius: 50%; filter: blur(90px); pointer-events: none; }
+.land-orb-1 { width: 480px; height: 480px; top: -140px; left: 50%; transform: translateX(-50%);
+  background: radial-gradient(circle, rgba(13,148,136,.32) 0%, transparent 70%);
+  animation: orbFloat1 9s ease-in-out infinite; }
+.land-orb-2 { width: 360px; height: 360px; bottom: -100px; right: -80px;
+  background: radial-gradient(circle, rgba(139,92,246,.22) 0%, transparent 70%);
+  animation: orbFloat2 11s ease-in-out infinite; }
+.land-orb-3 { width: 300px; height: 300px; bottom: 15%; left: -60px;
+  background: radial-gradient(circle, rgba(245,158,11,.16) 0%, transparent 70%);
+  animation: orbFloat3 13s ease-in-out infinite; }
+@keyframes orbFloat1 { 0%,100%{transform:translateX(-50%) scale(1);opacity:.7} 50%{transform:translateX(-50%) scale(1.18);opacity:1} }
+@keyframes orbFloat2 { 0%,100%{transform:scale(1) translate(0,0);opacity:.6} 50%{transform:scale(1.15) translate(-15px,-10px);opacity:1} }
+@keyframes orbFloat3 { 0%,100%{transform:scale(1) translate(0,0);opacity:.5} 50%{transform:scale(1.2) translate(10px,-15px);opacity:.9} }
+
+/* قسم الهيرو */
+.land-hero { text-align: center; margin-bottom: 20px; }
+.land-lamp-wrap { position: relative; display: inline-block; margin-bottom: 16px; }
+.land-lamp { font-size: 74px; display: block;
+  filter: drop-shadow(0 0 22px rgba(245,158,11,.65)) drop-shadow(0 0 55px rgba(13,148,136,.4));
+  animation: lampGlow 3.5s ease-in-out infinite; }
+.land-lamp-ring {
+  position: absolute; inset: -14px; border-radius: 50%;
+  border: 1.5px solid rgba(245,158,11,.2);
+  animation: ringPulse 3.5s ease-in-out infinite;
+}
+.land-lamp-ring2 {
+  position: absolute; inset: -28px; border-radius: 50%;
+  border: 1px solid rgba(13,148,136,.12);
+  animation: ringPulse 3.5s ease-in-out infinite .6s;
+}
+@keyframes lampGlow {
+  0%,100% { filter: drop-shadow(0 0 22px rgba(245,158,11,.65)) drop-shadow(0 0 55px rgba(13,148,136,.4)); }
+  50%      { filter: drop-shadow(0 0 38px rgba(245,158,11,.95)) drop-shadow(0 0 80px rgba(13,148,136,.65)); }
+}
+@keyframes ringPulse {
+  0%,100% { transform: scale(1); opacity: .5; }
+  50%      { transform: scale(1.18); opacity: .1; }
+}
+.land-title {
+  font-size: 30px; font-weight: 900; margin: 0 0 7px;
+  background: linear-gradient(135deg, #fff 25%, rgba(13,148,136,.9) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text; letter-spacing: -.5px;
+}
+.land-sub { font-size: 12.5px; color: rgba(255,255,255,.42); margin: 0; font-weight: 600; line-height: 1.6; }
+
+/* إحصائيات — بار واحد */
+.land-stats {
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 18px; padding: 14px 20px;
+  margin: 18px 0 22px; width: 100%;
+  backdrop-filter: blur(14px);
+}
+.land-stat-item { display: flex; flex-direction: column; align-items: center; flex: 1; }
+.land-stat-num  { font-size: 21px; font-weight: 900; color: #fff; line-height: 1; margin-bottom: 3px; }
+.land-stat-lbl  { font-size: 10.5px; color: rgba(255,255,255,.4); font-weight: 700; }
+.land-stat-div  { width: 1px; height: 34px; background: rgba(255,255,255,.1); margin: 0 6px; flex-shrink: 0; }
+
+/* سؤال الاختيار */
+.land-q { font-size: 11px; font-weight: 800; color: rgba(255,255,255,.38); text-align: center;
+  margin: 0 0 10px; letter-spacing: 1px; text-transform: uppercase; }
+
+/* بطاقات الأدوار */
+.land-roles { display: flex; flex-direction: column; gap: 9px; margin-bottom: 12px; width: 100%; }
+.land-role {
+  display: flex; align-items: center; gap: 14px;
+  border-radius: 16px; padding: 14px 16px;
+  cursor: pointer; font-family: 'Cairo', sans-serif;
+  transition: transform .22s, box-shadow .22s, border-color .22s;
+  text-align: right; width: 100%;
+  border: 1px solid rgba(255,255,255,.07);
+  background: rgba(255,255,255,.035);
+  backdrop-filter: blur(10px);
+}
+.land-role:hover  { transform: translateX(-5px); }
+.land-role:active { transform: translateX(-5px) scale(.98); }
+.land-role-s:hover { box-shadow: 0 8px 30px rgba(13,148,136,.28);  border-color: rgba(13,148,136,.45); }
+.land-role-e:hover { box-shadow: 0 8px 30px rgba(245,158,11,.22);   border-color: rgba(245,158,11,.45); }
+.land-role-o:hover { box-shadow: 0 8px 30px rgba(139,92,246,.28);   border-color: rgba(139,92,246,.45); }
+.land-role-icon {
+  width: 48px; height: 48px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; flex-shrink: 0;
+  box-shadow: 0 4px 18px rgba(0,0,0,.35);
+}
+.land-role-txt  { flex: 1; min-width: 0; }
+.land-role-name { font-size: 14px; font-weight: 900; color: #fff; margin-bottom: 2px; display: block; }
+.land-role-desc { font-size: 11px; color: rgba(255,255,255,.42); font-weight: 600; display: block; }
+.land-role-arr  { color: rgba(255,255,255,.2); font-size: 12px; flex-shrink: 0; margin-right: auto; transition: transform .22s, color .22s; }
+.land-role:hover .land-role-arr { transform: translateX(-4px); color: rgba(255,255,255,.65); }
+
+/* زر التصفح بدون حساب */
+.land-browse {
+  width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;
+  background: rgba(255,255,255,.055); border: 1px solid rgba(255,255,255,.11);
+  border-radius: 13px; padding: 13px;
+  color: rgba(255,255,255,.58); font-size: 13px;
+  font-family: 'Cairo', sans-serif; cursor: pointer; font-weight: 700;
+  transition: all .22s; margin-bottom: 4px;
+}
+.land-browse:hover { background: rgba(255,255,255,.1); color: #fff; border-color: rgba(255,255,255,.2); }
+.land-browse i { color: rgba(13,148,136,.85); font-size: 14px; }
+
+/* رابط تسجيل الدخول */
+.land-login-link { background: none; border: none; color: rgba(255,255,255,.28); font-size: 12px;
+  font-family: 'Cairo', sans-serif; cursor: pointer; font-weight: 700;
+  transition: color .2s; padding: 8px 16px; }
+.land-login-link:hover { color: rgba(255,255,255,.65); }
+.land-login-link span { color: rgba(13,148,136,.8); text-decoration: underline; text-underline-offset: 3px; transition: color .2s; }
+.land-login-link:hover span { color: #2dd4bf; }
+
+/* كلمات عائمة في الخلفية */
+@keyframes floatWord { 0%{transform:translateY(0);opacity:0} 8%{opacity:1} 90%{opacity:1} 100%{transform:translateY(-110vh);opacity:0} }
+.fw { position: absolute; bottom: -5%; color: rgba(255,255,255,.055); font-size: 13px; font-weight: 800; animation: floatWord linear infinite; pointer-events: none; white-space: nowrap; letter-spacing: .5px; }
 
 /* ── Office Profile Banner ── */
 .prof-banner { height: 110px; background: linear-gradient(135deg, var(--pd), var(--p)); position: relative; border-radius: var(--r) var(--r) 0 0; overflow: hidden; }

@@ -128,6 +128,7 @@ function pgOfficeHome(el) {
             { ico:'fa-users',       l:'عرض المتقدمين',     c:'var(--purple)', a:"goTo('candidates')" },
             { ico:'fa-columns',     l:'خط التوظيف Kanban', c:'var(--acc)',    a:"goTo('pipeline')" },
             { ico:'fa-building',    l:'ملف المكتب',        c:'var(--info)',   a:"goTo('profile')" },
+            { ico:'fa-crown',       l:'خطط الاشتراك',      c:'#f59e0b',      a:"showPaymentPlans()" },
           ].map(a => `<button class="btn bo" style="justify-content:flex-start;gap:10px;text-align:right" onclick="${a.a}">
             <div style="width:30px;height:30px;border-radius:8px;background:${a.c}18;color:${a.c};display:flex;align-items:center;justify-content:center;flex-shrink:0">
               <i class="fas ${a.ico}"></i>
@@ -139,30 +140,29 @@ function pgOfficeHome(el) {
       </div>
     </div>
 
-    <!-- آخر الطلبات -->
-    <div class="sh fade-up del4">
+    <!-- آخر الطلبات (بطاقات مضغوطة) -->
+    <div class="sh fade-up del4" style="margin-top:4px">
       <div class="st"><div class="st-ico"><i class="fas fa-bell"></i></div>آخر الطلبات</div>
       <button class="btn bg bsm" onclick="goTo('candidates')">عرض الكل <i class="fas fa-arrow-left"></i></button>
     </div>
-    <div class="card fade-up del4"><div class="tw"><table class="dt">
-      <thead><tr>
-        <th>المتقدم</th><th>الوظيفة</th><th>الخبرة</th><th>التاريخ</th><th>الحالة</th><th></th>
-      </tr></thead>
-      <tbody>${apps.slice(0, 5).map(a => {
-        const s = STAT[a.status] || STAT.pending;
-        return `<tr>
-          <td><div style="display:flex;align-items:center;gap:8px">
-            <div class="cand-avatar">${a.name.charAt(0)}</div>
-            <div><div style="font-size:12px;font-weight:700">${a.name}</div><div style="font-size:10px;color:var(--tx3)">${a.phone}</div></div>
-          </div></td>
-          <td style="font-size:12px;font-weight:600">${a.jobTitle}</td>
-          <td style="font-size:11px;color:var(--tx2)">${a.exp}</td>
-          <td style="font-size:11px;color:var(--tx3)">${a.appliedAt?.slice(0,10)||'—'}</td>
-          <td><span class="b ${s.c}"><i class="fas ${s.ico}"></i>${s.l}</span></td>
-          <td><button class="btn bp bsm" onclick="openCand(${JSON.stringify(a).replace(/"/g,'&quot;')})"><i class="fas fa-eye"></i>عرض</button></td>
-        </tr>`;
-      }).join('')}</tbody>
-    </table></div></div>`;
+    <div class="card fade-up del4" style="padding:12px 14px">
+      ${!apps.length ? `<div style="text-align:center;padding:24px 0;color:var(--tx3);font-size:13px"><i class="fas fa-inbox" style="font-size:28px;margin-bottom:8px;display:block;opacity:.4"></i>لا توجد طلبات بعد</div>` :
+        apps.slice(0, 5).map(a => {
+          const s = STAT[a.status] || STAT.pending;
+          const initials = (a.name || '?').charAt(0).toUpperCase();
+          return `<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--br);last-child:border:none">
+            <div class="cand-avatar" style="width:36px;height:36px;min-width:36px;font-size:14px;border-radius:50%">${initials}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:12px;font-weight:700;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.name}</div>
+              <div style="font-size:10px;color:var(--tx3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.jobTitle}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:7px;flex-shrink:0">
+              <span class="b ${s.c}" style="font-size:10px;padding:3px 7px"><i class="fas ${s.ico}"></i>${s.l}</span>
+              <button class="btn bg bsm" style="padding:4px 9px;font-size:11px" onclick="openCand(${JSON.stringify(a).replace(/"/g,'&quot;')})"><i class="fas fa-eye"></i></button>
+            </div>
+          </div>`;
+        }).join('')}
+    </div>`;
 }
 
 // ── وظائفي ──
@@ -1292,7 +1292,7 @@ async function submitJob() {
     province:  document.getElementById('jp')?.value,
     exp:       document.getElementById('je')?.value,
     gender:    document.getElementById('jge')?.value,
-    hours:     document.getElementById('jhr')?.value.trim(),
+    hours:     (document.getElementById('jhr')?.value || '').trim() || null,
     desc,
     reqs: (document.getElementById('jr')?.value||'').split(',').map(s=>s.trim()).filter(Boolean),
     bens: (document.getElementById('jb')?.value||'').split(',').map(s=>s.trim()).filter(Boolean),
@@ -1306,12 +1306,31 @@ async function submitJob() {
     expiresAt:   calcExpiresAt(document.getElementById('jdur')?.value || 'week'),
     adminPinned: false,
   };
+  // فحص حصة الوظائف قبل النشر
+  if (typeof checkJobQuota === 'function') {
+    const quota = await checkJobQuota();
+    if (!quota.ok) {
+      const planLabel = quota.plan === 'free' ? 'المجانية' : 'القياسية';
+      notify('انتهت حصة الوظائف', `وصلت لحد خطتك ${planLabel}. رقّ خطتك لنشر المزيد.`, 'warning');
+      if (typeof showPaymentPlans === 'function') showPaymentPlans();
+      return;
+    }
+  }
+
   loading('addJobBtn', true);
   if (!DEMO && window.db) {
     try {
       const ref = await window.db.collection('jobs').add({ ...job, postedAt: firebase.firestore.FieldValue.serverTimestamp() });
       job.id = ref.id;
-    } catch(e) { job.id = 'j_' + Date.now(); }
+    } catch(e) {
+      console.error('submitJob Firestore error:', e);
+      loading('addJobBtn', false);
+      const msg = e.code === 'permission-denied'
+        ? 'ليس لديك صلاحية نشر الوظائف. تأكد من حالة حسابك مع الأدمن.'
+        : `فشل حفظ الوظيفة: ${e.message}`;
+      notify('خطأ في النشر', msg, 'error');
+      return;
+    }
   } else { job.id = 'j_' + Date.now(); }
   JOBS.unshift(job);
   cmo('moAddJob');

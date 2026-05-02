@@ -64,6 +64,53 @@ TIP: [نصيحة عملية قصيرة لإجابة أفضل]`;
 }
 
 function buildIVModal() {
+  const uid      = U?.uid;
+  const attempts = uid ? parseInt(localStorage.getItem('iv_attempts_' + uid) || '0') : 0;
+  const lastScore = uid ? parseInt(localStorage.getItem('iv_last_score_' + uid) || '0') : 0;
+
+  // محاولتان استُنفدتا
+  if (uid && attempts >= 2) {
+    document.getElementById('moIVB').innerHTML = `
+      <div style="text-align:center;padding:30px 20px">
+        <div style="font-size:56px;margin-bottom:12px">🏁</div>
+        <div style="font-size:16px;font-weight:800;color:var(--tx);margin-bottom:8px">انتهت محاولاتك</div>
+        <div style="font-size:13px;color:var(--tx2);line-height:1.8;margin-bottom:16px">
+          لقد استخدمت المحاولتين المتاحتين للمقابلة الذكية.<br>
+          درجتك المحفوظة: <strong style="color:var(--p);font-size:18px">${lastScore}%</strong>
+        </div>
+        <div style="padding:12px 16px;background:rgba(139,92,246,.08);border-radius:12px;border:1px solid rgba(139,92,246,.2);font-size:12px;color:var(--tx2)">
+          <i class="fas fa-info-circle" style="color:var(--purple)"></i>
+          درجة مقابلتك مرفقة تلقائياً مع طلبات التوظيف الخاصة بك.
+        </div>
+      </div>`;
+    return;
+  }
+
+  // محاولة واحدة أُجريت ودرجتها >= 60 → لا حاجة للإعادة
+  if (uid && attempts === 1 && lastScore >= 60) {
+    document.getElementById('moIVB').innerHTML = `
+      <div style="text-align:center;padding:30px 20px">
+        <div style="font-size:56px;margin-bottom:12px">✅</div>
+        <div style="font-size:16px;font-weight:800;color:var(--tx);margin-bottom:8px">أنت مؤهّل!</div>
+        <div style="font-size:13px;color:var(--tx2);line-height:1.8;margin-bottom:16px">
+          حققت درجة <strong style="color:var(--success);font-size:20px">${lastScore}%</strong> في مقابلتك السابقة.<br>
+          درجة جيدة — لا حاجة لإعادة المقابلة.
+        </div>
+        <div style="padding:12px 16px;background:rgba(34,197,94,.08);border-radius:12px;border:1px solid rgba(34,197,94,.2);font-size:12px;color:var(--tx2)">
+          <i class="fas fa-check-circle" style="color:var(--success)"></i>
+          درجتك مرفقة تلقائياً مع جميع طلبات التوظيف.
+        </div>
+      </div>`;
+    return;
+  }
+
+  // محاولة واحدة أُجريت ودرجتها < 60 → يُسمح بإعادة واحدة
+  const retryBanner = (uid && attempts === 1 && lastScore < 60) ? `
+    <div style="margin-bottom:14px;padding:10px 14px;background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.25);border-radius:10px;font-size:12px;color:var(--danger)">
+      <i class="fas fa-redo"></i>
+      درجتك السابقة: <strong>${lastScore}%</strong> — هذه محاولتك الأخيرة المتاحة.
+    </div>` : '';
+
   document.getElementById('moIVB').innerHTML = `
     <div id="ivPicker">
       <div style="text-align:center;margin-bottom:18px">
@@ -79,6 +126,7 @@ function buildIVModal() {
           <i class="fas fa-check-circle"></i> متصل بـ Gemini AI — تقييم ذكي حقيقي مفعّل
         </div>`}
       </div>
+      ${retryBanner}
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
         ${SPECS.map(s => `
           <div style="padding:16px 10px;border:2px solid var(--br);border-radius:13px;cursor:pointer;text-align:center;transition:all .22s;background:var(--bgc2)"
@@ -222,6 +270,18 @@ async function sendIVAns() {
 async function showIVResult() {
   const total = Math.round((ivScore / (ivCount * 5)) * 100);
   const hasAI = isAIReady();
+
+  // حفظ الدرجة وعدد المحاولات
+  const uid = U?.uid;
+  if (uid) {
+    const prevAttempts = parseInt(localStorage.getItem('iv_attempts_' + uid) || '0');
+    localStorage.setItem('iv_last_score_' + uid, total);
+    localStorage.setItem('iv_attempts_' + uid, prevAttempts + 1);
+    // حفظ الدرجة في وثيقة السيرة الذاتية بـ Firestore
+    if (!DEMO && window.db) {
+      window.db.collection('cvs').doc(uid).update({ ivScore: total }).catch(() => {});
+    }
+  }
 
   // ملخص AI للمقابلة كاملة
   let aiSummary = '';
