@@ -335,6 +335,41 @@
   .lnd-stat { padding: 0 10px; }
 }
 
+/* ── Skills Tags System ── */
+.skill-chip { background: rgba(245,158,11,.1); border: 1px solid rgba(245,158,11,.3); color: var(--acc); cursor: pointer; transition: all .18s; }
+.skill-chip:hover { background: rgba(245,158,11,.2); border-color: var(--acc); }
+
+.skill-filter-chip {
+  padding: 4px 11px; border-radius: 99px; border: 1px solid var(--br2);
+  background: var(--bgc2); color: var(--tx2); font-family: 'Cairo', sans-serif;
+  font-size: 11px; font-weight: 700; cursor: pointer; transition: all .18s;
+}
+.skill-filter-chip:hover { border-color: var(--acc); color: var(--acc); background: rgba(245,158,11,.07); }
+.skill-filter-chip.on   { background: rgba(245,158,11,.15); border-color: var(--acc); color: var(--acc); }
+
+.skills-tags-wrap {
+  min-height: 40px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center;
+  background: var(--bgc2); border: 1px solid var(--br2); border-radius: var(--rs);
+  padding: 6px 10px; cursor: text; transition: border-color .2s;
+}
+.skills-tags-wrap:focus-within { border-color: var(--p); }
+.skill-tag-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: rgba(13,148,136,.1); border: 1px solid rgba(13,148,136,.3);
+  color: var(--p); border-radius: 8px; padding: 2px 8px; font-size: 12px; font-weight: 700;
+}
+.skill-tag-chip button { background: none; border: none; color: var(--p); cursor: pointer; font-size: 13px; line-height: 1; padding: 0 0 0 2px; }
+.skill-tag-input { border: none; background: none; outline: none; font-family: 'Cairo', sans-serif; font-size: 13px; color: var(--tx); min-width: 120px; flex: 1; }
+.skill-quick-btn {
+  padding: 4px 10px; border-radius: 8px; border: 1px solid var(--br2);
+  background: var(--bgc); color: var(--tx2); font-family: 'Cairo', sans-serif;
+  font-size: 11px; font-weight: 700; cursor: pointer; transition: all .18s;
+}
+.skill-quick-btn:hover { border-color: var(--acc); color: var(--acc); background: rgba(245,158,11,.07); }
+.skill-suggest-list { margin-top: 4px; border-radius: 10px; overflow: hidden; border: 1px solid var(--br); background: var(--bgc); box-shadow: var(--sh); }
+.skill-sug-item { padding: 8px 13px; font-size: 12px; font-weight: 600; color: var(--tx); cursor: pointer; transition: background .15s; }
+.skill-sug-item:hover { background: var(--bgc2); color: var(--p); }
+
 /* ── Office Profile Banner ── */
 .prof-banner { height: 110px; background: linear-gradient(135deg, var(--pd), var(--p)); position: relative; border-radius: var(--r) var(--r) 0 0; overflow: hidden; }
 .prof-banner::before { content: '🪔'; position: absolute; left: -8px; top: -8px; font-size: 80px; opacity: .08; }

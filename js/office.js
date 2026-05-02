@@ -1014,13 +1014,48 @@ function openAddJob() {
       <div class="fg"><label class="fl">الجنس</label>
         <select id="jge" class="fc"><option>الجنسين</option><option>ذكور</option><option>إناث</option></select>
       </div>
-      <div class="fg"><label class="fl">ساعات العمل</label><input type="text" id="jhr" class="fc" placeholder="8 ساعات يومياً"></div>
+      <div class="fg"><label class="fl">ساعات العمل <span class="fh" style="display:inline">الحد القانوني 48/أسبوع</span></label><input type="text" id="jhr" class="fc" placeholder="8 ساعات يومياً" oninput="checkLaborHours(this.value)"></div>
+    </div>
+    <!-- قانون العمل رقم 37 لسنة 2015 -->
+    <div class="fr">
+      <div class="fg"><label class="fl"><i class="fas fa-balance-scale" style="color:var(--p);font-size:11px"></i> نوع العقد</label>
+        <select id="jcon" class="fc">
+          <option value="permanent">دائم</option>
+          <option value="temp">مؤقت / محدد المدة</option>
+          <option value="contract">عقدي / مشروع</option>
+          <option value="training">تدريب / متدرب</option>
+        </select>
+      </div>
+      <div class="fg" style="display:flex;align-items:flex-end;padding-bottom:6px">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--tx2);font-weight:700">
+          <input type="checkbox" id="jsi" style="width:17px;height:17px;accent-color:var(--p)">
+          <span><i class="fas fa-shield-alt" style="color:var(--success);font-size:11px"></i> يشمل التأمين الاجتماعي</span>
+        </label>
+      </div>
+    </div>
+    <div id="laborWarn" style="display:none" class="al al-w" style="margin-top:-8px;margin-bottom:10px">
+      <i class="fas fa-exclamation-triangle"></i>
+      <span>تحذير: ساعات العمل المدخلة تتجاوز الحد القانوني (48 ساعة أسبوعياً)</span>
     </div>
     <div class="fg"><label class="fl req">وصف الوظيفة والمهام</label>
       <textarea id="jd" class="fc" rows="4" placeholder="صف الوظيفة والمهام اليومية والبيئة العملية..."></textarea>
     </div>
     <div class="fg"><label class="fl">المتطلبات <span class="fh" style="display:inline">(افصل بفاصلة)</span></label>
       <input type="text" id="jr" class="fc" placeholder="React.js, Node.js, MongoDB, Git">
+    </div>
+    <!-- المهارات المطلوبة -->
+    <div class="fg">
+      <label class="fl"><i class="fas fa-tags" style="color:var(--acc);font-size:11px"></i> المهارات المطلوبة <span class="fh" style="display:inline">اضغط للإضافة السريعة</span></label>
+      <div id="skillsTagsWrap" class="skills-tags-wrap" onclick="document.getElementById('skillInput').focus()">
+        <input type="text" id="skillInput" class="skill-tag-input" placeholder="أضف مهارة واضغط Enter..."
+          onkeydown="skillTagKey(event)" oninput="skillTagSuggest(this.value)" autocomplete="off">
+      </div>
+      <div id="skillSuggest" class="skill-suggest-list"></div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:7px">
+        ${['Excel','Word','Python','JavaScript','React','PHP','SQL','AutoCAD','Photoshop','محاسبة','تسويق رقمي','مبيعات','خدمة عملاء','إدارة مشاريع','لغة إنجليزية','تصوير','Adobe','Node.js','Java'].map(sk =>
+          `<button type="button" class="skill-quick-btn" onclick="addSkillTag('${sk}')">${sk}</button>`
+        ).join('')}
+      </div>
     </div>
     <div class="fg"><label class="fl">المزايا والفوائد <span class="fh" style="display:inline">(افصل بفاصلة)</span></label>
       <input type="text" id="jb" class="fc" placeholder="تأمين صحي, أجازة 30 يوم, عمل هجين">
@@ -1296,6 +1331,9 @@ async function submitJob() {
     desc,
     reqs: (document.getElementById('jr')?.value||'').split(',').map(s=>s.trim()).filter(Boolean),
     bens: (document.getElementById('jb')?.value||'').split(',').map(s=>s.trim()).filter(Boolean),
+    skills:         window._jobSkillsList || [],
+    contractType:   document.getElementById('jcon')?.value || 'permanent',
+    socialInsurance: document.getElementById('jsi')?.checked || false,
     deadline:  deadline || null,
     phone:     document.getElementById('jph')?.value.trim() || null,
     telegram:  document.getElementById('jtg')?.value.trim() || null,
@@ -1570,3 +1608,81 @@ function _fillJobForm(d) {
   sv('jph',  d.phone);
   sv('jtg',  d.telegram);
 }
+
+// ══════════════════════════════════════════════════════
+// نظام المهارات (Skills Tags) — نموذج نشر الوظيفة
+// ══════════════════════════════════════════════════════
+window._jobSkillsList = [];
+
+function _renderSkillTags() {
+  const wrap = document.getElementById('skillsTagsWrap');
+  if (!wrap) return;
+  const input = document.getElementById('skillInput');
+  wrap.innerHTML = '';
+  window._jobSkillsList.forEach((sk, i) => {
+    const chip = document.createElement('span');
+    chip.className = 'skill-tag-chip';
+    chip.innerHTML = `${sk} <button type="button" onclick="removeSkillTag(${i})">×</button>`;
+    wrap.appendChild(chip);
+  });
+  if (input) wrap.appendChild(input);
+}
+
+function addSkillTag(sk) {
+  if (!sk) return;
+  sk = sk.trim();
+  if (!sk || window._jobSkillsList.includes(sk)) return;
+  window._jobSkillsList.push(sk);
+  _renderSkillTags();
+  const sug = document.getElementById('skillSuggest');
+  if (sug) sug.innerHTML = '';
+}
+
+function removeSkillTag(idx) {
+  window._jobSkillsList.splice(idx, 1);
+  _renderSkillTags();
+}
+
+function skillTagKey(e) {
+  const inp = e.target;
+  if (e.key === 'Enter' || e.key === ',') {
+    e.preventDefault();
+    addSkillTag(inp.value.replace(',', '').trim());
+    inp.value = '';
+  } else if (e.key === 'Backspace' && !inp.value && window._jobSkillsList.length) {
+    window._jobSkillsList.pop();
+    _renderSkillTags();
+  }
+}
+
+function skillTagSuggest(val) {
+  const sug = document.getElementById('skillSuggest');
+  if (!sug) return;
+  if (!val || val.length < 1) { sug.innerHTML = ''; return; }
+  const all = ['Excel','Word','PowerPoint','Python','JavaScript','React','Node.js','PHP','SQL','MySQL','MongoDB',
+    'Java','C++','C#','AutoCAD','Photoshop','Illustrator','Adobe Premiere','محاسبة','تسويق رقمي','إدارة مشاريع',
+    'خدمة عملاء','تحليل بيانات','مبيعات','قيادة','لغة إنجليزية','SEO','تصوير','Git','Docker','تسويق'];
+  const matches = all.filter(s => s.toLowerCase().includes(val.toLowerCase()) && !window._jobSkillsList.includes(s));
+  sug.innerHTML = matches.slice(0,6).map(s =>
+    `<div class="skill-sug-item" onclick="addSkillTag('${s}');document.getElementById('skillInput').value=''">${s}</div>`
+  ).join('');
+}
+
+function checkLaborHours(val) {
+  const w = document.getElementById('laborWarn');
+  if (!w) return;
+  const match = val.match(/\d+/);
+  if (match) {
+    const h = parseInt(match[0]);
+    w.style.display = (h > 48 || (val.includes('يومي') && h > 8)) ? 'flex' : 'none';
+  } else {
+    w.style.display = 'none';
+  }
+}
+
+// إعادة تهيئة قائمة المهارات عند فتح النموذج
+const _origOpenAddJob = openAddJob;
+openAddJob = function() {
+  window._jobSkillsList = [];
+  _origOpenAddJob();
+};

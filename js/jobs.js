@@ -3,7 +3,7 @@
 // ║  صفحة الوظائف + التفاصيل + التقديم + المحفوظات     ║
 // ╚══════════════════════════════════════════════════════╝
 
-let JF = { type: '', cat: '', prov: '', q: '' };
+let JF = { type: '', cat: '', prov: '', q: '', skill: '' };
 let JSORT = 'newest'; // newest | salary_high | salary_low | applicants
 let JOBS_PAGE = 1;
 const JOBS_PER_PAGE = 20;
@@ -42,6 +42,8 @@ function jCard(j) {
           <span class="b ${tc}"><i class="fas fa-clock"></i>${tl}</span>
           ${j.cat ? `<span class="b b-bl">${CATS[j.cat] || j.cat}</span>` : ''}
           ${j.exp ? `<span class="b b-gy"><i class="fas fa-briefcase"></i>${j.exp}</span>` : ''}
+          ${j.socialInsurance ? `<span class="b b-gr" title="يشمل التأمين الاجتماعي وفق قانون العمل"><i class="fas fa-shield-alt"></i>تأمين اجتماعي</span>` : ''}
+          ${j.skills?.slice(0,3).map(s => `<span class="b skill-chip" onclick="event.stopPropagation();filterBySkill('${s}')" title="تصفح وظائف ${s}">${s}</span>`).join('') || ''}
         </div>
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
@@ -125,6 +127,14 @@ function pgJobs(el) {
         ].map(c => `<button class="fc2 ${c.v === JF.cat ? 'on' : ''}" onclick="JF.cat='${c.v}';setCat(this);rJobs()"><i class="fas ${c.ic}"></i>${c.l}</button>`).join('')}
         ${BOOKMARKS.length ? `<button class="fc2" onclick="showBookmarks(this)" style="margin-right:auto"><i class="fas fa-bookmark" style="color:var(--acc)"></i>محفوظاتي (${BOOKMARKS.length})</button>` : ''}
       </div>
+      <!-- فلتر المهارات -->
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:9px;padding-top:9px;border-top:1px solid var(--br)">
+        <span style="font-size:10px;font-weight:700;color:var(--tx3);flex-shrink:0"><i class="fas fa-tag"></i> مهارة:</span>
+        ${['Excel','Python','JavaScript','React','PHP','SQL','AutoCAD','Photoshop','محاسبة','تسويق رقمي','مبيعات','خدمة عملاء','إدارة مشاريع','لغة إنجليزية'].map(sk =>
+          `<button class="skill-filter-chip ${JF.skill===sk?'on':''}" onclick="filterBySkill('${sk}')">${sk}</button>`
+        ).join('')}
+        ${JF.skill ? `<button class="skill-filter-chip" style="background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.3);color:var(--danger)" onclick="filterBySkill('')"><i class="fas fa-times"></i> إلغاء</button>` : ''}
+      </div>
     </div>
 
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
@@ -151,17 +161,28 @@ function setCat(btn) {
   btn.classList.add('on');
 }
 
+function filterBySkill(sk) {
+  JF.skill = (JF.skill === sk) ? '' : sk;
+  rJobs();
+  // إعادة رسم فلتر المهارات
+  document.querySelectorAll('.skill-filter-chip').forEach(b => {
+    b.classList.toggle('on', b.textContent.trim() === sk && sk !== '');
+  });
+}
+
 function fJobs() {
   return JOBS.filter(j => {
     if (!isJobLive(j)) return false;  // فلتر الوظائف المنتهية
     if (JF.type && j.type !== JF.type) return false;
     if (JF.cat  && j.cat  !== JF.cat)  return false;
     if (JF.prov && j.province !== JF.prov) return false;
+    if (JF.skill && !j.skills?.includes(JF.skill)) return false;
     if (JF.q) {
       const q = JF.q.toLowerCase();
       if (!j.title?.toLowerCase().includes(q) &&
           !j.company?.toLowerCase().includes(q) &&
-          !j.province?.toLowerCase().includes(q)) return false;
+          !j.province?.toLowerCase().includes(q) &&
+          !j.skills?.some(s => s.toLowerCase().includes(q))) return false;
     }
     return true;
   });
@@ -281,6 +302,36 @@ function openJob(id) {
       <p style="font-size:13px;color:var(--tx2);line-height:1.8">${j.desc || ''}</p>
     </div>
 
+    <!-- معلومات العقد وفق قانون العمل -->
+    ${(j.contractType || j.socialInsurance) ? `
+    <div style="background:rgba(13,148,136,.05);border:1px solid rgba(13,148,136,.18);border-radius:13px;padding:12px 14px;margin-bottom:14px">
+      <div style="font-size:11px;font-weight:800;color:var(--p);margin-bottom:8px;display:flex;align-items:center;gap:5px">
+        <i class="fas fa-balance-scale"></i> معلومات العقد — قانون العمل رقم 37 لسنة 2015
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        ${j.contractType ? `<span class="b b-tl"><i class="fas fa-file-contract"></i>${{permanent:'عقد دائم',temp:'عقد مؤقت',contract:'عقد مشروع',training:'تدريب'}[j.contractType]||j.contractType}</span>` : ''}
+        ${j.socialInsurance ? `<span class="b b-gr"><i class="fas fa-shield-alt"></i>يشمل التأمين الاجتماعي</span>` : `<span class="b b-gy"><i class="fas fa-shield-alt"></i>بدون تأمين اجتماعي</span>`}
+        ${j.hours ? `<span class="b b-bl"><i class="fas fa-clock"></i>${j.hours}</span>` : ''}
+      </div>
+      <details style="margin-top:9px">
+        <summary style="font-size:11px;color:var(--tx3);cursor:pointer;font-weight:700">حقوق العامل وفق القانون <i class="fas fa-chevron-down" style="font-size:9px"></i></summary>
+        <div style="font-size:11px;color:var(--tx2);line-height:1.8;margin-top:7px;padding-top:7px;border-top:1px solid var(--br)">
+          • الحد الأقصى للعمل: <b>8 ساعات يومياً / 48 ساعة أسبوعياً</b><br>
+          • إجازة سنوية مدفوعة: <b>30 يوماً</b> بعد سنة خدمة<br>
+          • الفصل التعسفي يستوجب <b>تعويضاً قانونياً</b><br>
+          • التأمين الاجتماعي إلزامي على صاحب العمل بنسبة <b>12%</b> من الراتب
+        </div>
+      </details>
+    </div>` : ''}
+
+    <!-- المهارات المطلوبة -->
+    ${j.skills?.length ? `<div style="margin-bottom:14px">
+      <h3 style="font-size:13px;font-weight:800;color:var(--tx);margin-bottom:8px;display:flex;align-items:center;gap:5px">
+        <i class="fas fa-tags" style="color:var(--acc)"></i> المهارات المطلوبة
+      </h3>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">${j.skills.map(s => `<span class="b skill-chip" onclick="filterBySkill('${s}')">${s}</span>`).join('')}</div>
+    </div>` : ''}
+
     ${j.reqs?.length ? `<div style="margin-bottom:16px">
       <h3 style="font-size:13px;font-weight:800;color:var(--tx);margin-bottom:8px;display:flex;align-items:center;gap:5px">
         <i class="fas fa-check-square" style="color:var(--p)"></i> المتطلبات
@@ -301,13 +352,25 @@ function openJob(id) {
       </div>
     </div>` : ''}
 
-    <!-- التواصل المباشر -->
-    ${(ROLE === 'seeker' || ROLE === 'guest') && j.phone ? `
+    <!-- التواصل المباشر — مخفي حتى يتقدم ويُقبل -->
+    ${(ROLE === 'seeker') && j.phone ? `
     <div style="margin-bottom:20px;padding:14px;background:var(--bgc2);border-radius:14px;border:1px solid var(--br)">
       <div style="font-size:11px;font-weight:700;color:var(--tx3);margin-bottom:8px">
-        <i class="fas fa-headset" style="color:var(--p)"></i> التواصل المباشر مع جهة العمل
+        <i class="fas fa-headset" style="color:var(--p)"></i> التواصل المباشر
       </div>
-      ${renderContactBtns(j.phone, true, j.telegram || null)}
+      <div style="display:flex;align-items:center;gap:8px;background:rgba(13,148,136,.06);border:1px solid rgba(13,148,136,.15);border-radius:10px;padding:10px 13px">
+        <i class="fas fa-lock" style="color:var(--p);font-size:13px"></i>
+        <div>
+          <div style="font-size:12px;font-weight:700;color:var(--tx)">${j.phone.slice(0,4) + '×'.repeat(Math.max(0,j.phone.length-4))}</div>
+          <div style="font-size:10px;color:var(--tx3);margin-top:2px">رقم التواصل يظهر بعد قبول طلبك من جهة العمل</div>
+        </div>
+      </div>
+      ${j.telegram ? `<div style="margin-top:8px;font-size:11px;color:var(--tx3)"><i class="fab fa-telegram"></i> تلجرام: مُتاح بعد القبول</div>` : ''}
+    </div>` : (ROLE === 'guest') && j.phone ? `
+    <div style="margin-bottom:20px;padding:12px 14px;background:var(--bgc2);border-radius:14px;border:1px solid var(--br);text-align:center">
+      <i class="fas fa-lock" style="color:var(--tx3);font-size:18px;display:block;margin-bottom:6px"></i>
+      <div style="font-size:12px;color:var(--tx2);font-weight:700">سجّل حساباً مجانياً لعرض بيانات التواصل</div>
+      <button class="btn bp bsm" style="margin-top:8px" onclick="cmo('moJob');showAuth()">تسجيل مجاني</button>
     </div>` : ''}
 
     <!-- أزرار الإجراءات -->
