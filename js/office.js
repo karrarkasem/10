@@ -1473,6 +1473,16 @@ function setOfficesView(view, btn) {
   if (view === 'map') initOfficesMapInline();
 }
 
+// ── حساب المسافة بين نقطتين (كيلومتر) باستخدام Haversine ──
+function _haversine(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat/2) ** 2 +
+            Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) * Math.sin(dLng/2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
 function initOfficesMapInline() {
   if (_officesMapInst) { _officesMapInst.invalidateSize(); return; }
   const mapEl = document.getElementById('officesMapElInline');
@@ -1491,29 +1501,67 @@ function initOfficesMapInline() {
     return;
   }
 
-  withLoc.forEach(o => {
-    const initials = (o.officeName || o.name || '?').charAt(0);
+  // تحديد موقع المستخدم: إحداثيات محافظته أو موقعه المحفوظ
+  const userProv   = P?.province;
+  const userCenter = userProv && PROV_COORDS[userProv]
+    ? { lat: PROV_COORDS[userProv][0], lng: PROV_COORDS[userProv][1] }
+    : null;
+
+  // ترتيب المكاتب: الأقرب للمستخدم أولاً
+  const sorted = userCenter
+    ? [...withLoc].sort((a, b) =>
+        _haversine(userCenter.lat, userCenter.lng, a.lat, a.lng) -
+        _haversine(userCenter.lat, userCenter.lng, b.lat, b.lng))
+    : withLoc;
+
+  sorted.forEach((o, idx) => {
+    const isNearby  = userCenter && _haversine(userCenter.lat, userCenter.lng, o.lat, o.lng) < 80;
+    const sameProvince = o.province && o.province === userProv;
+    const initials  = (o.officeName || o.name || '?').charAt(0);
+    const bgColor   = sameProvince ? '#0d9488' : isNearby ? '#7c3aed' : '#64748b';
+    const size      = sameProvince ? 38 : isNearby ? 34 : 30;
+    const zIndex    = sameProvince ? 1000 : isNearby ? 500 : idx;
+
     const icon = L.divIcon({
-      html: `<div style="width:32px;height:32px;background:var(--p,#0d9488);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3);font-family:Cairo,sans-serif">${initials}</div>`,
+      html: `<div style="width:${size}px;height:${size}px;background:${bgColor};color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:${sameProvince?14:12}px;font-weight:900;border:${sameProvince?'3px':'2px'} solid #fff;box-shadow:0 ${sameProvince?4:2}px ${sameProvince?12:6}px rgba(0,0,0,.35);font-family:Cairo,sans-serif;transition:transform .2s">${initials}</div>`,
       className: '',
-      iconSize: [32, 32],
-      iconAnchor: [16, 16],
+      iconSize: [size, size],
+      iconAnchor: [size/2, size/2],
     });
-    L.marker([o.lat, o.lng], { icon }).addTo(_officesMapInst)
-      .bindPopup(`<div style="font-family:Cairo,sans-serif;direction:rtl;min-width:140px">
-        <b style="font-size:13px">${san(o.officeName || o.name)}</b><br>
-        <span style="font-size:11px;color:#666">${san(o.province||'')}</span><br>
-        ${o.avgRating ? `<span style="color:#f59e0b">★ ${(+o.avgRating).toFixed(1)}</span> (${o.ratingCount||0}) ` : ''}
-        <br><button onclick="viewOfficeJobs('${o.id}','${san(o.officeName||o.name)}')"
-          style="margin-top:6px;background:#0d9488;color:#fff;border:none;border-radius:6px;padding:4px 10px;cursor:pointer;font-family:Cairo,sans-serif;font-size:12px">
-          عرض الوظائف
+
+    const distTxt = userCenter
+      ? `<span style="font-size:10px;color:#888;display:block;margin-top:3px"><i class="fas fa-location-arrow"></i> ${Math.round(_haversine(userCenter.lat, userCenter.lng, o.lat, o.lng))} كم</span>`
+      : '';
+    const nearBadge = sameProvince
+      ? `<span style="display:inline-block;background:#0d9488;color:#fff;border-radius:10px;font-size:9px;padding:1px 7px;margin-top:3px">محافظتك</span>`
+      : isNearby ? `<span style="display:inline-block;background:#7c3aed;color:#fff;border-radius:10px;font-size:9px;padding:1px 7px;margin-top:3px">قريب منك</span>` : '';
+
+    const marker = L.marker([o.lat, o.lng], { icon, zIndexOffset: zIndex })
+      .addTo(_officesMapInst)
+      .bindPopup(`<div style="font-family:Cairo,sans-serif;direction:rtl;min-width:150px;padding:2px">
+        <b style="font-size:13px">${san(o.officeName || o.name)}</b>
+        <span style="font-size:11px;color:#666;display:block;margin-top:2px">${san(o.province||'')}</span>
+        ${o.avgRating ? `<span style="color:#f59e0b;font-size:11px">★ ${(+o.avgRating).toFixed(1)}</span> <span style="font-size:10px;color:#888">(${o.ratingCount||0})</span>` : ''}
+        ${distTxt}
+        ${nearBadge}
+        <button onclick="viewOfficeJobs('${o.id}','${san(o.officeName||o.name)}')"
+          style="margin-top:8px;background:#0d9488;color:#fff;border:none;border-radius:6px;padding:5px 12px;cursor:pointer;font-family:Cairo,sans-serif;font-size:12px;width:100%">
+          <i class="fas fa-briefcase"></i> عرض الوظائف
         </button>
       </div>`);
+
+    // فتح popup محافظة المستخدم تلقائياً لأول مكتب
+    if (sameProvince && idx === 0) setTimeout(() => marker.openPopup(), 600);
   });
 
-  // Fit map to markers
-  const bounds = L.latLngBounds(withLoc.map(o => [o.lat, o.lng]));
-  _officesMapInst.fitBounds(bounds, { padding: [30, 30] });
+  // توسيط الخريطة على محافظة المستخدم إن وُجدت، وإلا تضمين الكل
+  if (userCenter && userProv && PROV_COORDS[userProv]) {
+    const [lat, lng, zoom] = PROV_COORDS[userProv];
+    _officesMapInst.setView([lat, lng], zoom);
+  } else {
+    const bounds = L.latLngBounds(withLoc.map(o => [o.lat, o.lng]));
+    _officesMapInst.fitBounds(bounds, { padding: [30, 30] });
+  }
 }
 
 

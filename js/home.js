@@ -258,13 +258,15 @@ async function pgAdminHome(el) {
     <div class="sh fade-up del2"><div class="st"><div class="st-ico"><i class="fas fa-bolt"></i></div>إدارة سريعة</div></div>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:20px" class="fade-up del2">
       ${[
-        { ico:'fa-plus-circle', l:'نشر وظيفة جديدة',  c:'var(--success)', a:"openAddJob()" },
-        { ico:'fa-briefcase',   l:'الوظائف',            c:'var(--acc)',     a:"goTo('alljobs')" },
-        { ico:'fa-building',    l:'مكاتب التوظيف',     c:'var(--purple)',  a:"goTo('alloffices')" },
-        { ico:'fa-users',       l:'المستخدمون',          c:'var(--info)',    a:"goTo('allusers')" },
-        { ico:'fa-credit-card', l:'الاشتراكات',          c:'#f59e0b',       a:"goTo('payments')" },
-        { ico:'fa-bullhorn',    l:'حملات التواصل',      c:'var(--p)',       a:"goTo('campaigns')" },
-        { ico:'fa-cog',         l:'الإعدادات',           c:'var(--tx3)',     a:"goTo('settings')" },
+        { ico:'fa-plus-circle', l:'نشر وظيفة جديدة',    c:'var(--success)',  a:"openAddJob()" },
+        { ico:'fa-user-plus',   l:'إضافة مستخدم',       c:'var(--info)',     a:"openAddUserDirect()" },
+        { ico:'fa-briefcase',   l:'الوظائف',              c:'var(--acc)',     a:"goTo('alljobs')" },
+        { ico:'fa-building',    l:'مكاتب التوظيف',       c:'var(--purple)', a:"goTo('alloffices')" },
+        { ico:'fa-users',       l:'المستخدمون',            c:'var(--info)',   a:"goTo('allusers')" },
+        { ico:'fa-user-tie',    l:'الموظفون المُدارون',   c:'#7c3aed',       a:"goTo('admin_seekers')" },
+        { ico:'fa-credit-card', l:'الاشتراكات',            c:'#f59e0b',       a:"goTo('payments')" },
+        { ico:'fa-bullhorn',    l:'حملات التواصل',        c:'var(--p)',       a:"goTo('campaigns')" },
+        { ico:'fa-cog',         l:'الإعدادات',             c:'var(--tx3)',     a:"goTo('settings')" },
       ].map(a => '<div class="cat-item" onclick="' + a.a + '"><div class="cat-ico" style="color:' + a.c + ';background:' + a.c + '18"><i class="fas ' + a.ico + '"></i></div><div class="cat-label">' + a.l + '</div></div>').join('')}
     </div>
     <div class="sh fade-up del3"><div class="st"><div class="st-ico"><i class="fas fa-briefcase"></i></div>أحدث الوظائف</div>
@@ -287,7 +289,7 @@ function pgAdminJobs(el) {
   el.innerHTML = `
     <div class="sh">
       <div class="st"><div class="st-ico"><i class="fas fa-briefcase"></i></div>إدارة الوظائف</div>
-      <span class="b b-tl">${JOBS.length} وظيفة</span>
+      <button class="btn bp bsm" onclick="openAddJob()"><i class="fas fa-plus"></i>نشر وظيفة</button>
     </div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
       <span class="b b-gr"><i class="fas fa-circle" style="font-size:8px"></i> نشطة: ${live}</span>
@@ -493,13 +495,19 @@ async function pgAdminOffices(el) {
               <div style="font-size:10px;color:var(--tx3)">البريد</div>
             </div>
           </div>
-          <div style="display:flex;gap:8px">
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
             <button class="btn bp bsm bfu" style="flex:1" onclick="adminViewOffice(${JSON.stringify({id:o.id,name:san(o.officeName||o.name),province:san(o.province||''),email:san(o.email||''),phone:san(o.phone||''),status:o.status||'active',created}).replace(/"/g,'&quot;')})">
               <i class="fas fa-eye"></i>عرض
             </button>
+            ${!o.verified
+              ? `<button class="btn bsm" style="background:var(--success);color:#fff" title="توثيق المكتب"
+                   onclick="adminVerifyOffice('${o.id}','${san(o.officeName||o.name)}')">
+                   <i class="fas fa-check-circle"></i>توثيق
+                 </button>`
+              : `<span class="b b-gr" style="font-size:11px;align-self:center"><i class="fas fa-check-circle"></i>موثّق</span>`}
             ${isActive
               ? `<button class="btn bda bsm" onclick="adminToggleOffice('${o.id}','inactive','${san(o.officeName||o.name)}')"><i class="fas fa-ban"></i></button>`
-              : `<button class="btn" style="background:var(--success);color:#fff" onclick="adminToggleOffice('${o.id}','active','${san(o.officeName||o.name)}')"><i class="fas fa-check"></i></button>`
+              : `<button class="btn bsm" style="background:var(--info);color:#fff" onclick="adminToggleOffice('${o.id}','active','${san(o.officeName||o.name)}')"><i class="fas fa-check"></i></button>`
             }
           </div>
         </div>`;
@@ -558,10 +566,22 @@ async function adminToggleOffice(uid, newStatus, name) {
   });
 }
 
+async function adminVerifyOffice(uid, name) {
+  confirm2('توثيق المكتب', `هل تريد توثيق مكتب "${name}"؟\nسيحصل على شارة "موثّق ✅" وسيُفعَّل حسابه.`, async () => {
+    if (DEMO || !window.db) { notify('تنبيه', 'يتطلب Firebase', 'info'); return; }
+    try {
+      await window.db.collection('users').doc(uid).update({ verified: true, status: 'active' });
+      notify('تم التوثيق ✅', `تم توثيق مكتب "${name}" بنجاح`, 'success');
+      pgAdminOffices(document.getElementById('pcon'));
+    } catch(e) { notify('خطأ', 'فشل التوثيق: ' + e.message, 'error'); }
+  });
+}
+
 // ════════════════════════════════════════════
 // صفحة المستخدمين — أدمن (بيانات حقيقية)
 // ════════════════════════════════════════════
-let _usersSearch = '', _usersRoleFilter = '';
+let _usersSearch = '', _usersRoleFilter = '', _usersPage = 1;
+const _USERS_PER_PAGE = 20;
 
 async function pgAdminUsers(el) {
   el.innerHTML = `<div class="es"><div class="es-ico"><i class="fas fa-circle-notch spin" style="color:var(--p)"></i></div><div class="es-desc">جارٍ تحميل المستخدمين...</div></div>`;
@@ -577,82 +597,123 @@ async function pgAdminUsers(el) {
       notify('خطأ', 'تعذّر تحميل المستخدمين: ' + e.message, 'error');
     }
   }
-  if (!users.length) {
-    el.innerHTML = `
-      <div class="sh"><div class="st"><div class="st-ico"><i class="fas fa-users"></i></div>المستخدمون</div></div>
-      ${emptyState('👤', 'لا يوجد مستخدمون بعد', 'لم يُسجَّل أي مستخدم حتى الآن')}`;
-    return;
-  }
 
-  const seekers = users.filter(u => u.role === 'seeker' || !u.role).length;
-  const offices = users.filter(u => u.role === 'office').length;
-  const admins  = users.filter(u => u.role === 'admin').length;
-  const total   = users.length;
+  const seekers   = users.filter(u => u.role === 'seeker' || !u.role).length;
+  const offices   = users.filter(u => u.role === 'office').length;
+  const employers = users.filter(u => u.role === 'employer').length;
+  const admins    = users.filter(u => u.role === 'admin').length;
+  const total     = users.length;
+  const active    = users.filter(u => u.status === 'active' || !u.status).length;
 
   window._adminUsers = users;
   _usersSearch = '';
   _usersRoleFilter = '';
+  _usersPage = 1;
 
   el.innerHTML = `
-    <div class="sh">
-      <div class="st"><div class="st-ico"><i class="fas fa-users"></i></div>المستخدمون</div>
-      <button class="btn bp bsm" onclick="openInviteUser()">
-        <i class="fas fa-user-plus"></i>دعوة مستخدم
-      </button>
-    </div>
-
-    <div class="resp-g3" style="gap:12px;margin-bottom:20px">
-      ${[
-        {l:'الباحثون',   v:seekers, ic:'fa-user-tie',   c:'var(--p)',      f:'seeker'},
-        {l:'المكاتب',    v:offices, ic:'fa-building',   c:'var(--purple)', f:'office'},
-        {l:'المديرون',   v:admins,  ic:'fa-shield-alt', c:'var(--acc)',    f:'admin'},
-      ].map(x => `<div class="card cp" style="text-align:center;cursor:pointer" onclick="filterAdminUsers('${x.f}')">
-        <div class="si" style="width:44px;height:44px;border-radius:12px;background:${x.c}18;color:${x.c};margin:0 auto 10px;font-size:18px;display:flex;align-items:center;justify-content:center">
-          <i class="fas ${x.ic}"></i>
-        </div>
-        <div style="font-size:28px;font-weight:900;color:var(--tx)">${x.v}</div>
-        <div style="font-size:11px;color:var(--tx3);margin-top:3px">${x.l}</div>
-        <div style="font-size:10px;color:var(--tx3);margin-top:2px">${Math.round(x.v/total*100)||0}%</div>
-      </div>`).join('')}
-    </div>
-
-    <div class="card" style="margin-bottom:14px">
-      <div class="cp" style="padding-bottom:0">
-        <div class="ig" style="margin-bottom:10px">
-          <input type="search" class="fc" id="usersSearch" placeholder="بحث بالاسم أو البريد أو الهاتف..."
-            oninput="_usersSearch=this.value;renderAdminUsersList()">
-          <select class="fc" id="usersRoleFilter" style="width:auto;min-width:110px"
-            onchange="_usersRoleFilter=this.value;renderAdminUsersList()">
-            <option value="">جميع الأدوار</option>
-            <option value="seeker">باحث</option>
-            <option value="office">مكتب توظيف</option>
-            <option value="employer">صاحب عمل</option>
-            <option value="admin">أدمن</option>
-          </select>
-        </div>
+    <!-- رأس الصفحة -->
+    <div class="sh" style="flex-wrap:wrap;gap:8px">
+      <div class="st"><div class="st-ico"><i class="fas fa-users"></i></div>إدارة المستخدمين
+        <span class="b b-tl" style="font-size:10px;margin-right:6px">${total} مستخدم</span>
       </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn bp bsm" onclick="openAddUserDirect()">
+          <i class="fas fa-user-plus"></i>إضافة مستخدم
+        </button>
+        <button class="btn bg bsm" onclick="openInviteUser()">
+          <i class="fas fa-paper-plane"></i>دعوة بالبريد
+        </button>
+      </div>
+    </div>
+
+    <!-- بطاقات الإحصائيات -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:18px">
+      ${[
+        {l:'الباحثون',     v:seekers,   ic:'fa-user-tie',   c:'var(--p)',       f:'seeker',   bg:'rgba(13,148,136,.1)'},
+        {l:'المكاتب',      v:offices,   ic:'fa-building',   c:'var(--purple)',  f:'office',   bg:'rgba(124,58,237,.1)'},
+        {l:'أصحاب العمل',  v:employers, ic:'fa-briefcase',  c:'var(--info)',    f:'employer', bg:'rgba(59,130,246,.1)'},
+        {l:'المديرون',     v:admins,    ic:'fa-shield-alt', c:'var(--acc)',     f:'admin',    bg:'rgba(245,158,11,.1)'},
+        {l:'نشط',          v:active,    ic:'fa-check-circle',c:'var(--success)',f:'',         bg:'rgba(34,197,94,.1)'},
+      ].map(x => `
+        <div class="card" style="text-align:center;padding:14px 10px;cursor:${x.f?'pointer':'default'};transition:all .2s"
+          ${x.f ? `onclick="filterAdminUsers('${x.f}')"
+          onmouseenter="this.style.transform='translateY(-2px)';this.style.boxShadow='var(--shl)'"
+          onmouseleave="this.style.transform='';this.style.boxShadow=''"` : ''}>
+          <div style="width:38px;height:38px;border-radius:10px;background:${x.bg};color:${x.c};margin:0 auto 8px;font-size:16px;display:flex;align-items:center;justify-content:center">
+            <i class="fas ${x.ic}"></i>
+          </div>
+          <div style="font-size:24px;font-weight:900;color:var(--tx);line-height:1">${x.v}</div>
+          <div style="font-size:10px;color:var(--tx3);margin-top:4px">${x.l}</div>
+          <div style="height:3px;border-radius:2px;background:${x.c};opacity:.25;margin-top:8px;
+            width:${Math.round(x.v/Math.max(total,1)*100)}%"></div>
+        </div>`).join('')}
+    </div>
+
+    <!-- شريط البحث والفلترة -->
+    <div class="card" style="margin-bottom:12px;padding:12px 14px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <div style="flex:1;min-width:180px;position:relative">
+          <i class="fas fa-search" style="position:absolute;right:11px;top:50%;transform:translateY(-50%);color:var(--tx3);font-size:13px;pointer-events:none"></i>
+          <input type="search" class="fc" id="usersSearch" placeholder="اسم، بريد إلكتروني أو هاتف..."
+            style="padding-right:34px"
+            oninput="_usersSearch=this.value;_usersPage=1;renderAdminUsersList()">
+        </div>
+        <select class="fc" id="usersRoleFilter" style="width:auto;min-width:120px"
+          onchange="_usersRoleFilter=this.value;_usersPage=1;renderAdminUsersList()">
+          <option value="">جميع الأدوار</option>
+          <option value="seeker">باحث عن عمل</option>
+          <option value="office">مكتب توظيف</option>
+          <option value="employer">صاحب عمل</option>
+          <option value="admin">مدير النظام</option>
+        </select>
+        <button class="btn bg bsm" onclick="_usersSearch='';_usersRoleFilter='';_usersPage=1;document.getElementById('usersSearch').value='';document.getElementById('usersRoleFilter').value='';renderAdminUsersList()">
+          <i class="fas fa-undo"></i>إعادة تعيين
+        </button>
+      </div>
+    </div>
+
+    <!-- الجدول -->
+    <div class="card" style="overflow:hidden">
       <div id="usersTableWrap" style="overflow-x:auto">
-        <table style="width:100%;border-collapse:collapse;font-size:12px" id="usersTable">
+        <table style="width:100%;border-collapse:collapse;font-size:12.5px;min-width:620px" id="usersTable">
           <thead>
-            <tr style="border-bottom:2px solid var(--br)">
-              <th style="padding:10px 12px;text-align:right;color:var(--tx3);font-weight:700">المستخدم</th>
-              <th style="padding:10px 12px;text-align:right;color:var(--tx3);font-weight:700">الدور</th>
-              <th style="padding:10px 12px;text-align:right;color:var(--tx3);font-weight:700">المحافظة</th>
-              <th style="padding:10px 12px;text-align:right;color:var(--tx3);font-weight:700">الخطة</th>
-              <th style="padding:10px 12px;text-align:right;color:var(--tx3);font-weight:700">الحالة</th>
-              <th style="padding:10px 12px;text-align:right;color:var(--tx3);font-weight:700">إجراء</th>
+            <tr style="background:var(--bgc2);border-bottom:2px solid var(--br)">
+              <th style="padding:12px 14px;text-align:right;color:var(--tx2);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap">
+                <i class="fas fa-user" style="margin-left:5px;color:var(--p)"></i>المستخدم
+              </th>
+              <th style="padding:12px 14px;text-align:right;color:var(--tx2);font-weight:700;font-size:11px;white-space:nowrap">
+                <i class="fas fa-tag" style="margin-left:5px;color:var(--purple)"></i>الدور
+              </th>
+              <th style="padding:12px 14px;text-align:right;color:var(--tx2);font-weight:700;font-size:11px;white-space:nowrap">
+                <i class="fas fa-map-marker-alt" style="margin-left:5px;color:var(--danger)"></i>المحافظة
+              </th>
+              <th style="padding:12px 14px;text-align:right;color:var(--tx2);font-weight:700;font-size:11px;white-space:nowrap">
+                <i class="fas fa-crown" style="margin-left:5px;color:var(--acc)"></i>الخطة
+              </th>
+              <th style="padding:12px 14px;text-align:right;color:var(--tx2);font-weight:700;font-size:11px;white-space:nowrap">
+                <i class="fas fa-circle" style="margin-left:5px;color:var(--success)"></i>الحالة
+              </th>
+              <th style="padding:12px 14px;text-align:right;color:var(--tx2);font-weight:700;font-size:11px;white-space:nowrap">إجراءات</th>
             </tr>
           </thead>
           <tbody id="usersTableBody"></tbody>
         </table>
       </div>
+      <div id="usersPagination" style="padding:10px 14px;border-top:1px solid var(--br);display:flex;justify-content:center"></div>
     </div>`;
+
+  if (!users.length) {
+    document.getElementById('usersTableBody').innerHTML = `
+      <tr><td colspan="6">${emptyState('👤', 'لا يوجد مستخدمون بعد', 'لم يُسجَّل أي مستخدم حتى الآن')}</td></tr>`;
+    return;
+  }
 
   renderAdminUsersList();
 }
 
 function filterAdminUsers(role) {
   _usersRoleFilter = role;
+  _usersPage = 1;
   const sel = document.getElementById('usersRoleFilter');
   if (sel) sel.value = role;
   renderAdminUsersList();
@@ -662,65 +723,134 @@ function renderAdminUsersList() {
   const users = window._adminUsers || [];
   const q = _usersSearch.toLowerCase();
   const filtered = users.filter(u => {
-    const matchRole  = !_usersRoleFilter || u.role === _usersRoleFilter || (!u.role && _usersRoleFilter === 'seeker');
+    const matchRole   = !_usersRoleFilter || u.role === _usersRoleFilter || (!u.role && _usersRoleFilter === 'seeker');
     const matchSearch = !q || (u.name||'').toLowerCase().includes(q) || (u.email||'').toLowerCase().includes(q) || (u.phone||'').includes(q);
     return matchRole && matchSearch;
   });
 
   const roleLabel = { seeker:'باحث', office:'مكتب', employer:'صاحب عمل', admin:'أدمن' };
   const roleClass = { seeker:'b-tl', office:'b-pu', employer:'b-bl', admin:'b-am' };
+  const roleIcon  = { seeker:'fa-user', office:'fa-building', employer:'fa-briefcase', admin:'fa-shield-alt' };
 
   const tbody = document.getElementById('usersTableBody');
+  const pagDiv = document.getElementById('usersPagination');
   if (!tbody) return;
 
   if (!filtered.length) {
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--tx3)">لا توجد نتائج</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--tx3)">
+      <div style="font-size:32px;margin-bottom:8px">🔍</div>
+      <div style="font-weight:700;margin-bottom:4px">لا توجد نتائج</div>
+      <div style="font-size:11px">جرّب تغيير كلمة البحث أو الفلتر</div>
+    </td></tr>`;
+    if (pagDiv) pagDiv.innerHTML = '';
     return;
   }
 
-  tbody.innerHTML = filtered.map(u => {
+  const totalPages = Math.ceil(filtered.length / _USERS_PER_PAGE);
+  if (_usersPage > totalPages) _usersPage = totalPages;
+  const start = (_usersPage - 1) * _USERS_PER_PAGE;
+  const page  = filtered.slice(start, start + _USERS_PER_PAGE);
+
+  tbody.innerHTML = page.map(u => {
     const isActive = u.status === 'active' || !u.status;
     const role     = u.role || 'seeker';
-    const created  = u.createdAt?.toDate?.()?.toLocaleDateString('ar-IQ') || '—';
-    return `<tr style="border-bottom:1px solid var(--br);transition:background .15s" onmouseenter="this.style.background='var(--bgc2)'" onmouseleave="this.style.background=''">
-      <td style="padding:10px 12px">
-        <div style="display:flex;align-items:center;gap:9px">
-          <div class="av" style="width:32px;height:32px;border-radius:50%;background:var(--grad-p);color:#fff;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">${(u.name||'م').charAt(0)}</div>
-          <div>
-            <div style="font-weight:700;color:var(--tx)">${san(u.name||'—')}</div>
-            <div style="color:var(--tx3);font-size:11px">${san(u.email||'—')}</div>
+    const plan     = u.plan || (u.plus ? 'standard' : 'free');
+    const expired  = plan !== 'free' && u.planExpiry && new Date(u.planExpiry) < new Date();
+    const PCOLOR   = { free:'#6b7280', standard:'#3b82f6', premium:'#f59e0b' };
+    const PNAME    = { free:'مجاني', standard:'قياسي', premium:'مميز ⭐' };
+    const dateStr  = u.createdAt?.toDate?.()?.toLocaleDateString('ar-IQ') || '';
+
+    return `<tr style="border-bottom:1px solid var(--br);transition:background .15s"
+      onmouseenter="this.style.background='var(--bgc2)'" onmouseleave="this.style.background=''">
+
+      <!-- المستخدم -->
+      <td style="padding:11px 14px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--p),var(--pl));color:#fff;font-size:14px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 6px rgba(13,148,136,.25)">
+            ${(u.name||'م').charAt(0)}
+          </div>
+          <div style="min-width:0">
+            <div style="font-weight:800;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px" title="${san(u.name||'')}">
+              ${san(u.name||'—')}
+              ${u.verified ? '<i class="fas fa-check-circle" style="color:var(--p);font-size:10px;margin-right:3px" title="موثّق"></i>' : ''}
+            </div>
+            <div style="color:var(--tx3);font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px">${san(u.email||'—')}</div>
+            ${u.phone ? `<div style="color:var(--tx3);font-size:10px">${san(u.phone)}</div>` : ''}
+            ${dateStr ? `<div style="color:var(--tx3);font-size:9.5px;margin-top:1px;opacity:.7">${dateStr}</div>` : ''}
           </div>
         </div>
       </td>
-      <td style="padding:10px 12px">
-        <div style="display:flex;align-items:center;gap:6px">
-          <span class="b ${roleClass[role]||'b-tl'}"><i class="fas ${role==='admin'?'fa-shield-alt':role==='office'?'fa-building':role==='employer'?'fa-briefcase':'fa-user'}"></i>${roleLabel[role]||'باحث'}</span>
-          ${role !== 'admin' ? `<button class="btn bo bsm" style="padding:2px 7px;font-size:10px" title="تغيير الدور"
+
+      <!-- الدور -->
+      <td style="padding:11px 14px">
+        <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
+          <span class="b ${roleClass[role]||'b-tl'}" style="font-size:11px">
+            <i class="fas ${roleIcon[role]||'fa-user'}"></i>${roleLabel[role]||'باحث'}
+          </span>
+          ${role !== 'admin' ? `
+          <button class="btn bo bsm" style="padding:2px 6px;font-size:10px;border-radius:6px" title="تغيير الدور"
             onclick="adminChangeRole('${u.id}','${role}','${san(u.name||'')}')">
             <i class="fas fa-exchange-alt"></i>
           </button>` : ''}
         </div>
       </td>
-      <td style="padding:10px 12px;color:var(--tx2)">${san(u.province||'—')}</td>
-      <td style="padding:10px 12px">
-        ${(()=>{
-            const plan = u.plan || (u.plus ? 'standard' : 'free');
-            const expired = plan !== 'free' && u.planExpiry && new Date(u.planExpiry) < new Date();
-            const PCOLOR = { free:'#6b7280', standard:'#3b82f6', premium:'#f59e0b' };
-            const PNAME  = { free:'مجاني', standard:'قياسي', premium:'مميز ⭐' };
-            return `<span class="b" style="background:${PCOLOR[plan]||'#888'}18;color:${PCOLOR[plan]||'#888'};${expired?'opacity:.5;text-decoration:line-through':''}"
-              title="${expired?'منتهية الصلاحية':''}">${PNAME[plan]||plan}</span>`;
-          })()}
+
+      <!-- المحافظة -->
+      <td style="padding:11px 14px;color:var(--tx2);font-size:12px">
+        ${u.province ? `<span style="display:flex;align-items:center;gap:4px"><i class="fas fa-map-marker-alt" style="color:var(--danger);font-size:10px"></i>${san(u.province)}</span>` : '<span style="color:var(--tx3)">—</span>'}
       </td>
-      <td style="padding:10px 12px"><span class="b ${isActive?'b-gr':'b-rd'}"><i class="fas ${isActive?'fa-check-circle':'fa-times-circle'}"></i>${isActive?'نشط':'موقوف'}</span></td>
-      <td style="padding:10px 12px">
+
+      <!-- الخطة -->
+      <td style="padding:11px 14px">
+        <span class="b" style="background:${PCOLOR[plan]||'#888'}15;color:${PCOLOR[plan]||'#888'};border:1px solid ${PCOLOR[plan]||'#888'}25;font-size:11px;${expired?'opacity:.5;text-decoration:line-through':''}"
+          title="${expired?'انتهت الصلاحية':''}">
+          ${PNAME[plan]||plan}
+        </span>
+        ${expired ? '<div style="font-size:9px;color:var(--danger);margin-top:2px"><i class="fas fa-exclamation-circle"></i>منتهية</div>' : ''}
+      </td>
+
+      <!-- الحالة -->
+      <td style="padding:11px 14px">
+        <span class="b ${isActive?'b-gr':'b-rd'}" style="font-size:11px">
+          <i class="fas ${isActive?'fa-check-circle':'fa-times-circle'}"></i>
+          ${isActive?'نشط':'موقوف'}
+        </span>
+      </td>
+
+      <!-- الإجراءات -->
+      <td style="padding:11px 14px">
         ${role !== 'admin' ? `
-        <button class="btn ${isActive?'bda':'bg'} bsm" onclick="adminToggleUser('${u.id}','${isActive?'inactive':'active'}','${san(u.name||'')}')">
-          <i class="fas ${isActive?'fa-ban':'fa-check'}"></i>${isActive?'إيقاف':'تفعيل'}
-        </button>` : '<span style="color:var(--tx3);font-size:11px">محمي</span>'}
+        <div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">
+          <button class="btn ${isActive?'bda':'bg'} bsm" style="font-size:11px;padding:4px 9px;border-radius:7px"
+            title="${isActive?'إيقاف الحساب':'تفعيل الحساب'}"
+            onclick="adminToggleUser('${u.id}','${isActive?'inactive':'active'}','${san(u.name||'')}')">
+            <i class="fas ${isActive?'fa-ban':'fa-check'}"></i>${isActive?'إيقاف':'تفعيل'}
+          </button>
+          ${(role==='office'||role==='employer') && !u.verified ? `
+          <button class="btn bsm" style="background:var(--success);color:#fff;font-size:11px;padding:4px 9px;border-radius:7px"
+            title="توثيق الحساب" onclick="adminVerifyUser('${u.id}','${san(u.name||'')}','${role}')">
+            <i class="fas fa-check-circle"></i>توثيق
+          </button>` : ''}
+          <button class="btn bsm" style="background:none;border:1px solid var(--br);color:var(--tx3);font-size:11px;padding:4px 8px;border-radius:7px"
+            title="حذف المستخدم" onclick="adminDeleteUser('${u.id}','${san(u.name||'')}')">
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>` : `
+        <div style="display:flex;align-items:center;gap:5px">
+          <span class="b b-am" style="font-size:10px"><i class="fas fa-shield-alt"></i>محمي</span>
+        </div>`}
       </td>
     </tr>`;
   }).join('');
+
+  if (pagDiv) {
+    pagDiv.innerHTML = totalPages > 1
+      ? `<div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--tx3)">
+           <span>عرض ${start+1}–${Math.min(start+_USERS_PER_PAGE,filtered.length)} من ${filtered.length}</span>
+           ${_buildPagination(totalPages, _usersPage, p => { _usersPage=p; renderAdminUsersList(); })}
+         </div>`
+      : `<div style="font-size:11px;color:var(--tx3)">إجمالي النتائج: ${filtered.length} مستخدم</div>`;
+  }
 }
 
 async function adminToggleUser(uid, newStatus, name) {
@@ -734,6 +864,32 @@ async function adminToggleUser(uid, newStatus, name) {
       renderAdminUsersList();
       notify('تم ✅', `تم ${label} الحساب بنجاح`, 'success');
     } catch(e) { notify('خطأ', 'فشلت العملية', 'error'); }
+  });
+}
+
+async function adminDeleteUser(uid, name) {
+  confirm2('حذف المستخدم', `سيُحذف ملف "${name}" من قاعدة البيانات نهائياً.\n\nملاحظة: يبقى حساب المصادقة قائماً — احذفه من Firebase Console إن لزم.`, async () => {
+    if (DEMO || !window.db) { notify('تنبيه', 'يتطلب Firebase', 'info'); return; }
+    try {
+      await window.db.collection('users').doc(uid).delete();
+      window._adminUsers = (window._adminUsers||[]).filter(u => u.id !== uid);
+      renderAdminUsersList();
+      notify('تم الحذف', `تم حذف ملف "${name}"`, 'info');
+    } catch(e) { notify('خطأ', 'فشل الحذف: ' + e.message, 'error'); }
+  });
+}
+
+async function adminVerifyUser(uid, name, role) {
+  const lbl = role === 'office' ? 'المكتب' : role === 'employer' ? 'صاحب العمل' : 'المستخدم';
+  confirm2('توثيق الحساب', `هل تريد توثيق ${lbl} "${name}"؟\nسيظهر شارة "موثّق ✅" على ملفه ويُفعَّل حسابه.`, async () => {
+    if (DEMO || !window.db) { notify('تنبيه', 'يتطلب Firebase', 'info'); return; }
+    try {
+      await window.db.collection('users').doc(uid).update({ verified: true, status: 'active' });
+      const u = (window._adminUsers||[]).find(u => u.id === uid);
+      if (u) { u.verified = true; u.status = 'active'; }
+      renderAdminUsersList();
+      notify('تم التوثيق ✅', `تم توثيق ${lbl} "${name}" بنجاح`, 'success');
+    } catch(e) { notify('خطأ', 'فشل التوثيق: ' + e.message, 'error'); }
   });
 }
 
@@ -844,6 +1000,100 @@ async function adminSendInvite() {
   } finally { loading('inviteBtn', false); }
 }
 
+// ── إضافة مستخدم مباشر ──
+function openAddUserDirect() {
+  const body = `
+    <div class="al al-i" style="margin-bottom:14px">
+      <i class="fas fa-info-circle"></i>
+      <span>سيتم إنشاء حساب Firebase Auth كامل مع ملف في قاعدة البيانات</span>
+    </div>
+    <div class="fr">
+      <div class="fg">
+        <label class="fl req">الاسم الكامل</label>
+        <input type="text" class="fc" id="auName" placeholder="أحمد محمد">
+      </div>
+      <div class="fg">
+        <label class="fl req">رقم الهاتف</label>
+        <input type="tel" class="fc" id="auPhone" placeholder="07801234567">
+      </div>
+    </div>
+    <div class="fr">
+      <div class="fg">
+        <label class="fl req">البريد الإلكتروني</label>
+        <input type="email" class="fc" id="auEmail" placeholder="user@example.com">
+      </div>
+      <div class="fg">
+        <label class="fl req">كلمة المرور (6+ أحرف)</label>
+        <input type="password" class="fc" id="auPass" placeholder="••••••••" minlength="6">
+      </div>
+    </div>
+    <div class="fg">
+      <label class="fl req">الدور</label>
+      <select class="fc" id="auRole">
+        <option value="seeker">باحث عن عمل</option>
+        <option value="office">مكتب توظيف</option>
+        <option value="employer">صاحب عمل</option>
+        <option value="admin">مدير نظام</option>
+      </select>
+    </div>
+    <div class="mf" style="border:none;padding:0;margin-top:14px">
+      <button class="btn bo" onclick="cmo('_adminModal')">إلغاء</button>
+      <button class="btn bp bfu" id="auSubmitBtn" onclick="adminDoAddUser()">
+        <i class="fas fa-user-plus"></i>إنشاء الحساب
+      </button>
+    </div>`;
+  _showAdminModal('إضافة مستخدم جديد', body);
+}
+
+async function adminDoAddUser() {
+  const name  = document.getElementById('auName')?.value.trim();
+  const email = document.getElementById('auEmail')?.value.trim().toLowerCase();
+  const pass  = document.getElementById('auPass')?.value;
+  const role  = document.getElementById('auRole')?.value;
+  const phone = document.getElementById('auPhone')?.value.trim();
+
+  if (!name || name.length < 2)   { notify('خطأ', 'أدخل الاسم الكامل', 'error'); return; }
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { notify('خطأ', 'البريد غير صحيح', 'error'); return; }
+  if (!pass || pass.length < 6)   { notify('خطأ', 'كلمة المرور 6 أحرف على الأقل', 'error'); return; }
+
+  loading('auSubmitBtn', true);
+  let secondaryApp = null;
+  try {
+    // نستخدم تطبيق Firebase ثانوي لإنشاء المستخدم دون تغيير جلسة الأدمن
+    secondaryApp = firebase.initializeApp(firebase.app().options, 'adminCreate_' + Date.now());
+    const cred = await secondaryApp.auth().createUserWithEmailAndPassword(email, pass);
+    const uid  = cred.user.uid;
+
+    await window.db.collection('users').doc(uid).set({
+      name, email,
+      phone: phone || '',
+      role,
+      status: 'active',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      createdBy: U?.uid,
+    });
+
+    await secondaryApp.auth().signOut();
+    cmo('_adminModal');
+
+    if (window._adminUsers) {
+      window._adminUsers.unshift({ id: uid, name, email, phone: phone||'', role, status: 'active' });
+    }
+    renderAdminUsersList();
+    notify('تم الإنشاء ✅', `تم إنشاء حساب "${name}" بنجاح`, 'success');
+  } catch(e) {
+    const msgs = {
+      'auth/email-already-in-use': 'البريد الإلكتروني مستخدم بالفعل',
+      'auth/weak-password':        'كلمة المرور ضعيفة جداً',
+      'auth/invalid-email':        'البريد الإلكتروني غير صالح',
+    };
+    notify('خطأ', msgs[e.code] || 'فشل إنشاء الحساب: ' + e.message, 'error');
+  } finally {
+    loading('auSubmitBtn', false);
+    try { if (secondaryApp) await secondaryApp.delete(); } catch(_) {}
+  }
+}
+
 // ── مودال عام للأدمن ──
 function _showAdminModal(title, body) {
   let mo = document.getElementById('_adminModal');
@@ -896,6 +1146,99 @@ function _apiSection(color, icon, fab, title, hint, link, linkLabel, fields, tog
   </div>`;
 }
 
+// ════════════════════════════════════════════
+// الموظفون المُدارون — أدمن (كل المكاتب)
+// ════════════════════════════════════════════
+async function pgAdminManagedSeekers(el) {
+  el.innerHTML = `<div class="es"><div class="es-ico"><i class="fas fa-circle-notch spin" style="color:var(--p)"></i></div><div class="es-desc">جارٍ التحميل...</div></div>`;
+
+  let seekers = [], offices = [];
+  if (!DEMO && window.db) {
+    try {
+      const [sSnap, oSnap] = await Promise.all([
+        window.db.collection('managed_seekers').get(),
+        window.db.collection('users').where('role', '==', 'office').get(),
+      ]);
+      seekers = sSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      offices = oSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    } catch(e) { console.warn('adminManagedSeekers:', e.message); }
+  }
+
+  const officeMap = {};
+  offices.forEach(o => { officeMap[o.id] = o.officeName || o.name || '—'; });
+
+  if (!seekers.length) {
+    el.innerHTML = `
+      <div class="sh"><div class="st"><div class="st-ico"><i class="fas fa-user-tie"></i></div>الموظفون المُدارون</div></div>
+      ${emptyState('👤', 'لا يوجد موظفون مُدارون', 'المكاتب لم تُضف أي موظفين بعد')}`;
+    return;
+  }
+
+  const published = seekers.filter(s => s.published).length;
+
+  el.innerHTML = `
+    <div class="sh">
+      <div class="st"><div class="st-ico"><i class="fas fa-user-tie"></i></div>الموظفون المُدارون</div>
+      <span class="b b-tl">${seekers.length} موظف • ${published} منشور</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px">
+      ${seekers.map(s => {
+        const officeName = officeMap[s.officeId] || '—';
+        const init = (s.name||'م').charAt(0);
+        return `<div class="card cp fade-up" style="${s.published ? 'border-color:rgba(168,85,247,.3)' : ''}">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+            ${s.photo
+              ? `<img src="${s.photo}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0">`
+              : `<div class="av" style="width:40px;height:40px;border-radius:50%;background:var(--grad-p);color:#fff;font-size:16px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0">${init}</div>`}
+            <div style="flex:1;min-width:0">
+              <div style="font-size:13px;font-weight:800;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${san(s.name)}</div>
+              <div style="font-size:11px;color:var(--tx3)">${san(s.title||'—')}</div>
+            </div>
+            <span class="b ${s.published ? 'b-pu' : 'b-rd'}" style="font-size:10px;flex-shrink:0">${s.published ? 'منشور' : 'خاص'}</span>
+          </div>
+          <div style="font-size:11px;color:var(--tx3);margin-bottom:10px">
+            <i class="fas fa-building" style="color:var(--purple)"></i> ${san(officeName)}
+            ${s.province ? ` • <i class="fas fa-map-marker-alt"></i> ${san(s.province)}` : ''}
+            ${s.phone ? ` • <i class="fas fa-phone"></i> ${san(s.phone)}` : ''}
+          </div>
+          <div style="display:flex;gap:6px">
+            <button class="btn ${s.published ? '' : 'bp'} bsm" style="${s.published ? 'background:#7c3aed;color:#fff' : ''};flex:1"
+              onclick="adminToggleManagedSeeker('${s.id}',${!s.published},'${san(s.name)}')">
+              <i class="fas ${s.published ? 'fa-eye-slash' : 'fa-eye'}"></i>${s.published ? 'إخفاء' : 'نشر'}
+            </button>
+            <button class="btn bda bsm" onclick="adminDeleteManagedSeeker('${s.id}','${san(s.name)}')">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+async function adminToggleManagedSeeker(id, publish, name) {
+  if (DEMO || !window.db) return;
+  try {
+    await window.db.collection('managed_seekers').doc(id).update({ published: publish });
+    notify('تم ✅', `"${name}" ${publish ? 'منشور الآن للأصحاب العمل' : 'تم إخفاؤه'}`, 'success');
+    pgAdminManagedSeekers(document.getElementById('pcon'));
+  } catch(e) { notify('خطأ', 'فشلت العملية', 'error'); }
+}
+
+async function adminDeleteManagedSeeker(id, name) {
+  confirm2('حذف الموظف', `هل تريد حذف ملف "${name}" نهائياً؟`, async () => {
+    if (DEMO || !window.db) return;
+    try {
+      await window.db.collection('managed_seekers').doc(id).delete();
+      notify('تم الحذف', `تم حذف "${name}"`, 'info');
+      pgAdminManagedSeekers(document.getElementById('pcon'));
+    } catch(e) { notify('خطأ', 'فشل الحذف', 'error'); }
+  });
+}
+
+
+// ════════════════════════════════════════════
+// إعدادات النظام — أدمن
+// ════════════════════════════════════════════
 async function pgAdminSettings(el) {
   el.innerHTML = `<div class="es"><div class="es-ico"><i class="fas fa-circle-notch spin" style="color:var(--p)"></i></div><div class="es-desc">جارٍ تحميل الإعدادات...</div></div>`;
 

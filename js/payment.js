@@ -96,34 +96,147 @@ function showPaymentPlans() {
 }
 
 // ── طلب ترقية الخطة ──
-async function requestPlanUpgrade(plan) {
+function requestPlanUpgrade(plan) {
   if (!U || !window.db) { notify('تنبيه', 'سجّل دخولك أولاً', 'warning'); return; }
   const p = PLANS[plan];
   if (!p || p.price === 0) return;
 
-  confirm2(
-    `طلب ترقية إلى ${p.name}`,
-    `ستحصل على ${p.limit === Infinity ? 'وظائف غير محدودة' : `حتى ${p.limit} وظائف`} مقابل ${p.price.toLocaleString('ar-IQ')} IQD شهرياً.\n\nسيتواصل معك الأدمن لإتمام الدفع.`,
-    async () => {
-      try {
-        await window.db.collection('payments').add({
-          userId:    U.uid,
-          userName:  P?.name   || 'مستخدم',
-          userEmail: U.email   || '',
-          plan,
-          planName:  p.name,
-          amount:    p.price,
-          status:    'pending',
-          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-        });
-        cmo('moPay');
-        notify('تم إرسال الطلب ✅', 'سيراجع الأدمن طلبك ويفعّل خطتك بعد تأكيد الدفع', 'success');
-      } catch(e) {
-        console.error('requestPlanUpgrade:', e);
-        notify('خطأ', 'فشل إرسال الطلب. حاول مجدداً.', 'error');
-      }
+  // نعرض نافذة تأكيد مع حقل لملاحظة إيصال الدفع
+  let mo = document.getElementById('_upgradeModal');
+  if (!mo) {
+    mo = document.createElement('div');
+    mo.id = '_upgradeModal';
+    mo.className = 'mo';
+    mo.onclick = e => { if (e.target === mo) cmo('_upgradeModal'); };
+    mo.innerHTML = `<div class="mob" style="max-width:440px">
+      <div class="mh">
+        <div class="mt" id="_upgModalTitle"></div>
+        <div class="mc" onclick="cmo('_upgradeModal')"><i class="fas fa-times"></i></div>
+      </div>
+      <div class="mbod" id="_upgModalBody"></div>
+    </div>`;
+    document.body.appendChild(mo);
+  }
+
+  document.getElementById('_upgModalTitle').textContent = `ترقية إلى ${p.name}`;
+  document.getElementById('_upgModalBody').innerHTML = `
+    <div class="al al-i" style="margin-bottom:14px">
+      <i class="fas fa-info-circle"></i>
+      <div>
+        <div style="font-weight:700;font-size:13px">طريقة الدفع</div>
+        <div style="font-size:12px;color:var(--tx2);line-height:1.7;margin-top:3px">
+          ادفع <b>${p.price.toLocaleString('ar-IQ')} IQD</b> عبر <b>زين كاش أو حوالة مصرفية</b>،
+          ثم أرسل رقم العملية أو صورة الإيصال في الحقل أدناه.
+        </div>
+      </div>
+    </div>
+    <div style="background:var(--bgc2);border-radius:12px;padding:14px;margin-bottom:14px;text-align:center">
+      <div style="font-size:12px;color:var(--tx3);margin-bottom:4px">المبلغ المطلوب</div>
+      <div style="font-size:26px;font-weight:900;color:${p.color}">${p.price.toLocaleString('ar-IQ')} IQD</div>
+      <div style="font-size:11px;color:var(--tx3)">${p.limit === Infinity ? 'وظائف غير محدودة' : 'حتى ' + p.limit + ' وظائف'} / شهر</div>
+    </div>
+    <div class="fg">
+      <label class="fl">ملاحظة / رقم إيصال الدفع (اختياري)</label>
+      <textarea class="fc" id="upgradeReceiptNote" placeholder="مثال: رقم عملية زين كاش: 123456..." rows="2"
+        style="resize:none;font-size:13px"></textarea>
+    </div>
+    <div class="mf" style="border:none;padding:0;margin-top:12px">
+      <button class="btn bo" onclick="cmo('_upgradeModal')">إلغاء</button>
+      <button class="btn bfu" id="upgSubmitBtn" style="background:${p.color};color:#fff" onclick="_doRequestUpgrade('${plan}')">
+        <i class="fas fa-paper-plane"></i>إرسال الطلب
+      </button>
+    </div>`;
+  oMo('_upgradeModal');
+}
+
+async function _doRequestUpgrade(plan) {
+  if (!U || !window.db) return;
+  const p = PLANS[plan];
+  if (!p) return;
+  const note = document.getElementById('upgradeReceiptNote')?.value.trim() || '';
+  loading('upgSubmitBtn', true);
+  try {
+    await window.db.collection('payments').add({
+      userId     : U.uid,
+      userName   : P?.name    || 'مستخدم',
+      userEmail  : U.email    || '',
+      plan,
+      planName   : p.name,
+      amount     : p.price,
+      status     : 'pending',
+      receiptNote: note,
+      createdAt  : firebase.firestore.FieldValue.serverTimestamp(),
+    });
+    cmo('_upgradeModal');
+    cmo('moPay');
+    await notifyAdmin(
+      `طلب اشتراك جديد — ${p.name}`,
+      `مستخدم: ${P?.name||''} (${U.email||''})\nالخطة: ${p.name} — ${p.price.toLocaleString('ar-IQ')} IQD\n${note ? 'إيصال: ' + note : ''}`,
+      `💳 طلب اشتراك جديد\n👤 ${P?.name||''}\n📧 ${U.email||''}\n✨ ${p.name} — ${p.price.toLocaleString('ar-IQ')} IQD${note ? '\n📄 ' + note : ''}`
+    );
+    notify('تم إرسال الطلب ✅', 'سيراجع الأدمن طلبك ويفعّل خطتك بعد التحقق من الدفع', 'success');
+  } catch(e) {
+    console.error('requestPlanUpgrade:', e);
+    notify('خطأ', 'فشل إرسال الطلب. حاول مجدداً.', 'error');
+  } finally { loading('upgSubmitBtn', false); }
+}
+
+// ══════════════════════════════════════════════════════
+// توليد رقم الفاتورة
+// ══════════════════════════════════════════════════════
+function _genInvoiceNo() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  const rand = Math.floor(Math.random() * 9000) + 1000;
+  return `INV-${y}${m}${d}-${rand}`;
+}
+
+// ── إرسال الفاتورة بالبريد للمستخدم ──
+async function _sendInvoiceEmail(payment, plan, invoiceNo, expiry) {
+  if (!CFG.emailjs?.pub || CFG.emailjs.pub.startsWith('YOUR')) return;
+  const expiryDate = new Date(expiry).toLocaleDateString('ar-IQ');
+  const issueDate  = new Date().toLocaleDateString('ar-IQ');
+  const subject    = `فاتورة اشتراك الفانوس للتوظيف — ${invoiceNo}`;
+  const body = `
+الفانوس للتوظيف — فاتورة اشتراك
+══════════════════════════════
+
+رقم الفاتورة : ${invoiceNo}
+تاريخ الإصدار: ${issueDate}
+
+══════════════════════════════
+بيانات المشترك
+──────────────
+الاسم  : ${payment.userName}
+البريد : ${payment.userEmail}
+
+══════════════════════════════
+تفاصيل الاشتراك
+────────────────
+الخطة     : ${plan.name}
+المبلغ    : ${(payment.amount||0).toLocaleString('ar-IQ')} IQD
+الحد الأقصى: ${plan.limit === Infinity ? 'غير محدود' : plan.limit + ' وظيفة'}
+صالح حتى  : ${expiryDate}
+
+══════════════════════════════
+شكراً لاشتراكك في الفانوس للتوظيف.
+للدعم: ${CFG.emailjs.admin || 'support@fanoos.iq'}
+  `.trim();
+
+  try {
+    if (typeof emailjs !== 'undefined') {
+      emailjs.init(CFG.emailjs.pub);
+      await emailjs.send(CFG.emailjs.svc, CFG.emailjs.tpl, {
+        to_email : payment.userEmail,
+        to_name  : payment.userName,
+        subject,
+        message  : body,
+        reply_to : CFG.emailjs.admin || '',
+      });
     }
-  );
+  } catch(e) { console.warn('Invoice email error:', e); }
 }
 
 // ══════════════════════════════════════════════════════
@@ -144,93 +257,194 @@ async function pgAdminPayments(el) {
   const pending  = payments.filter(p => p.status === 'pending');
   const approved = payments.filter(p => p.status === 'approved');
   const rejected = payments.filter(p => p.status === 'rejected');
+  const totalRev = approved.reduce((s, p) => s + (p.amount||0), 0);
 
   el.innerHTML = `
+    <!-- رأس الصفحة -->
     <div class="sh">
       <div class="st"><div class="st-ico"><i class="fas fa-credit-card"></i></div>طلبات الاشتراكات</div>
-      <span class="b b-am">${pending.length} معلق</span>
+      ${pending.length ? `<span class="b b-am"><i class="fas fa-clock"></i> ${pending.length} معلق</span>` : ''}
     </div>
 
-    ${pending.length
-      ? `<div style="margin-bottom:16px">
-           <div style="font-size:12px;font-weight:800;color:var(--am);margin-bottom:8px">
-             <i class="fas fa-clock"></i> بانتظار الموافقة (${pending.length})
-           </div>
-           ${pending.map(p => _paymentCard(p, true)).join('')}
-         </div>`
-      : `<div class="es" style="padding:24px"><div class="es-ico">✅</div><div class="es-desc">لا توجد طلبات معلقة</div></div>`}
+    <!-- إحصائيات سريعة -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:18px">
+      ${[
+        {l:'معلقة',    v:pending.length,  c:'var(--am)',      ic:'fa-clock'},
+        {l:'مقبولة',   v:approved.length, c:'var(--success)', ic:'fa-check-circle'},
+        {l:'مرفوضة',   v:rejected.length, c:'var(--danger)',  ic:'fa-times-circle'},
+        {l:'الإيرادات',v:totalRev.toLocaleString('ar-IQ')+' IQD', c:'var(--p)', ic:'fa-coins'},
+      ].map(x => `<div class="card" style="padding:12px;text-align:center">
+        <i class="fas ${x.ic}" style="color:${x.c};font-size:18px;margin-bottom:6px;display:block"></i>
+        <div style="font-size:${x.l==='الإيرادات'?'13':'22'}px;font-weight:900;color:var(--tx)">${x.v}</div>
+        <div style="font-size:10px;color:var(--tx3);margin-top:3px">${x.l}</div>
+      </div>`).join('')}
+    </div>
 
+    <!-- الطلبات المعلقة -->
+    <div style="margin-bottom:20px">
+      <div style="font-size:13px;font-weight:800;color:var(--am);margin-bottom:10px;display:flex;align-items:center;gap:6px">
+        <i class="fas fa-clock"></i> بانتظار الموافقة
+        ${pending.length ? `<span class="b b-am" style="font-size:10px">${pending.length}</span>` : ''}
+      </div>
+      ${pending.length
+        ? pending.map(p => _paymentCard(p, true)).join('')
+        : `<div class="card" style="text-align:center;padding:28px;color:var(--tx3)">
+             <div style="font-size:28px;margin-bottom:8px">✅</div>
+             <div style="font-weight:700">لا توجد طلبات معلقة</div>
+             <div style="font-size:11px;margin-top:4px">جميع الطلبات تمت معالجتها</div>
+           </div>`}
+    </div>
+
+    <!-- السجل السابق -->
     ${approved.length + rejected.length > 0 ? `
-      <div class="sh"><div class="st">السجل السابق</div></div>
-      ${[...approved, ...rejected].map(p => _paymentCard(p, false)).join('')}
+      <div>
+        <div style="font-size:13px;font-weight:800;color:var(--tx2);margin-bottom:10px;display:flex;align-items:center;gap:6px">
+          <i class="fas fa-history"></i> السجل السابق
+          <span style="font-size:10px;color:var(--tx3);font-weight:400">${approved.length + rejected.length} طلب</span>
+        </div>
+        ${[...approved, ...rejected].sort((a,b) => tsMs(b.approvedAt||b.createdAt) - tsMs(a.approvedAt||a.createdAt)).map(p => _paymentCard(p, false)).join('')}
+      </div>
     ` : ''}`;
 }
 
 function _paymentCard(p, showActions) {
-  const plan = PLANS[p.plan] || { name: p.planName, color: '#888', icon: 'fa-layer-group' };
+  const plan = PLANS[p.plan] || { name: p.planName||'', color: '#888', icon: 'fa-layer-group', limit: 0 };
+  const dateStr = p.createdAt?.toDate?.()?.toLocaleDateString('ar-IQ') || ago(p.createdAt);
+  const expiryStr = p.planExpiry ? new Date(p.planExpiry).toLocaleDateString('ar-IQ') : '';
+
   return `
-    <div class="card cp" style="margin-bottom:10px">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
-        <div>
-          <div style="font-weight:800;font-size:14px;margin-bottom:4px">${san(p.userName)}</div>
-          <div style="font-size:12px;color:var(--tx3);margin-bottom:6px">${san(p.userEmail)}</div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap">
-            <span class="b" style="background:${plan.color}18;color:${plan.color}">
-              <i class="fas ${plan.icon}"></i> ${san(p.planName)}
-            </span>
-            <span class="b b-tl">${(p.amount||0).toLocaleString('ar-IQ')} IQD</span>
-            <span style="font-size:11px;color:var(--tx3)">${ago(p.createdAt)}</span>
+    <div class="card" style="margin-bottom:10px;border-right:3px solid ${showActions ? 'var(--am)' : p.status === 'approved' ? 'var(--success)' : 'var(--danger)'}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap">
+
+        <!-- معلومات المستخدم -->
+        <div style="flex:1;min-width:200px">
+          <div style="display:flex;align-items:center;gap:9px;margin-bottom:8px">
+            <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--p),var(--pl));color:#fff;font-size:15px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              ${(p.userName||'م').charAt(0)}
+            </div>
+            <div>
+              <div style="font-weight:800;font-size:13.5px;color:var(--tx)">${san(p.userName)}</div>
+              <div style="font-size:11px;color:var(--tx3)">${san(p.userEmail)}</div>
+            </div>
           </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+            <span class="b" style="background:${plan.color}18;color:${plan.color};border:1px solid ${plan.color}30">
+              <i class="fas ${plan.icon}"></i> ${san(p.planName||plan.name)}
+            </span>
+            <span class="b b-tl" style="font-size:11px">
+              <i class="fas fa-coins"></i>${(p.amount||0).toLocaleString('ar-IQ')} IQD
+            </span>
+            <span style="font-size:10.5px;color:var(--tx3)"><i class="fas fa-calendar-alt" style="margin-left:3px"></i>${dateStr}</span>
+          </div>
+          ${p.invoiceNo ? `<div style="font-size:10px;color:var(--tx3);margin-top:5px"><i class="fas fa-file-invoice" style="margin-left:3px;color:var(--p)"></i>رقم الفاتورة: <strong>${san(p.invoiceNo)}</strong></div>` : ''}
+          ${expiryStr && p.status === 'approved' ? `<div style="font-size:10px;color:var(--success);margin-top:3px"><i class="fas fa-check-circle" style="margin-left:3px"></i>صالح حتى: ${expiryStr}</div>` : ''}
+          ${p.receiptNote ? `<div style="font-size:10.5px;color:var(--tx2);margin-top:6px;padding:6px 10px;background:var(--bgc2);border-radius:6px;border-right:2px solid var(--p)"><i class="fas fa-receipt" style="margin-left:4px;color:var(--p)"></i>${san(p.receiptNote)}</div>` : ''}
         </div>
-        <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center">
+
+        <!-- الإجراءات -->
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:flex-start">
           ${showActions ? `
-            <button class="btn bsm" style="background:var(--success);color:#fff"
-              onclick="approvePayment('${p.id}','${p.userId}','${p.plan}')">
-              <i class="fas fa-check"></i> موافقة
+            <button class="btn bsm" style="background:var(--success);color:#fff;font-size:12px"
+              onclick="approvePayment('${p.id}','${p.userId}','${p.plan}','${san(p.userName)}','${san(p.userEmail)}')">
+              <i class="fas fa-check"></i>موافقة + فاتورة
             </button>
-            <button class="btn bda bsm" onclick="rejectPayment('${p.id}')">
-              <i class="fas fa-times"></i> رفض
+            <button class="btn bda bsm" style="font-size:12px" onclick="rejectPayment('${p.id}','${san(p.userName)}')">
+              <i class="fas fa-times"></i>رفض
             </button>
-          ` : `<span class="b ${p.status === 'approved' ? 'b-gr' : 'b-rd'}">${p.status === 'approved' ? 'مقبول ✅' : 'مرفوض'}</span>`}
+          ` : `
+            <div style="text-align:center">
+              <span class="b ${p.status === 'approved' ? 'b-gr' : 'b-rd'}" style="font-size:11px">
+                <i class="fas ${p.status === 'approved' ? 'fa-check-circle' : 'fa-times-circle'}"></i>
+                ${p.status === 'approved' ? 'مقبول' : 'مرفوض'}
+              </span>
+              ${p.status === 'approved' && p.invoiceNo ? `
+                <div style="margin-top:5px">
+                  <button class="btn bg bsm" style="font-size:10px" onclick="resendInvoice('${p.id}')">
+                    <i class="fas fa-envelope"></i>إعادة إرسال الفاتورة
+                  </button>
+                </div>` : ''}
+            </div>
+          `}
         </div>
       </div>
     </div>`;
 }
 
-async function approvePayment(paymentId, userId, plan) {
+async function approvePayment(paymentId, userId, plan, userName, userEmail) {
+  if (DEMO || !window.db) { notify('تنبيه', 'يتطلب Firebase حقيقي', 'info'); return; }
+  const planObj = PLANS[plan];
+  if (!planObj) { notify('خطأ', 'نوع الخطة غير صحيح', 'error'); return; }
+
   try {
-    if (!DEMO && window.db) {
-      const expiry = new Date(Date.now() + 30 * 86400000).toISOString();
-      await Promise.all([
-        window.db.collection('payments').doc(paymentId).update({
-          status: 'approved',
-          approvedAt: firebase.firestore.FieldValue.serverTimestamp(),
-        }),
-        window.db.collection('users').doc(userId).update({
-          plan,
-          planExpiry: expiry,
-        }),
-      ]);
+    const expiry    = new Date(Date.now() + 30 * 86400000).toISOString();
+    const invoiceNo = _genInvoiceNo();
+    const paySnap   = await window.db.collection('payments').doc(paymentId).get();
+    const payData   = paySnap.exists ? { id: paymentId, ...paySnap.data() } : { id: paymentId, userName, userEmail, plan, planName: planObj.name, amount: planObj.price };
+
+    await Promise.all([
+      window.db.collection('payments').doc(paymentId).update({
+        status     : 'approved',
+        approvedAt : firebase.firestore.FieldValue.serverTimestamp(),
+        invoiceNo,
+        planExpiry : expiry,
+      }),
+      window.db.collection('users').doc(userId).update({
+        plan,
+        planExpiry : expiry,
+      }),
+    ]);
+
+    // إرسال إشعار داخلي للمستخدم
+    if (userId) {
+      window.db.collection('notifications').add({
+        userId,
+        type  : 'subscription',
+        title : `تم تفعيل خطة ${planObj.name} ✅`,
+        body  : `اشتراكك نشط حتى ${new Date(expiry).toLocaleDateString('ar-IQ')} — رقم الفاتورة: ${invoiceNo}`,
+        read  : false,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      }).catch(() => {});
     }
-    notify('تمت الموافقة ✅', `تم تفعيل خطة ${PLANS[plan]?.name} للمستخدم`, 'success');
+
+    // إرسال الفاتورة بالبريد
+    await _sendInvoiceEmail(payData, planObj, invoiceNo, expiry);
+
+    notify('تمت الموافقة ✅', `تم تفعيل خطة ${planObj.name} وإرسال الفاتورة إلى ${userEmail}`, 'success');
     pgAdminPayments(document.getElementById('pcon'));
   } catch(e) {
     console.error('approvePayment:', e);
-    notify('خطأ', 'فشل تفعيل الخطة', 'error');
+    notify('خطأ', 'فشل تفعيل الخطة: ' + e.message, 'error');
   }
 }
 
-async function rejectPayment(paymentId) {
-  try {
-    if (!DEMO && window.db) {
-      await window.db.collection('payments').doc(paymentId).update({ status: 'rejected' });
+async function rejectPayment(paymentId, userName) {
+  confirm2('رفض طلب الاشتراك', `هل تريد رفض طلب "${userName||'المستخدم'}"؟`, async () => {
+    try {
+      if (!DEMO && window.db) {
+        await window.db.collection('payments').doc(paymentId).update({
+          status    : 'rejected',
+          rejectedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        });
+      }
+      notify('تم الرفض', 'تم رفض طلب الاشتراك', 'info');
+      pgAdminPayments(document.getElementById('pcon'));
+    } catch(e) {
+      console.error('rejectPayment:', e);
+      notify('خطأ', 'فشل رفض الطلب', 'error');
     }
-    notify('تم الرفض', 'تم رفض طلب الاشتراك', 'info');
-    pgAdminPayments(document.getElementById('pcon'));
-  } catch(e) {
-    console.error('rejectPayment:', e);
-    notify('خطأ', 'فشل رفض الطلب', 'error');
-  }
+  });
+}
+
+async function resendInvoice(paymentId) {
+  if (DEMO || !window.db) return;
+  try {
+    const snap = await window.db.collection('payments').doc(paymentId).get();
+    if (!snap.exists) { notify('خطأ', 'لم يُعثر على الطلب', 'error'); return; }
+    const p = { id: snap.id, ...snap.data() };
+    const planObj = PLANS[p.plan] || { name: p.planName, color: '#888', icon: 'fa-layer-group', limit: 0 };
+    await _sendInvoiceEmail(p, planObj, p.invoiceNo || _genInvoiceNo(), p.planExpiry || new Date(Date.now()+30*86400000).toISOString());
+    notify('تم الإرسال ✅', `أُعيد إرسال الفاتورة إلى ${p.userEmail}`, 'success');
+  } catch(e) { notify('خطأ', 'فشل إعادة الإرسال', 'error'); }
 }
 
 // ── رابط للأدمن من نافبار ──

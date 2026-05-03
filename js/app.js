@@ -314,12 +314,14 @@ const NAV_OFFICE = [
   { id:'profile',         icon:'fa-building',       label:'ملف المكتب',       btm:true  },
 ];
 const NAV_ADMIN = [
-  { id:'home',        icon:'fa-tachometer-alt', label:'لوحة التحكم',     btm:true  },
-  { id:'alljobs',     icon:'fa-briefcase',      label:'الوظائف',          btm:false },
-  { id:'alloffices',  icon:'fa-building',       label:'المكاتب',          btm:false },
-  { id:'allusers',    icon:'fa-users',          label:'المستخدمون',       btm:false },
-  { id:'campaigns',   icon:'fa-bullhorn',       label:'حملات التواصل',    btm:false },
-  { id:'settings',    icon:'fa-cog',            label:'الإعدادات',        btm:true  },
+  { id:'home',            icon:'fa-tachometer-alt', label:'لوحة التحكم',     btm:true  },
+  { id:'alljobs',         icon:'fa-briefcase',      label:'الوظائف',          btm:false },
+  { id:'alloffices',      icon:'fa-building',       label:'المكاتب',          btm:false },
+  { id:'allusers',        icon:'fa-users',          label:'المستخدمون',       btm:false },
+  { id:'admin_seekers',   icon:'fa-user-tie',       label:'الموظفون المُدارون', btm:false },
+  { id:'payments',        icon:'fa-credit-card',    label:'الاشتراكات',       btm:false },
+  { id:'campaigns',       icon:'fa-bullhorn',       label:'حملات التواصل',    btm:false },
+  { id:'settings',        icon:'fa-cog',            label:'الإعدادات',        btm:true  },
 ];
 
 function getNav() {
@@ -330,11 +332,15 @@ function getNav() {
   return NAV_SEEKER;
 }
 
+// شارات عداد الإشعارات لقائمة الأدمن { pageId: count }
+const _navBadges = {};
+
 function buildNav() {
   const pages = getNav();
   let html = '<div class="nav-lbl">القائمة</div>';
   pages.forEach(p => {
-    html += `<div class="ni" id="ni_${p.id}" onclick="goTo('${p.id}')"><i class="fas ${p.icon} ico"></i>${p.label}</div>`;
+    const badge = (_navBadges[p.id] > 0) ? `<span class="nbadge" style="background:#ef4444;color:#fff">${_navBadges[p.id]}</span>` : '';
+    html += `<div class="ni" id="ni_${p.id}" onclick="goTo('${p.id}')"><i class="fas ${p.icon} ico"></i>${p.label}${badge}</div>`;
   });
   if (ROLE === 'guest') {
     html += `<div class="nav-lbl">انضم إلينا</div>
@@ -351,6 +357,22 @@ function buildNav() {
   document.getElementById('bnav').innerHTML = btm.map(p =>
     `<div class="bni" id="bni_${p.id}" onclick="goTo('${p.id}')"><i class="fas ${p.icon}"></i>${p.label}</div>`
   ).join('');
+}
+
+// ── تحديث شارة الدفعات المعلقة للأدمن ──
+async function updatePaymentBadge() {
+  if (ROLE !== 'admin' || DEMO || !window.db) return;
+  try {
+    const snap = await window.db.collection('payments').where('status', '==', 'pending').get();
+    const cnt = snap.size;
+    if (cnt !== _navBadges.payments) {
+      _navBadges.payments = cnt || 0;
+      buildNav();
+      const cur = window.location.hash.replace('#', '') || 'home';
+      document.getElementById(`ni_${cur}`)?.classList.add('on');
+      document.getElementById(`bni_${cur}`)?.classList.add('on');
+    }
+  } catch(e) { /* نتجاهل الأخطاء في الخلفية */ }
 }
 
 function goTo(page) {
@@ -399,10 +421,11 @@ function renderPage(pg) {
     if (pg === 'home')        return pgAdminHome(el);
     if (pg === 'alljobs')     return pgAdminJobs(el);
     if (pg === 'alloffices')  return pgAdminOffices(el);
-    if (pg === 'allusers')    return pgAdminUsers(el);
-    if (pg === 'settings')    return pgAdminSettings(el);
-    if (pg === 'campaigns')   return pgAdminCampaigns(el);
-    if (pg === 'payments')    return pgAdminPayments(el);
+    if (pg === 'allusers')      return pgAdminUsers(el);
+    if (pg === 'admin_seekers') return pgAdminManagedSeekers(el);
+    if (pg === 'settings')      return pgAdminSettings(el);
+    if (pg === 'campaigns')     return pgAdminCampaigns(el);
+    if (pg === 'payments')      return pgAdminPayments(el);
     return pgAdminHome(el); // catch-all
   }
   // seeker (default)
@@ -447,6 +470,12 @@ function bootApp() {
   // إظهار شارة الإشعارات إذا كان هناك طلبات
   const ndot = document.getElementById('ndot');
   if (ndot && MY_APPS.length > 0) ndot.style.display = 'block';
+  // تحديث شارة الدفعات المعلقة للأدمن
+  if (ROLE === 'admin') {
+    updatePaymentBadge();
+    // تحديث دوري كل دقيقتين
+    setInterval(updatePaymentBadge, 120000);
+  }
   // استعادة آخر صفحة من URL hash
   const hash = location.hash.replace('#', '');
   const nav = getNav();
