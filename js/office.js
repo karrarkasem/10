@@ -739,14 +739,14 @@ function pgOfficeProfile(el) {
 
       <div class="cp" style="padding-top:30px">
         <!-- الإحصائيات -->
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px">
           ${[
             { v:JOBS.filter(j=>j.postedBy===U?.uid).length, l:'وظائف نشطة', c:'var(--p)' },
             { v:OFFICE_APPS.length,                          l:'المتقدمون',  c:'var(--acc)' },
             { v:OFFICE_APPS.filter(a=>a.status==='hired').length, l:'تم توظيفهم', c:'var(--success)' },
-          ].map(x => `<div style="text-align:center;padding:12px 10px;background:var(--bgc2);border-radius:11px;border:1px solid var(--br)">
-            <div style="font-size:20px;font-weight:900;color:${x.c}">${x.v}</div>
-            <div style="font-size:10px;color:var(--tx3);margin-top:2px">${x.l}</div>
+          ].map(x => `<div style="text-align:center;padding:10px 6px;background:var(--bgc2);border-radius:11px;border:1px solid var(--br);min-width:0;overflow:hidden">
+            <div style="font-size:22px;font-weight:900;color:${x.c}">${x.v}</div>
+            <div style="font-size:10px;color:var(--tx3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${x.l}</div>
           </div>`).join('')}
         </div>
 
@@ -814,50 +814,45 @@ function pgOfficeProfile(el) {
 
     <!-- خطط الاشتراك -->
     <div class="card cp" style="margin-bottom:14px">
-      <div style="font-size:13px;font-weight:800;color:var(--tx);margin-bottom:4px;display:flex;align-items:center;gap:6px">
-        <i class="fas fa-crown" style="color:var(--acc)"></i> خطة الاشتراك
-        <span class="b b-gr" style="font-size:10px">الخطة الحالية: مجانية</span>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">
+        <i class="fas fa-crown" style="color:var(--acc)"></i>
+        <span style="font-size:13px;font-weight:800;color:var(--tx)">خطة الاشتراك</span>
+        <span class="b b-gr" style="font-size:10px">الخطة الحالية: ${PLANS[getUserPlan()]?.name||'مجاني'}</span>
       </div>
       <p style="font-size:11px;color:var(--tx3);margin-bottom:14px">ارفع مستوى اشتراكك للوصول إلى ميزات متقدمة وزيادة ظهور وظائفك</p>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
-        ${[
-          {
-            name:'مجاني', price:'0', cur:'IQD', period:'دائماً',
-            color:'var(--tx2)', bg:'var(--bgc2)', badge:'',
-            features:['3 وظائف نشطة','50 مشاهدة/شهر','دعم بالبريد','تقارير أساسية'],
-            btn:'الخطة الحالية', btnClass:'bo', disabled:true
-          },
-          {
-            name:'برو', price:'50,000', cur:'IQD', period:'شهرياً',
-            color:'var(--p)', bg:'rgba(13,148,136,.06)', badge:'الأكثر طلباً',
-            features:['20 وظيفة نشطة','وظائف مميزة (Boost)','1000 مشاهدة/شهر','تقارير متقدمة','دعم أولوية'],
-            btn:'ترقية للبرو', btnClass:'bp', disabled:false
-          },
-          {
-            name:'مؤسسة', price:'150,000', cur:'IQD', period:'شهرياً',
-            color:'var(--acc)', bg:'rgba(245,158,11,.06)', badge:'للشركات الكبيرة',
-            features:['وظائف غير محدودة','ظهور مميز #1','تقارير AI متقدمة','مدير حساب مخصص','API للتكامل'],
-            btn:'تواصل معنا', btnClass:'ba', disabled:false
-          },
-        ].map(plan => `
-          <div style="border:2px solid ${plan.disabled ? 'var(--br)' : plan.color};border-radius:14px;padding:14px;background:${plan.bg};position:relative;transition:all .2s"
-            ${!plan.disabled ? `onmouseenter="this.style.transform='translateY(-3px)';this.style.boxShadow='0 8px 24px rgba(0,0,0,.1)'" onmouseleave="this.style.transform='';this.style.boxShadow=''"` : ''}>
-            ${plan.badge ? `<div style="position:absolute;top:-10px;right:50%;transform:translateX(50%);background:${plan.color};color:#fff;font-size:9px;font-weight:800;padding:3px 10px;border-radius:20px;white-space:nowrap">${plan.badge}</div>` : ''}
-            <div style="font-size:13px;font-weight:900;color:${plan.color};margin-bottom:4px">${plan.name}</div>
-            <div style="font-size:18px;font-weight:900;color:var(--tx)">${plan.price} <span style="font-size:10px;font-weight:400;color:var(--tx3)">${plan.cur} / ${plan.period}</span></div>
-            <div style="margin:10px 0;display:flex;flex-direction:column;gap:5px">
-              ${plan.features.map(f => `<div style="font-size:10px;color:var(--tx2);display:flex;align-items:center;gap:5px">
-                <i class="fas fa-check-circle" style="color:${plan.color};font-size:9px;flex-shrink:0"></i>${f}
-              </div>`).join('')}
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px">
+        ${Object.entries(PLANS).map(([key, plan]) => {
+          const isCur = getUserPlan() === key;
+          return `
+          <div style="border:2px solid ${isCur ? plan.color : 'var(--br)'};border-radius:14px;padding:14px;
+            background:${isCur ? plan.color+'10' : 'var(--bgc2)'};position:relative;
+            transition:all .2s;min-width:0;overflow:hidden"
+            ${!isCur ? `onmouseenter="this.style.transform='translateY(-3px)';this.style.boxShadow='var(--shl)'" onmouseleave="this.style.transform='';this.style.boxShadow=''"` : ''}>
+            ${isCur ? `<div style="position:absolute;top:-1px;right:50%;transform:translateX(50%);background:${plan.color};color:#fff;font-size:9px;font-weight:800;padding:2px 10px;border-radius:0 0 8px 8px;white-space:nowrap">خطتك الحالية</div>` : ''}
+            <div style="margin-top:${isCur?'10px':'0'}">
+              <i class="fas ${plan.icon}" style="color:${plan.color};font-size:20px;margin-bottom:6px;display:block"></i>
+              <div style="font-size:13px;font-weight:900;color:${plan.color};margin-bottom:4px">${plan.name}</div>
+              <div style="font-size:16px;font-weight:900;color:var(--tx)">
+                ${plan.price === 0 ? 'مجاناً' : plan.price.toLocaleString('ar-IQ')}
+                ${plan.price > 0 ? `<span style="font-size:9px;font-weight:400;color:var(--tx3)"> IQD/شهر</span>` : ''}
+              </div>
+              <div style="font-size:10px;color:var(--tx2);margin:8px 0;display:flex;align-items:center;gap:4px">
+                <i class="fas fa-briefcase" style="color:${plan.color};font-size:9px;flex-shrink:0"></i>
+                ${plan.limit === Infinity ? 'وظائف غير محدودة' : 'حتى ' + plan.limit + ' وظائف'}
+              </div>
+              ${isCur
+                ? `<div class="b b-gr" style="width:100%;justify-content:center;font-size:11px">✓ مفعّلة</div>`
+                : `<button class="btn bsm bfu" style="background:${plan.color};color:#fff;width:100%;font-size:11px"
+                    onclick="showPaymentPlans()">
+                    <i class="fas fa-arrow-up"></i> الترقية
+                  </button>`}
             </div>
-            <button class="btn ${plan.btnClass} bsm bfu" ${plan.disabled ? 'disabled' : `onclick="notify('${plan.name === 'مؤسسة' ? 'تواصل معنا' : 'الترقية'}','${plan.name === 'مؤسسة' ? 'سيتواصل معك فريقنا قريباً' : 'سيتم تفعيل الدفع الإلكتروني قريباً'}','${plan.name === 'مؤسسة' ? 'info' : 'success'}')"`}>
-              ${plan.btn}
-            </button>
-          </div>`).join('')}
+          </div>`;
+        }).join('')}
       </div>
       <div class="al al-i" style="margin-top:12px">
         <i class="fas fa-shield-alt"></i>
-        <span>ضمان استرجاع خلال 7 أيام. الدفع عبر: <strong>ZainCash</strong> • <strong>AsiaHawala</strong> • <strong>FIB</strong> • بطاقة مصرفية</span>
+        <span style="font-size:12px">الدفع عبر: <strong>ZainCash</strong> • <strong>AsiaHawala</strong> • <strong>FIB</strong></span>
       </div>
     </div>
 
