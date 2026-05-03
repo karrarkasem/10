@@ -327,10 +327,11 @@ service cloud.firestore {
       allow read: if isAdmin()
         || (isOffice() && resource.data.officeId == request.auth.uid)
         || (isJobPoster() && resource.data.published == true);
-      allow create: if isOffice() && isActive()
-        && request.resource.data.officeId == request.auth.uid
-        && validSize(request.resource.data)
-        && hasFields(request.resource.data, ['name', 'phone', 'officeId']);
+      allow create: if isAdmin()
+        || (isOffice() && isActive()
+            && request.resource.data.officeId == request.auth.uid
+            && validSize(request.resource.data)
+            && hasFields(request.resource.data, ['name', 'phone', 'officeId']));
       allow update: if isAdmin()
         || (isOffice() && resource.data.officeId == request.auth.uid
             && validSize(request.resource.data));
