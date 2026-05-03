@@ -1540,7 +1540,17 @@ function initOfficesMapInline(filter) {
   }).addTo(_officesMapInst);
 
   const allOffices = window._officesData || [];
-  const withLoc    = allOffices.filter(o => o.lat && o.lng);
+  // المكاتب التي لها إحداثيات محددة، أو نستخدم مركز محافظتها كموقع افتراضي
+  const withLoc = allOffices
+    .map(o => {
+      if (o.lat && o.lng) return o;
+      if (o.province && PROV_COORDS[o.province]) {
+        const [lat, lng] = PROV_COORDS[o.province];
+        return { ...o, lat, lng, _provFallback: true };
+      }
+      return null;
+    })
+    .filter(Boolean);
 
   // إحداثيات محافظة المستخدم
   const userProv   = P?.province;
@@ -1591,13 +1601,17 @@ function initOfficesMapInline(filter) {
     const bgColor = sameProvince ? '#0d9488' : isNearby ? '#7c3aed' : '#64748b';
     const size    = sameProvince ? 40 : isNearby ? 35 : 30;
     const zOff    = sameProvince ? 1000 : isNearby ? 500 : 0;
+    // موقع تقريبي (مركز المحافظة) — نضيف حد متقطع للتمييز
+    const borderStyle = o._provFallback
+      ? `border:2px dashed #fff;opacity:.85`
+      : `border:${sameProvince ? '3px' : '2px'} solid #fff`;
 
     const icon = L.divIcon({
       html: `<div style="
         width:${size}px;height:${size}px;background:${bgColor};color:#fff;
         border-radius:50%;display:flex;align-items:center;justify-content:center;
         font-size:${size > 35 ? 15 : 13}px;font-weight:900;
-        border:${sameProvince ? '3px' : '2px'} solid #fff;
+        ${borderStyle};
         box-shadow:0 ${sameProvince ? 5 : 2}px ${sameProvince ? 14 : 7}px rgba(0,0,0,.4);
         font-family:Cairo,sans-serif">
         ${initials}
@@ -1625,6 +1639,7 @@ function initOfficesMapInline(filter) {
             <i class="fas fa-map-marker-alt" style="color:#ef4444;margin-left:3px"></i>${san(o.province||'—')}
           </div>
           ${o.avgRating ? `<div style="color:#f59e0b;font-size:12px;margin-bottom:3px">★ ${(+o.avgRating).toFixed(1)} <span style="color:#94a3b8;font-size:10px">(${o.ratingCount||0} تقييم)</span></div>` : ''}
+          ${o._provFallback ? `<div style="font-size:9px;color:#f59e0b;margin-top:3px"><i class="fas fa-info-circle"></i> موقع تقريبي — مركز المحافظة</div>` : ''}
           ${distBadge}
           ${provBadge}
           <button onclick="viewOfficeJobs('${o.id}','${san(o.officeName||o.name)}')"
