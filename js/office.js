@@ -1164,11 +1164,39 @@ async function pgOfficesList(el) {
     </div>
 
     <div id="officesViewMap" style="display:none">
-      <div id="officesMapElInline" style="height:480px;border-radius:14px;overflow:hidden;border:1px solid var(--br)"></div>
-      <div style="font-size:11px;color:var(--tx3);text-align:center;margin-top:8px"><i class="fas fa-map-pin"></i> المكاتب التي حددت موقعها على الخارطة</div>
+
+      <!-- شريط فلترة الخارطة -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
+        <button id="mapFilterAll" class="btn bp bsm" onclick="setMapFilter('all',this)">
+          <i class="fas fa-globe-asia"></i> كل المحافظات
+        </button>
+        <button id="mapFilterNear" class="btn bg bsm" onclick="setMapFilter('near',this)">
+          <i class="fas fa-location-arrow"></i> قريب مني
+          ${P?.province ? `<span style="font-size:10px;opacity:.75">(${san(P.province)})</span>` : ''}
+        </button>
+        <div style="margin-right:auto">
+          <select id="mapProvJump" class="fc" style="font-size:12px;padding:5px 10px;height:auto;min-width:130px"
+            onchange="jumpToProvince(this.value);this.value=''">
+            <option value="">الانتقال إلى محافظة...</option>
+            ${PROVS.map(p => `<option value="${p}">${p}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+
+      <!-- حاوية الخريطة -->
+      <div id="officesMapElInline" style="height:460px;border-radius:14px;overflow:hidden;border:1px solid var(--br);box-shadow:var(--sh)"></div>
+
+      <!-- مفتاح الألوان -->
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;font-size:11px;color:var(--tx3);padding:0 4px">
+        <span><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#0d9488;vertical-align:middle;margin-left:4px"></span>محافظتك</span>
+        <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#7c3aed;vertical-align:middle;margin-left:4px"></span>قريب (< 80 كم)</span>
+        <span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#64748b;vertical-align:middle;margin-left:4px"></span>بقية المحافظات</span>
+        <span style="margin-right:auto"><i class="fas fa-map-pin"></i> ${offices.filter(o=>o.lat&&o.lng).length} مكتب على الخارطة</span>
+      </div>
     </div>`;
 
   window._officesData = offices;
+  window._officesMapFilter = 'all';
 }
 
 function officeCard(o) {
@@ -1470,7 +1498,29 @@ function setOfficesView(view, btn) {
   setTab(btn);
   document.getElementById('officesViewList').style.display = view === 'list' ? '' : 'none';
   document.getElementById('officesViewMap').style.display  = view === 'map'  ? '' : 'none';
-  if (view === 'map') initOfficesMapInline();
+  if (view === 'map') {
+    // نعيد تهيئة الخريطة في كل مرة يُفتح التاب لضمان الأبعاد الصحيحة
+    if (_officesMapInst) { _officesMapInst.remove(); _officesMapInst = null; }
+    initOfficesMapInline(window._officesMapFilter || 'all');
+  }
+}
+
+// ── فلترة الخارطة: كل المحافظات / قريب مني ──
+function setMapFilter(filter, btn) {
+  window._officesMapFilter = filter;
+  const btnAll  = document.getElementById('mapFilterAll');
+  const btnNear = document.getElementById('mapFilterNear');
+  if (btnAll)  { btnAll.className  = `btn ${filter==='all'  ? 'bp' : 'bg'} bsm`; }
+  if (btnNear) { btnNear.className = `btn ${filter==='near' ? 'bp' : 'bg'} bsm`; }
+  if (_officesMapInst) { _officesMapInst.remove(); _officesMapInst = null; }
+  initOfficesMapInline(filter);
+}
+
+// ── الانتقال السريع إلى محافظة ──
+function jumpToProvince(prov) {
+  if (!prov || !PROV_COORDS[prov] || !_officesMapInst) return;
+  const [lat, lng, zoom] = PROV_COORDS[prov];
+  _officesMapInst.setView([lat, lng], zoom + 1, { animate: true });
 }
 
 // ── حساب المسافة بين نقطتين (كيلومتر) باستخدام Haversine ──
@@ -1483,84 +1533,129 @@ function _haversine(lat1, lng1, lat2, lng2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
-function initOfficesMapInline() {
-  if (_officesMapInst) { _officesMapInst.invalidateSize(); return; }
+function initOfficesMapInline(filter) {
+  filter = filter || window._officesMapFilter || 'all';
   const mapEl = document.getElementById('officesMapElInline');
   if (!mapEl) return;
 
   _officesMapInst = L.map('officesMapElInline').setView([33.0, 44.0], 6);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap', maxZoom: 19,
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    maxZoom: 19,
   }).addTo(_officesMapInst);
 
-  const offices = window._officesData || [];
-  const withLoc = offices.filter(o => o.lat && o.lng);
+  const allOffices = window._officesData || [];
+  const withLoc    = allOffices.filter(o => o.lat && o.lng);
 
-  if (!withLoc.length) {
-    _officesMapInst.setView([33.3152, 44.3661], 6);
-    return;
-  }
-
-  // تحديد موقع المستخدم: إحداثيات محافظته أو موقعه المحفوظ
+  // إحداثيات محافظة المستخدم
   const userProv   = P?.province;
-  const userCenter = userProv && PROV_COORDS[userProv]
+  const userCoords = userProv && PROV_COORDS[userProv]
     ? { lat: PROV_COORDS[userProv][0], lng: PROV_COORDS[userProv][1] }
     : null;
 
-  // ترتيب المكاتب: الأقرب للمستخدم أولاً
-  const sorted = userCenter
-    ? [...withLoc].sort((a, b) =>
-        _haversine(userCenter.lat, userCenter.lng, a.lat, a.lng) -
-        _haversine(userCenter.lat, userCenter.lng, b.lat, b.lng))
-    : withLoc;
+  // فلترة حسب الخيار المحدد
+  let displayed = withLoc;
+  if (filter === 'near' && userProv) {
+    displayed = withLoc.filter(o =>
+      o.province === userProv ||
+      (userCoords && _haversine(userCoords.lat, userCoords.lng, o.lat, o.lng) < 100)
+    );
+  }
 
+  // رسالة فارغة داخل الخريطة إذا لم توجد نقاط
+  if (!displayed.length) {
+    const noDataDiv = document.createElement('div');
+    noDataDiv.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:999;background:rgba(255,255,255,.95);border-radius:14px;padding:20px 28px;text-align:center;font-family:Cairo,sans-serif;box-shadow:0 4px 20px rgba(0,0,0,.15)';
+    noDataDiv.innerHTML = `<div style="font-size:28px;margin-bottom:6px">🗺️</div>
+      <div style="font-weight:800;font-size:14px;color:#0f172a">لا توجد مكاتب في هذه المنطقة</div>
+      <div style="font-size:12px;color:#64748b;margin-top:4px">جرّب "كل المحافظات" لرؤية جميع المكاتب</div>`;
+    mapEl.style.position = 'relative';
+    mapEl.appendChild(noDataDiv);
+    if (userCoords) {
+      const [lat, lng, zoom] = PROV_COORDS[userProv];
+      _officesMapInst.setView([lat, lng], zoom);
+    }
+    return;
+  }
+
+  // ترتيب: الأقرب للمستخدم أولاً
+  const sorted = userCoords
+    ? [...displayed].sort((a, b) =>
+        _haversine(userCoords.lat, userCoords.lng, a.lat, a.lng) -
+        _haversine(userCoords.lat, userCoords.lng, b.lat, b.lng))
+    : displayed;
+
+  // رسم النقاط
+  const markers = [];
   sorted.forEach((o, idx) => {
-    const isNearby  = userCenter && _haversine(userCenter.lat, userCenter.lng, o.lat, o.lng) < 80;
-    const sameProvince = o.province && o.province === userProv;
-    const initials  = (o.officeName || o.name || '?').charAt(0);
-    const bgColor   = sameProvince ? '#0d9488' : isNearby ? '#7c3aed' : '#64748b';
-    const size      = sameProvince ? 38 : isNearby ? 34 : 30;
-    const zIndex    = sameProvince ? 1000 : isNearby ? 500 : idx;
+    const sameProvince = userProv && o.province === userProv;
+    const dist         = userCoords ? _haversine(userCoords.lat, userCoords.lng, o.lat, o.lng) : null;
+    const isNearby     = dist !== null && dist < 100 && !sameProvince;
+    const initials     = (o.officeName || o.name || '?').charAt(0);
+
+    const bgColor = sameProvince ? '#0d9488' : isNearby ? '#7c3aed' : '#64748b';
+    const size    = sameProvince ? 40 : isNearby ? 35 : 30;
+    const zOff    = sameProvince ? 1000 : isNearby ? 500 : 0;
 
     const icon = L.divIcon({
-      html: `<div style="width:${size}px;height:${size}px;background:${bgColor};color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:${sameProvince?14:12}px;font-weight:900;border:${sameProvince?'3px':'2px'} solid #fff;box-shadow:0 ${sameProvince?4:2}px ${sameProvince?12:6}px rgba(0,0,0,.35);font-family:Cairo,sans-serif;transition:transform .2s">${initials}</div>`,
+      html: `<div style="
+        width:${size}px;height:${size}px;background:${bgColor};color:#fff;
+        border-radius:50%;display:flex;align-items:center;justify-content:center;
+        font-size:${size > 35 ? 15 : 13}px;font-weight:900;
+        border:${sameProvince ? '3px' : '2px'} solid #fff;
+        box-shadow:0 ${sameProvince ? 5 : 2}px ${sameProvince ? 14 : 7}px rgba(0,0,0,.4);
+        font-family:Cairo,sans-serif">
+        ${initials}
+      </div>`,
       className: '',
-      iconSize: [size, size],
+      iconSize:   [size, size],
       iconAnchor: [size/2, size/2],
     });
 
-    const distTxt = userCenter
-      ? `<span style="font-size:10px;color:#888;display:block;margin-top:3px"><i class="fas fa-location-arrow"></i> ${Math.round(_haversine(userCenter.lat, userCenter.lng, o.lat, o.lng))} كم</span>`
+    const distBadge = dist !== null
+      ? `<div style="font-size:10px;color:#888;margin-top:4px"><i class="fas fa-route" style="color:${bgColor}"></i> ${dist < 1 ? 'موقعك' : Math.round(dist) + ' كم'}</div>`
       : '';
-    const nearBadge = sameProvince
-      ? `<span style="display:inline-block;background:#0d9488;color:#fff;border-radius:10px;font-size:9px;padding:1px 7px;margin-top:3px">محافظتك</span>`
-      : isNearby ? `<span style="display:inline-block;background:#7c3aed;color:#fff;border-radius:10px;font-size:9px;padding:1px 7px;margin-top:3px">قريب منك</span>` : '';
+    const provBadge = sameProvince
+      ? `<span style="display:inline-block;background:#0d9488;color:#fff;border-radius:10px;font-size:9px;padding:1px 8px;margin-top:4px">📍 محافظتك</span>`
+      : isNearby
+        ? `<span style="display:inline-block;background:#7c3aed;color:#fff;border-radius:10px;font-size:9px;padding:1px 8px;margin-top:4px">قريب منك</span>`
+        : '';
 
-    const marker = L.marker([o.lat, o.lng], { icon, zIndexOffset: zIndex })
+    const marker = L.marker([o.lat, o.lng], { icon, zIndexOffset: zOff })
       .addTo(_officesMapInst)
-      .bindPopup(`<div style="font-family:Cairo,sans-serif;direction:rtl;min-width:150px;padding:2px">
-        <b style="font-size:13px">${san(o.officeName || o.name)}</b>
-        <span style="font-size:11px;color:#666;display:block;margin-top:2px">${san(o.province||'')}</span>
-        ${o.avgRating ? `<span style="color:#f59e0b;font-size:11px">★ ${(+o.avgRating).toFixed(1)}</span> <span style="font-size:10px;color:#888">(${o.ratingCount||0})</span>` : ''}
-        ${distTxt}
-        ${nearBadge}
-        <button onclick="viewOfficeJobs('${o.id}','${san(o.officeName||o.name)}')"
-          style="margin-top:8px;background:#0d9488;color:#fff;border:none;border-radius:6px;padding:5px 12px;cursor:pointer;font-family:Cairo,sans-serif;font-size:12px;width:100%">
-          <i class="fas fa-briefcase"></i> عرض الوظائف
-        </button>
-      </div>`);
+      .bindPopup(`
+        <div style="font-family:Cairo,sans-serif;direction:rtl;min-width:155px;padding:3px">
+          <div style="font-size:13.5px;font-weight:800;color:#0f172a;margin-bottom:3px">${san(o.officeName||o.name)}</div>
+          <div style="font-size:11px;color:#64748b;margin-bottom:4px">
+            <i class="fas fa-map-marker-alt" style="color:#ef4444;margin-left:3px"></i>${san(o.province||'—')}
+          </div>
+          ${o.avgRating ? `<div style="color:#f59e0b;font-size:12px;margin-bottom:3px">★ ${(+o.avgRating).toFixed(1)} <span style="color:#94a3b8;font-size:10px">(${o.ratingCount||0} تقييم)</span></div>` : ''}
+          ${distBadge}
+          ${provBadge}
+          <button onclick="viewOfficeJobs('${o.id}','${san(o.officeName||o.name)}')"
+            style="margin-top:8px;background:#0d9488;color:#fff;border:none;border-radius:8px;
+              padding:6px 0;cursor:pointer;font-family:Cairo,sans-serif;font-size:12px;
+              font-weight:700;width:100%;display:flex;align-items:center;justify-content:center;gap:5px">
+            <i class="fas fa-briefcase"></i> عرض وظائفه
+          </button>
+        </div>
+      `, { maxWidth: 200 });
 
-    // فتح popup محافظة المستخدم تلقائياً لأول مكتب
-    if (sameProvince && idx === 0) setTimeout(() => marker.openPopup(), 600);
+    markers.push(marker);
+
+    // فتح popup المكتب الأول في محافظة المستخدم تلقائياً
+    if (sameProvince && idx === 0) setTimeout(() => marker.openPopup(), 700);
   });
 
-  // توسيط الخريطة على محافظة المستخدم إن وُجدت، وإلا تضمين الكل
-  if (userCenter && userProv && PROV_COORDS[userProv]) {
+  // توسيط الخريطة
+  if (filter === 'near' && userCoords && PROV_COORDS[userProv]) {
     const [lat, lng, zoom] = PROV_COORDS[userProv];
     _officesMapInst.setView([lat, lng], zoom);
+  } else if (markers.length === 1) {
+    _officesMapInst.setView([sorted[0].lat, sorted[0].lng], 12);
   } else {
-    const bounds = L.latLngBounds(withLoc.map(o => [o.lat, o.lng]));
-    _officesMapInst.fitBounds(bounds, { padding: [30, 30] });
+    const bounds = L.latLngBounds(displayed.map(o => [o.lat, o.lng]));
+    _officesMapInst.fitBounds(bounds, { padding: [40, 40], maxZoom: 12 });
   }
 }
 
