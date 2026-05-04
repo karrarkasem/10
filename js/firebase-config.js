@@ -1,5 +1,5 @@
 // ╔══════════════════════════════════════════════════════════════╗
-// ║   🔥 الفانوس للتوظيف — إعداد Firebase                      ║
+// ║   🔥 عفراء للتوظيف — إعداد Firebase                        ║
 // ╚══════════════════════════════════════════════════════════════╝
 
 const firebaseConfig = {
@@ -21,7 +21,7 @@ try {
   db.enablePersistence({ synchronizeTabs: true })
     .catch(err => { if (err.code !== 'failed-precondition' && err.code !== 'unimplemented') console.warn('Firestore offline:', err.code); });
 
-  console.log('✅ Firebase initialized — الفانوس للتوظيف');
+  console.log('✅ Firebase initialized — عفراء للتوظيف');
 } catch (e) {
   window.FIREBASE_ERROR = true;
   console.warn('⚠️ Firebase error — Demo Mode active');

@@ -1,5 +1,5 @@
 // ╔══════════════════════════════════════════════════════╗
-// ║  الفانوس للتوظيف — home.js                          ║
+// ║  عفراء للتوظيف — home.js                            ║
 // ║  الرئيسية + صفحات الأدمن الأربع                    ║
 // ╚══════════════════════════════════════════════════════╝
 
@@ -45,9 +45,9 @@ function pgSeekerHome(el) {
 
   el.innerHTML = `
     <div class="hero-banner fade-up">
-      <div class="hero-lamp">🪔</div>
+      <div class="hero-lamp">✨</div>
       <div class="hero-content">
-        <p class="hero-label">${greet}، مرحباً بك في الفانوس 👋</p>
+        <p class="hero-label">${greet}، مرحباً بك في عفراء 👋</p>
         <h2 class="hero-name">أهلاً، ${nm}</h2>
         <p class="hero-sub">
           ${newJ ? '<strong>' + newJ + ' وظيفة</strong> جُددت هذا الأسبوع' : 'تصفح الوظائف المتاحة'}
@@ -1441,10 +1441,10 @@ async function pgAdminSettings(el) {
         <div class="ch"><div class="cht"><i class="fas fa-sliders-h" style="color:var(--info)"></i> إعدادات الموقع</div></div>
         <div class="cp">
           <div class="fg"><label class="fl">اسم المنصة</label>
-            <input class="fc" id="siteName" value="${c.general?.siteName||'الفانوس للتوظيف'}" placeholder="الفانوس للتوظيف">
+            <input class="fc" id="siteName" value="${c.general?.siteName||'عفراء للتوظيف'}" placeholder="عفراء للتوظيف">
           </div>
           <div class="fg"><label class="fl">رابط الموقع (للمشاركة)</label>
-            <input class="fc" id="siteUrl" value="${c.general?.siteUrl||''}" placeholder="https://fanoos.app">
+            <input class="fc" id="siteUrl" value="${c.general?.siteUrl||''}" placeholder="https://afraa.iq">
           </div>
           ${_toggleRow('maintMode', c.general?.maintenance, 'وضع الصيانة', 'يمنع المستخدمين من الدخول مؤقتاً')}
         </div>
@@ -1480,7 +1480,7 @@ async function testTelegram() {
   const chat = document.getElementById('tgChat')?.value.trim();
   if (!bot || !chat) { notify('تنبيه', 'أدخل Bot Token و Chat ID أولاً', 'warning'); return; }
   try {
-    const data = await _tgSend(bot, chat, '✅ <b>الفانوس للتوظيف</b> — اختبار إشعار الأدمن ناجح!');
+    const data = await _tgSend(bot, chat, '✅ <b>عفراء للتوظيف</b> — اختبار إشعار الأدمن ناجح!');
     if (data.ok) notify('تم ✅', 'وصل الإشعار للأدمن على Telegram', 'success');
     else notify('خطأ', data.description || 'فشل الاختبار', 'error');
   } catch(e) { notify('خطأ', 'تعذّر الاتصال بـ Telegram', 'error'); }
@@ -1491,7 +1491,7 @@ async function testTelegramChannel() {
   const channel = document.getElementById('tgChannel')?.value.trim();
   if (!bot || !channel) { notify('تنبيه', 'أدخل Bot Token و Channel ID أولاً', 'warning'); return; }
   try {
-    const data = await _tgSend(bot, channel, '📢 <b>الفانوس للتوظيف</b>\n\nاختبار نشر وظيفة على القناة ✅\nسيظهر هنا إعلان الوظيفة تلقائياً عند نشرها.');
+    const data = await _tgSend(bot, channel, '📢 <b>عفراء للتوظيف</b>\n\nاختبار نشر وظيفة على القناة ✅\nسيظهر هنا إعلان الوظيفة تلقائياً عند نشرها.');
     if (data.ok) notify('تم ✅', 'وصل المنشور التجريبي للقناة', 'success');
     else notify('خطأ', data.description || 'تأكد أن البوت مشرف في القناة', 'error');
   } catch(e) { notify('خطأ', 'تعذّر الاتصال بـ Telegram', 'error'); }
@@ -1504,7 +1504,7 @@ async function testFacebook() {
   try {
     const res  = await fetch(`https://graph.facebook.com/v19.0/${pageId}/feed`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: '📢 الفانوس للتوظيف — اختبار نشر تلقائي ✅', access_token: token })
+      body: JSON.stringify({ message: '📢 عفراء للتوظيف — اختبار نشر تلقائي ✅', access_token: token })
     });
     const data = await res.json();
     if (data.id) notify('تم ✅', 'نُشر المنشور التجريبي على صفحة Facebook', 'success');

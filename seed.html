@@ -2,7 +2,7 @@
 <html dir="rtl" lang="ar">
 <head>
   <meta charset="UTF-8">
-  <title>🪔 الفانوس — بناء البيانات</title>
+  <title>✨ عفراء — بناء البيانات</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Segoe UI', Arial, sans-serif; background: #0f172a; color: #e2e8f0; padding: 24px; }
@@ -21,7 +21,7 @@
   </style>
 </head>
 <body>
-  <h1>🪔 الفانوس للتوظيف — بناء البيانات التجريبية</h1>
+  <h1>✨ عفراء للتوظيف — بناء البيانات التجريبية</h1>
   <div id="log">⏳ جارٍ التحضير...</div>
   <div id="result"></div>
 
@@ -49,23 +49,23 @@
     // ══════════════════════════════
     const ACCOUNTS = [
       {
-        email: 'admin@fanoos.iq',
+        email: 'admin@afra.iq',
         pass : 'Admin@1234',
         data : {
           name    : 'مدير النظام',
-          email   : 'admin@fanoos.iq',
+          email   : 'admin@afra.iq',
           role    : 'admin',
           status  : 'active',
           province: 'كربلاء',
         }
       },
       {
-        email: 'office@fanoos.iq',
+        email: 'office@afra.iq',
         pass : 'Office@1234',
         data : {
-          name      : 'مكتب الفانوس للتوظيف',
-          officeName: 'مكتب الفانوس للتوظيف',
-          email     : 'office@fanoos.iq',
+          name      : 'مكتب عفراء للتوظيف',
+          officeName: 'مكتب عفراء للتوظيف',
+          email     : 'office@afra.iq',
           role      : 'office',
           status    : 'active',
           province  : 'كربلاء',
@@ -74,12 +74,12 @@
         }
       },
       {
-        email: 'employer@fanoos.iq',
+        email: 'employer@afra.iq',
         pass : 'Employer@1234',
         data : {
           name       : 'مطعم الكرم الكربلائي',
           companyName: 'مطعم الكرم الكربلائي',
-          email      : 'employer@fanoos.iq',
+          email      : 'employer@afra.iq',
           role       : 'employer',
           status     : 'active',
           province   : 'كربلاء',
@@ -89,11 +89,11 @@
         }
       },
       {
-        email: 'seeker@fanoos.iq',
+        email: 'seeker@afra.iq',
         pass : 'Seeker@1234',
         data : {
           name    : 'أحمد علي محمد',
-          email   : 'seeker@fanoos.iq',
+          email   : 'seeker@afra.iq',
           role    : 'seeker',
           status  : 'active',
           province: 'كربلاء',
@@ -251,7 +251,7 @@
       // ── الخطوة ٢: الوظائف (بحساب المكتب) ──
       log('━━━ الخطوة ٢: إنشاء الوظائف ━━━', 'inf');
       try {
-        const cred = await auth.signInWithEmailAndPassword('office@fanoos.iq', 'Office@1234');
+        const cred = await auth.signInWithEmailAndPassword('office@afra.iq', 'Office@1234');
         const offUid = cred.user.uid;
         for (const j of JOBS) {
           await db.collection('jobs').add({ ...j, postedBy: offUid, postedAt: TS() });
@@ -265,7 +265,7 @@
       // ── الخطوة ٢ب: وظائف صاحب العمل ──
       log('━━━ الخطوة ٢ب: وظائف أصحاب العمل ━━━', 'inf');
       try {
-        const cred2 = await auth.signInWithEmailAndPassword('employer@fanoos.iq', 'Employer@1234');
+        const cred2 = await auth.signInWithEmailAndPassword('employer@afra.iq', 'Employer@1234');
         const empUid = cred2.user.uid;
         for (const j of EMPLOYER_JOBS) {
           await db.collection('jobs').add({ ...j, postedBy: empUid, postedAt: TS() });
@@ -279,10 +279,10 @@
       // ── الخطوة ٣: الإعدادات والحملات (بحساب الأدمن) ──
       log('━━━ الخطوة ٣: الإعدادات والحملات ━━━', 'inf');
       try {
-        await auth.signInWithEmailAndPassword('admin@fanoos.iq', 'Admin@1234');
+        await auth.signInWithEmailAndPassword('admin@afra.iq', 'Admin@1234');
 
         await db.collection('config').doc('settings').set({
-          general : { siteName: 'الفانوس للتوظيف', siteUrl: 'https://karbala-b4884.web.app', maintenance: false },
+          general : { siteName: 'عفراء للتوظيف', siteUrl: 'https://karbala-b4884.web.app', maintenance: false },
           telegram: { bot: '', chat: '', channel: '', autoPost: false },
           emailjs : { serviceId: '', templateId: '', userId: '' },
           imgbb   : { key: '' },
@@ -301,7 +301,7 @@
           name       : 'حملة التوظيف الرئيسية',
           active     : true,
           phone      : '07701234567',
-          telegram   : 'https://t.me/fanoos_jobs',
+          telegram   : 'https://t.me/afra_jobs',
           description: 'تواصل معنا للحصول على فرص عمل في كربلاء والمحافظات',
           createdAt  : TS(),
         });
@@ -319,10 +319,10 @@
       document.getElementById('result').innerHTML = `
         <div class="box">
           <h3>🔑 بيانات الدخول التجريبية</h3>
-          <div class="row"><span class="lbl">👑 الأدمن</span><span class="val">admin@fanoos.iq &nbsp;|&nbsp; Admin@1234</span></div>
-          <div class="row"><span class="lbl">🏢 مكتب التوظيف</span><span class="val">office@fanoos.iq &nbsp;|&nbsp; Office@1234</span></div>
-          <div class="row"><span class="lbl">🍽️ صاحب العمل (مطعم)</span><span class="val">employer@fanoos.iq &nbsp;|&nbsp; Employer@1234</span></div>
-          <div class="row"><span class="lbl">👤 الباحث</span><span class="val">seeker@fanoos.iq &nbsp;|&nbsp; Seeker@1234</span></div>
+          <div class="row"><span class="lbl">👑 الأدمن</span><span class="val">admin@afra.iq &nbsp;|&nbsp; Admin@1234</span></div>
+          <div class="row"><span class="lbl">🏢 مكتب التوظيف</span><span class="val">office@afra.iq &nbsp;|&nbsp; Office@1234</span></div>
+          <div class="row"><span class="lbl">🍽️ صاحب العمل (مطعم)</span><span class="val">employer@afra.iq &nbsp;|&nbsp; Employer@1234</span></div>
+          <div class="row"><span class="lbl">👤 الباحث</span><span class="val">seeker@afra.iq &nbsp;|&nbsp; Seeker@1234</span></div>
         </div>
         <div class="box">
           <h3>📊 ما تم إنشاؤه</h3>

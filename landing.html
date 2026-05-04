@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>الفانوس للتوظيف — نور طريقك نحو فرصتك المهنية</title>
+  <title>عفراء للتوظيف — ناصع البياض في سوق العمل العراقي</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
@@ -600,6 +600,66 @@
     }
     .footer-bottom p { color: var(--text-muted); font-size: 0.83rem; }
 
+    /* ── ABOUT / VISION ── */
+    #about {
+      padding: 90px 24px;
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .about-card {
+      background: linear-gradient(135deg, rgba(13,148,136,.08) 0%, rgba(13,148,136,.02) 100%);
+      border: 1px solid rgba(13,148,136,.3);
+      border-radius: 22px;
+      padding: 32px 36px;
+      margin-bottom: 44px;
+    }
+    .about-founder-row {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      margin-bottom: 22px;
+    }
+    .about-spark { font-size: 3.2rem; line-height: 1; flex-shrink: 0; }
+    .about-founder-name {
+      font-size: 1.18rem;
+      font-weight: 900;
+      color: var(--primary-light);
+      margin-bottom: 4px;
+    }
+    .about-founder-title { font-size: 0.87rem; color: var(--text-muted); }
+    .about-text {
+      font-size: 1rem;
+      color: var(--text);
+      line-height: 1.95;
+    }
+    .about-text strong { color: var(--primary-light); }
+    .about-text em { font-style: normal; color: var(--accent); font-weight: 800; }
+    .vision-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    @media (max-width: 768px) { .vision-grid { grid-template-columns: 1fr; } }
+    @media (min-width: 540px) and (max-width: 768px) { .vision-grid { grid-template-columns: repeat(2, 1fr); } }
+    .vision-card {
+      background: var(--card2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 30px 22px;
+      text-align: center;
+      transition: transform .22s, border-color .22s;
+    }
+    .vision-card:hover { transform: translateY(-5px); border-color: var(--primary); }
+    .vision-icon { font-size: 2.6rem; margin-bottom: 14px; display: block; }
+    .vision-card h3 {
+      font-size: 1.12rem;
+      font-weight: 900;
+      color: var(--primary-light);
+      margin-bottom: 12px;
+    }
+    .vision-card p { font-size: 0.91rem; color: var(--text-muted); line-height: 1.85; }
+
     /* ── FLOATING BUTTON ── */
     .floating-btn {
       position: fixed;
@@ -710,10 +770,11 @@
 
 <!-- ────────── NAVBAR ────────── -->
 <nav id="navbar">
-  <a href="index.html" class="nav-logo">🪔 <span>الفانوس</span></a>
+  <a href="index.html" class="nav-logo">✨ <span>عفراء</span></a>
   <ul class="nav-links">
     <li><a href="#jobs">الوظائف</a></li>
     <li><a href="#features">المميزات</a></li>
+    <li><a href="about.html">عن عفراء</a></li>
     <li><a href="#how">كيف يعمل</a></li>
     <li><a href="#provinces">المحافظات</a></li>
     <li><a href="index.html" class="btn-nav">ابدأ مجاناً</a></li>
@@ -727,6 +788,7 @@
 <nav class="mobile-menu" id="mobileMenu">
   <a href="#jobs" onclick="closeMobile()">الوظائف</a>
   <a href="#features" onclick="closeMobile()">المميزات</a>
+  <a href="about.html" onclick="closeMobile()">عن عفراء</a>
   <a href="#how" onclick="closeMobile()">كيف يعمل</a>
   <a href="#provinces" onclick="closeMobile()">المحافظات</a>
   <a href="index.html" class="btn-mobile-cta">ابدأ مجاناً ←</a>
@@ -762,9 +824,9 @@
 <!-- ────────── HERO ────────── -->
 <section class="hero">
   <div class="hero-content">
-    <div class="hero-lamp">🪔</div>
-    <h1>نور طريقك نحو فرصتك المهنية</h1>
-    <p>منصة الفانوس للتوظيف تربط أصحاب العمل بالكفاءات العراقية في جميع المحافظات — ابحث عن وظيفتك أو وظّف الشخص المناسب اليوم.</p>
+    <div class="hero-lamp">✨</div>
+    <h1>ناصع البياض في سوق العمل العراقي</h1>
+    <p>منصة عفراء للتوظيف تربط أصحاب العمل بالكفاءات العراقية في جميع المحافظات بشفافية ونقاء تام — ابحث عن وظيفتك أو وظّف الشخص المناسب اليوم.</p>
     <div class="hero-btns">
       <a href="index.html" class="btn-primary">🔍 ابحث عن وظيفة</a>
       <a href="index.html" class="btn-outline">🏢 أنا صاحب عمل</a>
@@ -910,7 +972,7 @@
 <!-- ────────── FEATURES ────────── -->
 <section id="features">
   <div class="container">
-    <h2 class="section-title">مميزات <span class="highlight">الفانوس</span></h2>
+    <h2 class="section-title">مميزات <span class="highlight">عفراء</span></h2>
     <p class="section-sub">أدوات ذكية تجعل البحث عن وظيفة أسرع وأكثر فاعلية من أي وقت مضى</p>
     <div class="features-grid">
       <div class="feature-card fade-up stagger-1">
@@ -950,7 +1012,7 @@
 <!-- ────────── HOW IT WORKS ────────── -->
 <section id="how">
   <div class="container">
-    <h2 class="section-title">كيف <span class="highlight">يعمل</span> الفانوس؟</h2>
+    <h2 class="section-title">كيف <span class="highlight">تعمل</span> عفراء؟</h2>
     <p class="section-sub">خطوات بسيطة تبدأ بها رحلتك المهنية أو تجد الكفاءة المناسبة لعملك</p>
 
     <div class="how-row">
@@ -1007,11 +1069,50 @@
   </div>
 </section>
 
+<!-- ────────── ABOUT / VISION ────────── -->
+<section id="about">
+  <div class="container">
+    <h2 class="section-title">قصة <span class="highlight">منصة عفراء</span></h2>
+    <p class="section-sub">اسمٌ يحمل معنى، ورسالة تحمل حلماً عراقياً أصيلاً</p>
+
+    <div class="about-card fade-up">
+      <div class="about-founder-row">
+        <span class="about-spark">✨</span>
+        <div>
+          <p class="about-founder-name">الأستاذة المهندسة عفراء الهاشمي</p>
+          <p class="about-founder-title">مؤسسة ورائدة منصة عفراء للتوظيف</p>
+        </div>
+      </div>
+      <p class="about-text">
+        <strong>عفراء</strong> — اسمٌ عربيٌّ أصيل يعني <em>ناصع البياض</em>، وهو النقاء والصفاء الذي تسعى المنصة إلى تجسيده في كل خطوة: شفافية كاملة، وفرص حقيقية، وعلاقات عمل مبنية على الثقة والمصداقية. اختارت المهندسة عفراء الهاشمي هذا الاسم ليعكس رؤيتها في بناء سوق عمل عراقي نظيف ومتوازن يُنصف الجميع ويُعطي كل ذي كفاءة حقه — فكما يعني الاسم نقاء لا يشوبه غبار، كذلك تطمح المنصة أن تكون المرجع الأنقى والأكثر ثقة في رحلة كل عراقي نحو وظيفته.
+      </p>
+    </div>
+
+    <div class="vision-grid">
+      <div class="vision-card fade-up stagger-1">
+        <span class="vision-icon">🎯</span>
+        <h3>الرؤية</h3>
+        <p>أن تكون منصة عفراء المرجع الأول والأكثر ثقة للتوظيف في العراق، تجمع الكفاءات بأصحاب العمل بكل شفافية وعدالة، وتُسهم في بناء اقتصاد وطني قائم على الجدارة والكفاءة.</p>
+      </div>
+      <div class="vision-card fade-up stagger-2">
+        <span class="vision-icon">💡</span>
+        <h3>الرسالة</h3>
+        <p>تمكين الباحثين عن عمل وأصحاب العمل من التواصل بسهولة وثقة عبر منصة رقمية متطورة، تعكس نقاء الاسم وصدق الهدف — فرصة عمل كريمة لكل عراقي في كل محافظة.</p>
+      </div>
+      <div class="vision-card fade-up stagger-3">
+        <span class="vision-icon">🌟</span>
+        <h3>الهدف</h3>
+        <p>تقليص الفجوة بين سوق العمل العراقي والكفاءات المؤهلة، وتوفير بيئة توظيف رقمية عادلة وموثوقة تغطي جميع المحافظات العراقية الثماني عشرة، مجاناً للباحثين بالكامل.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- ────────── ROLES ────────── -->
 <section id="roles">
   <div class="container">
     <h2 class="section-title">منصة واحدة <span class="highlight">لجميع الأطراف</span></h2>
-    <p class="section-sub">سواء كنت تبحث عن وظيفة أو تبحث عن موظف — الفانوس هو وجهتك الأولى</p>
+    <p class="section-sub">سواء كنت تبحث عن وظيفة أو تبحث عن موظف — عفراء هي وجهتك الأولى</p>
     <div class="roles-grid">
       <div class="role-card role-card-teal fade-up stagger-1">
         <div class="role-icon">👤</div>
@@ -1075,9 +1176,9 @@
 
 <!-- ────────── FINAL CTA ────────── -->
 <div class="cta-section">
-  <div class="cta-lamp">🪔</div>
-  <h2>جاهز لتُنير طريقك المهني؟</h2>
-  <p>سجّل الآن مجاناً وابدأ رحلتك مع الفانوس — آلاف الوظائف بانتظارك في جميع أنحاء العراق</p>
+  <div class="cta-lamp">✨</div>
+  <h2>جاهز لتبدأ رحلتك المهنية مع عفراء؟</h2>
+  <p>سجّل الآن مجاناً وابدأ رحلتك مع عفراء — آلاف الوظائف بانتظارك في جميع أنحاء العراق</p>
   <div class="hero-btns" style="justify-content:center; margin-bottom:0;">
     <a href="index.html" class="btn-primary">🔍 ابحث عن وظيفة الآن</a>
     <a href="index.html" class="btn-outline">🏢 انشر وظيفتك</a>
@@ -1088,8 +1189,8 @@
 <footer>
   <div class="footer-grid">
     <div class="footer-brand">
-      <h3>🪔 الفانوس للتوظيف</h3>
-      <p>منصة رقمية عراقية تربط الكفاءات بأصحاب العمل في جميع المحافظات. نؤمن بأن كل شخص يستحق فرصة عمل كريمة.</p>
+      <h3>✨ عفراء للتوظيف</h3>
+      <p>منصة رقمية عراقية ناصعة البياض تربط الكفاءات بأصحاب العمل في جميع المحافظات بشفافية تامة. نؤمن بأن كل شخص يستحق فرصة عمل كريمة.</p>
       <div class="social-links">
         <a href="#" class="social-link" title="فيسبوك">📘</a>
         <a href="#" class="social-link" title="تلجرام">✈️</a>
@@ -1120,14 +1221,14 @@
     </div>
     <div class="footer-col">
       <h4>تواصل معنا</h4>
-      <div class="footer-contact-item">📧 info@fanoos.iq</div>
+      <div class="footer-contact-item">📧 info@afraa.iq</div>
       <div class="footer-contact-item">📱 07800000000</div>
       <div class="footer-contact-item">📍 بغداد، العراق</div>
       <div class="footer-contact-item">🕐 السبت–الخميس: 9ص–5م</div>
     </div>
   </div>
   <div class="footer-bottom">
-    <p>© 2025 الفانوس للتوظيف — جميع الحقوق محفوظة</p>
+    <p>© 2025 عفراء للتوظيف — جميع الحقوق محفوظة</p>
     <p>صُنع بـ ❤️ في العراق</p>
   </div>
 </footer>

@@ -1,5 +1,5 @@
 // ╔══════════════════════════════════════════════════════╗
-// ║  الفانوس للتوظيف — app.js                           ║
+// ║  عفراء للتوظيف — app.js                             ║
 // ║  الحالة العامة + المساعدات + التنقل + الإعداد       ║
 // ╚══════════════════════════════════════════════════════╝
 
@@ -18,7 +18,7 @@ const CFG = {
   snapchat:  { accessToken: '', adAccountId: '', autoPost: false },
   youtube:   { apiKey: '', channelId: '' },
   gemini:    { key: '' },
-  general:   { maintenance: false, siteName: 'الفانوس للتوظيف', siteUrl: '' },
+  general:   { maintenance: false, siteName: 'عفراء للتوظيف', siteUrl: '' },
 };
 
 // ═══════════════════════════════════════════════
@@ -265,7 +265,7 @@ async function notifyAdmin(subj, html, tg) {
 // الثيم
 // ═══════════════════════════════════════════════
 function initTheme() {
-  let t = localStorage.getItem('fanoos_theme');
+  let t = localStorage.getItem('afraa_theme');
   if (!t) t = window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   document.documentElement.setAttribute('data-theme', t);
   const ic = document.getElementById('thIco');
@@ -276,7 +276,7 @@ function toggleTheme() {
   const cur = document.documentElement.getAttribute('data-theme') === 'dark';
   const nxt = cur ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', nxt);
-  localStorage.setItem('fanoos_theme', nxt);
+  localStorage.setItem('afraa_theme', nxt);
   const ic = document.getElementById('thIco');
   if (ic) ic.className = nxt === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
 }
@@ -493,7 +493,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // ═══════════════════════════════════════════════
 // نظام المحفوظات (Bookmarks)
 // ═══════════════════════════════════════════════
-let BOOKMARKS = JSON.parse(localStorage.getItem('fanoos_bookmarks') || '[]');
+let BOOKMARKS = JSON.parse(localStorage.getItem('afraa_bookmarks') || '[]');
 
 function toggleBookmark(id, e) {
   if (e) e.stopPropagation();
@@ -505,7 +505,7 @@ function toggleBookmark(id, e) {
     BOOKMARKS.splice(idx, 1);
     notify('تمت الإزالة', 'حُذفت من المحفوظات', 'info');
   }
-  localStorage.setItem('fanoos_bookmarks', JSON.stringify(BOOKMARKS));
+  localStorage.setItem('afraa_bookmarks', JSON.stringify(BOOKMARKS));
   document.querySelectorAll(`[data-bkm="${id}"]`).forEach(btn => {
     const saved = BOOKMARKS.includes(id);
     btn.className = 'bkm-btn' + (saved ? ' on' : '');

@@ -1,5 +1,5 @@
 // ╔══════════════════════════════════════════════════════╗
-// ║  الفانوس للتوظيف — jobs.js                          ║
+// ║  عفراء للتوظيف — jobs.js                            ║
 // ║  صفحة الوظائف + التفاصيل + التقديم + المحفوظات     ║
 // ╚══════════════════════════════════════════════════════╝
 
@@ -549,12 +549,12 @@ function _buildShareText(j, long = false) {
   const sal  = j.salary ? `${fmt(j.salary)}${j.salaryMax ? '–' + fmt(j.salaryMax) : ''} ${j.currency || 'IQD'}` : 'قابل للتفاوض';
   const type = jobTypeLabel(j.type);
   if (long) {
-    return `🔔 *فرصة عمل — الفانوس للتوظيف*\n\n` +
+    return `🔔 *فرصة عمل — عفراء للتوظيف*\n\n` +
       `💼 *${j.title}*\n🏢 ${j.company}\n📍 ${j.province || '—'} | ${type}\n💰 ${sal}\n⏳ آخر موعد: ${j.deadline || '—'}\n\n` +
       `${j.desc ? j.desc.slice(0, 150) + '...' : ''}\n\n` +
-      `👆 تقدّم الآن عبر منصة الفانوس للتوظيف 🪔\n${location.href}`;
+      `👆 تقدّم الآن عبر منصة عفراء للتوظيف ✨\n${location.href}`;
   }
-  return `فرصة عمل: ${j.title} — ${j.company} | ${j.province || ''} | ${type} | ${sal} — الفانوس للتوظيف 🪔 ${location.href}`;
+  return `فرصة عمل: ${j.title} — ${j.company} | ${j.province || ''} | ${type} | ${sal} — عفراء للتوظيف ✨ ${location.href}`;
 }
 
 // ── مشاركة الوظيفة عبر WhatsApp ──
@@ -578,9 +578,9 @@ function shareJobGeneral(id) {
 
 // ── مشاركة المنصة نفسها ──
 function sharePlatform() {
-  const text = `🪔 الفانوس للتوظيف — منصة التوظيف الأولى في العراق!\n\nآلاف الوظائف في 18 محافظة، تقدّم بنقرة واحدة وتابع طلبك لحظة بلحظة.\n✨ ذكاء اصطناعي يساعدك في المقابلة والسيرة الذاتية.\n\n${location.href}`;
-  const short = `الفانوس للتوظيف — منصة التوظيف الأولى في العراق 🪔 ${location.href}`;
-  _openSharePanel({ title: 'الفانوس للتوظيف', text: short, longText: text, url: location.href });
+  const text = `✨ عفراء للتوظيف — منصة التوظيف الأولى في العراق!\n\nآلاف الوظائف في 18 محافظة، تقدّم بنقرة واحدة وتابع طلبك لحظة بلحظة.\nذكاء اصطناعي يساعدك في المقابلة والسيرة الذاتية.\n\n${location.href}`;
+  const short = `عفراء للتوظيف — منصة التوظيف الأولى في العراق ✨ ${location.href}`;
+  _openSharePanel({ title: 'عفراء للتوظيف', text: short, longText: text, url: location.href });
 }
 
 // ── بناء نافذة المشاركة ──

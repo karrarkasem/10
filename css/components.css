@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════
-   الفانوس للتوظيف — المكونات المشتركة
+   عفراء للتوظيف — المكونات المشتركة
 ═══════════════════════════════════════════════ */
 
 /* ── App Shell ── */
@@ -441,6 +441,11 @@
   .auth-logo h1     { font-size: 17px; }
   .auth-logo-ico    { width: 52px; height: 52px; font-size: 22px; }
 }
+@media (max-width: 320px) {
+  .auth-card        { padding: 18px 14px; border-radius: 16px; }
+  .auth-logo h1     { font-size: 15px; }
+  .auth-logo-ico    { width: 44px; height: 44px; font-size: 18px; }
+}
 
 /* ── Hero banner: scale text down on small phones ── */
 @media (max-width: 400px) {
@@ -452,13 +457,13 @@
 }
 
 /* ── Quick actions: 1 col on very small screens ── */
-@media (max-width: 360px) {
+@media (max-width: 400px) {
   .qact-grid { grid-template-columns: 1fr; }
 }
 
 /* ── Search box: no hard min-width on mobile ── */
 @media (max-width: 480px) {
-  .sb { min-width: 140px; }
+  .sb { min-width: 100px; }
   .fb { gap: 5px; padding: 10px; }
 }
 

@@ -1,5 +1,5 @@
 // ╔══════════════════════════════════════════════════════╗
-// ║  الفانوس للتوظيف — payment.js                       ║
+// ║  عفراء للتوظيف — payment.js                         ║
 // ║  نظام الاشتراكات + حصة الوظائف + تمييز الإعلانات   ║
 // ╚══════════════════════════════════════════════════════╝
 
@@ -198,9 +198,9 @@ async function _sendInvoiceEmail(payment, plan, invoiceNo, expiry) {
   if (!CFG.emailjs?.pub || CFG.emailjs.pub.startsWith('YOUR')) return;
   const expiryDate = new Date(expiry).toLocaleDateString('ar-IQ');
   const issueDate  = new Date().toLocaleDateString('ar-IQ');
-  const subject    = `فاتورة اشتراك الفانوس للتوظيف — ${invoiceNo}`;
+  const subject    = `فاتورة اشتراك عفراء للتوظيف — ${invoiceNo}`;
   const body = `
-الفانوس للتوظيف — فاتورة اشتراك
+عفراء للتوظيف — فاتورة اشتراك
 ══════════════════════════════
 
 رقم الفاتورة : ${invoiceNo}
@@ -221,8 +221,8 @@ async function _sendInvoiceEmail(payment, plan, invoiceNo, expiry) {
 صالح حتى  : ${expiryDate}
 
 ══════════════════════════════
-شكراً لاشتراكك في الفانوس للتوظيف.
-للدعم: ${CFG.emailjs.admin || 'support@fanoos.iq'}
+شكراً لاشتراكك في عفراء للتوظيف.
+للدعم: ${CFG.emailjs.admin || 'support@afraa.iq'}
   `.trim();
 
   try {

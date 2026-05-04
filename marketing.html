@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>الفانوس — إنشاء إعلان وظيفة</title>
+  <title>عفراء — إنشاء إعلان وظيفة</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
@@ -465,7 +465,7 @@
 
 <!-- ────────── NAVBAR ────────── -->
 <nav id="navbar">
-  <a href="landing.html" class="nav-logo">🪔 <span>الفانوس</span></a>
+  <a href="landing.html" class="nav-logo">✨ <span>عفراء</span></a>
   <a href="landing.html" class="btn-back">← العودة للموقع</a>
 </nav>
 
@@ -584,8 +584,8 @@
         <div class="card-inner">
           <div class="card-header">
             <div class="card-brand">
-              <span class="card-brand-icon">🪔</span>
-              <span>الفانوس للتوظيف</span>
+              <span class="card-brand-icon">✨</span>
+              <span>عفراء للتوظيف</span>
             </div>
             <span class="card-badge">فرصة عمل</span>
           </div>
@@ -608,7 +608,7 @@
 
           <div id="cardDeadline">📅 آخر موعد للتقديم: —</div>
 
-          <div class="card-cta">🔗 سجّل الآن عبر: fanoos.iq</div>
+          <div class="card-cta">🔗 سجّل الآن عبر: afra.iq</div>
         </div>
       </div>
     </div>
@@ -738,7 +738,7 @@
 
     const provinceTag = province !== '—' ? `#${province.replace(/\s+/g, '_')}` : '';
 
-    return `🪔 فرصة عمل | الفانوس للتوظيف
+    return `✨ فرصة عمل | عفراء للتوظيف
 
 📌 ${title}
 🏢 ${company}
@@ -751,10 +751,10 @@ ${reqsText}
 
 📅 آخر موعد: ${deadline}
 
-🔗 قدّم الآن عبر: fanoos.iq
+🔗 قدّم الآن عبر: afra.iq
 📱 أو حمّل التطبيق من الموقع
 
-#وظائف_العراق #الفانوس_للتوظيف ${provinceTag}`.trim();
+#وظائف_العراق #عفراء_للتوظيف ${provinceTag}`.trim();
   }
 
   // ── Share functions ──
@@ -765,12 +765,12 @@ ${reqsText}
 
   function shareTelegram() {
     const text = encodeURIComponent(getShareText());
-    const url  = encodeURIComponent('https://fanoos.iq');
+    const url  = encodeURIComponent('https://afra.iq');
     window.open(`https://t.me/share/url?url=${url}&text=${text}`, '_blank');
   }
 
   function shareFacebook() {
-    const url = encodeURIComponent('https://fanoos.iq');
+    const url = encodeURIComponent('https://afra.iq');
     window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
   }
 
@@ -830,7 +830,7 @@ ${reqsText}
     }).then(canvas => {
       card.style.borderRadius = origBR || '16px';
       const link = document.createElement('a');
-      link.download = 'fanoos-job-ad.png';
+      link.download = 'afra-job-ad.png';
       link.href = canvas.toDataURL('image/png');
       link.click();
     }).catch(err => {

@@ -1,5 +1,5 @@
 // ╔══════════════════════════════════════════════════════╗
-// ║  الفانوس للتوظيف — office.js                        ║
+// ║  عفراء للتوظيف — office.js                          ║
 // ║  لوحة مكتب التوظيف + إدارة الوظائف + المتقدمون     ║
 // ╚══════════════════════════════════════════════════════╝
 
@@ -318,7 +318,7 @@ function renderCandRows(apps) {
   if (!apps.length) return `<tr><td colspan="6" style="text-align:center;padding:28px;color:var(--tx3)">لا توجد نتائج</td></tr>`;
   return apps.map(a => {
     const s = STAT[a.status] || STAT.pending;
-    // المكتب المرتبط: إما مكتب الترشيح أو مكتب فانوس (التقديم المباشر)
+    // المكتب المرتبط: إما مكتب الترشيح أو مكتب عفراء (التقديم المباشر)
     const affiliation = a.isReferral
       ? `<span class="b b-pu" style="font-size:9px"><i class="fas fa-building"></i>${san(a.officeName || 'مكتب')}</span>`
       : `<span class="b b-tl" style="font-size:9px"><i class="fas fa-user"></i>مباشر</span>`;
