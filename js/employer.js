@@ -72,7 +72,7 @@ function pgEmployerHome(el) {
     </div>
 
     <!-- إجراءات سريعة + آخر الوظائف -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px" class="fade-up del3">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-bottom:18px" class="fade-up del3">
       <!-- إجراءات سريعة -->
       <div class="card cp">
         <div class="cht" style="margin-bottom:13px"><i class="fas fa-bolt" style="color:var(--acc)"></i> إجراءات سريعة</div>

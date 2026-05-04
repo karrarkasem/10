@@ -94,7 +94,7 @@ function pgOfficeHome(el) {
     </div>
 
     <!-- قسمان: مسار التوظيف + الإجراءات -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px" class="fade-up del3">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-bottom:18px" class="fade-up del3">
       <!-- مسار التوظيف -->
       <div class="card">
         <div class="ch"><div class="cht"><i class="fas fa-filter" style="color:var(--p)"></i> مسار التوظيف</div></div>
