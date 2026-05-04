@@ -10,20 +10,22 @@ function pgSeekerProfile(el) {
   el.innerHTML = `
     <div class="sh"><div class="st"><div class="st-ico"><i class="fas fa-user"></i></div>حسابي الشخصي</div></div>
     <div class="card" style="margin-bottom:14px">
-      <div class="prof-banner">
-        <div style="position:absolute;bottom:-22px;right:22px;z-index:2">
+      <div class="prof-banner"></div>
+      <!-- الأفاتار خارج البانر لتجنب قصّه بـ overflow:hidden -->
+      <div style="position:relative;height:50px">
+        <div style="position:absolute;top:-40px;right:20px;z-index:3">
           <div style="position:relative;display:inline-block;cursor:pointer" onclick="triggerAvatarUpload()" title="تغيير الصورة الشخصية">
             ${p?.photoURL
               ? `<img src="${p.photoURL}" class="av avxl" style="object-fit:cover;border:3px solid var(--bgc);box-shadow:var(--shxl)">`
               : `<div class="av avxl" style="background:var(--grad-p);color:#fff;font-size:28px;font-weight:900;border:3px solid var(--bgc);box-shadow:var(--shxl)">${p?.name?.charAt(0)||'م'}</div>`}
-            <div style="position:absolute;bottom:0;left:0;width:26px;height:26px;background:var(--p);border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid var(--bgc)">
-              <i class="fas fa-camera" style="color:#fff;font-size:11px"></i>
+            <div style="position:absolute;bottom:2px;left:2px;width:24px;height:24px;background:var(--p);border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid var(--bgc)">
+              <i class="fas fa-camera" style="color:#fff;font-size:10px"></i>
             </div>
           </div>
           <input type="file" id="avatarInput" accept="image/*" style="display:none" onchange="uploadAvatar(this.files[0])">
         </div>
       </div>
-      <div class="cp" style="padding-top:32px">
+      <div class="cp" style="padding-top:0">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px">
           <div>
             <div style="font-size:19px;font-weight:900;color:var(--tx)">${p?.name||'مستخدم'}</div>

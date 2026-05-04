@@ -731,13 +731,14 @@ function pgOfficeProfile(el) {
 
     <div class="card" style="margin-bottom:14px">
       <!-- البانر -->
-      <div class="prof-banner">
-        <div style="position:absolute;bottom:-20px;right:22px;z-index:2">
+      <div class="prof-banner"></div>
+      <div style="position:relative;height:50px">
+        <div style="position:absolute;top:-40px;right:20px;z-index:3">
           <div class="av avxl" style="background:var(--bgc);color:var(--pd);font-size:28px;font-weight:900;border:3px solid var(--bgc);box-shadow:var(--shxl)">${nm.charAt(0)}</div>
         </div>
       </div>
 
-      <div class="cp" style="padding-top:30px">
+      <div class="cp" style="padding-top:0">
         <!-- الإحصائيات -->
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px">
           ${[
