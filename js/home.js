@@ -695,33 +695,9 @@ async function pgAdminUsers(el) {
       </div>
     </div>
 
-    <!-- الجدول -->
+    <!-- قائمة المستخدمين -->
     <div class="card" style="overflow:hidden">
-      <div id="usersTableWrap" style="overflow-x:auto">
-        <table style="width:100%;border-collapse:collapse;font-size:12.5px;min-width:620px" id="usersTable">
-          <thead>
-            <tr style="background:var(--bgc2);border-bottom:2px solid var(--br)">
-              <th style="padding:12px 14px;text-align:right;color:var(--tx2);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap">
-                <i class="fas fa-user" style="margin-left:5px;color:var(--p)"></i>المستخدم
-              </th>
-              <th style="padding:12px 14px;text-align:right;color:var(--tx2);font-weight:700;font-size:11px;white-space:nowrap">
-                <i class="fas fa-tag" style="margin-left:5px;color:var(--purple)"></i>الدور
-              </th>
-              <th style="padding:12px 14px;text-align:right;color:var(--tx2);font-weight:700;font-size:11px;white-space:nowrap">
-                <i class="fas fa-map-marker-alt" style="margin-left:5px;color:var(--danger)"></i>المحافظة
-              </th>
-              <th style="padding:12px 14px;text-align:right;color:var(--tx2);font-weight:700;font-size:11px;white-space:nowrap">
-                <i class="fas fa-crown" style="margin-left:5px;color:var(--acc)"></i>الخطة
-              </th>
-              <th style="padding:12px 14px;text-align:right;color:var(--tx2);font-weight:700;font-size:11px;white-space:nowrap">
-                <i class="fas fa-circle" style="margin-left:5px;color:var(--success)"></i>الحالة
-              </th>
-              <th style="padding:12px 14px;text-align:right;color:var(--tx2);font-weight:700;font-size:11px;white-space:nowrap">إجراءات</th>
-            </tr>
-          </thead>
-          <tbody id="usersTableBody"></tbody>
-        </table>
-      </div>
+      <div id="usersTableBody"></div>
       <div id="usersPagination" style="padding:10px 14px;border-top:1px solid var(--br);display:flex;justify-content:center"></div>
     </div>`;
 
@@ -760,11 +736,11 @@ function renderAdminUsersList() {
   if (!tbody) return;
 
   if (!filtered.length) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--tx3)">
+    tbody.innerHTML = `<div style="text-align:center;padding:40px;color:var(--tx3)">
       <div style="font-size:32px;margin-bottom:8px">🔍</div>
       <div style="font-weight:700;margin-bottom:4px">لا توجد نتائج</div>
       <div style="font-size:11px">جرّب تغيير كلمة البحث أو الفلتر</div>
-    </td></tr>`;
+    </div>`;
     if (pagDiv) pagDiv.innerHTML = '';
     return;
   }
@@ -781,90 +757,66 @@ function renderAdminUsersList() {
     const expired  = plan !== 'free' && u.planExpiry && new Date(u.planExpiry) < new Date();
     const PCOLOR   = { free:'#6b7280', standard:'#3b82f6', premium:'#f59e0b' };
     const PNAME    = { free:'مجاني', standard:'قياسي', premium:'مميز ⭐' };
-    const dateStr  = u.createdAt?.toDate?.()?.toLocaleDateString('ar-IQ') || '';
+    const dateStr  = u.createdAt?.toDate?.()?.toLocaleDateString('ar-IQ') || (u.createdAt ? u.createdAt.slice?.(0,10) : '');
 
-    return `<tr style="border-bottom:1px solid var(--br);transition:background .15s"
+    return `
+    <div style="padding:13px 14px;border-bottom:1px solid var(--br);transition:background .15s"
       onmouseenter="this.style.background='var(--bgc2)'" onmouseleave="this.style.background=''">
 
-      <!-- المستخدم -->
-      <td style="padding:11px 14px">
-        <div style="display:flex;align-items:center;gap:10px">
-          <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--p),var(--pl));color:#fff;font-size:14px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 6px rgba(13,148,136,.25)">
-            ${(u.name||'م').charAt(0)}
-          </div>
-          <div style="min-width:0">
-            <div style="font-weight:800;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px" title="${san(u.name||'')}">
-              ${san(u.name||'—')}
-              ${u.verified ? '<i class="fas fa-check-circle" style="color:var(--p);font-size:10px;margin-right:3px" title="موثّق"></i>' : ''}
-            </div>
-            <div style="color:var(--tx3);font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px">${san(u.email||'—')}</div>
-            ${u.phone ? `<div style="color:var(--tx3);font-size:10px">${san(u.phone)}</div>` : ''}
-            ${dateStr ? `<div style="color:var(--tx3);font-size:9.5px;margin-top:1px;opacity:.7">${dateStr}</div>` : ''}
-          </div>
+      <!-- الصف الأول: الأفاتار + الاسم + الدور -->
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:9px">
+        <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--p),var(--pl));color:#fff;font-size:16px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 6px rgba(13,148,136,.25)">
+          ${(u.name||'م').charAt(0)}
         </div>
-      </td>
-
-      <!-- الدور -->
-      <td style="padding:11px 14px">
-        <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
-          <span class="b ${roleClass[role]||'b-tl'}" style="font-size:11px">
-            <i class="fas ${roleIcon[role]||'fa-user'}"></i>${roleLabel[role]||'باحث'}
-          </span>
-          ${role !== 'admin' ? `
-          <button class="btn bo bsm" style="padding:2px 6px;font-size:10px;border-radius:6px" title="تغيير الدور"
-            onclick="adminChangeRole('${u.id}','${role}','${san(u.name||'')}')">
-            <i class="fas fa-exchange-alt"></i>
-          </button>` : ''}
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:800;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px">
+            ${san(u.name||'—')}
+            ${u.verified ? '<i class="fas fa-check-circle" style="color:var(--p);font-size:10px;margin-right:2px"></i>' : ''}
+            ${u.verificationRequested && !u.verified ? '<i class="fas fa-clock" style="color:var(--acc);font-size:10px;margin-right:2px" title="طلب توثيق معلّق"></i>' : ''}
+          </div>
+          <div style="color:var(--tx3);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${san(u.email||'—')}</div>
+          ${u.phone ? `<div style="color:var(--tx3);font-size:10.5px">${san(u.phone)}</div>` : ''}
         </div>
-      </td>
-
-      <!-- المحافظة -->
-      <td style="padding:11px 14px;color:var(--tx2);font-size:12px">
-        ${u.province ? `<span style="display:flex;align-items:center;gap:4px"><i class="fas fa-map-marker-alt" style="color:var(--danger);font-size:10px"></i>${san(u.province)}</span>` : '<span style="color:var(--tx3)">—</span>'}
-      </td>
-
-      <!-- الخطة -->
-      <td style="padding:11px 14px">
-        <span class="b" style="background:${PCOLOR[plan]||'#888'}15;color:${PCOLOR[plan]||'#888'};border:1px solid ${PCOLOR[plan]||'#888'}25;font-size:11px;${expired?'opacity:.5;text-decoration:line-through':''}"
-          title="${expired?'انتهت الصلاحية':''}">
-          ${PNAME[plan]||plan}
+        <span class="b ${roleClass[role]||'b-tl'}" style="font-size:10px;flex-shrink:0">
+          <i class="fas ${roleIcon[role]||'fa-user'}"></i>${roleLabel[role]||'باحث'}
         </span>
-        ${expired ? '<div style="font-size:9px;color:var(--danger);margin-top:2px"><i class="fas fa-exclamation-circle"></i>منتهية</div>' : ''}
-      </td>
+      </div>
 
-      <!-- الحالة -->
-      <td style="padding:11px 14px">
-        <span class="b ${isActive?'b-gr':'b-rd'}" style="font-size:11px">
-          <i class="fas ${isActive?'fa-check-circle':'fa-times-circle'}"></i>
-          ${isActive?'نشط':'موقوف'}
+      <!-- الصف الثاني: شارات المعلومات -->
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:9px;padding-right:50px">
+        <span class="b ${isActive?'b-gr':'b-rd'}" style="font-size:10px">
+          <i class="fas ${isActive?'fa-check-circle':'fa-times-circle'}"></i>${isActive?'نشط':'موقوف'}
         </span>
-      </td>
+        <span class="b" style="background:${PCOLOR[plan]||'#888'}15;color:${PCOLOR[plan]||'#888'};border:1px solid ${PCOLOR[plan]||'#888'}25;font-size:10px;${expired?'text-decoration:line-through':''}">${PNAME[plan]||plan}</span>
+        ${u.province ? `<span style="font-size:10px;color:var(--tx3);display:flex;align-items:center;gap:2px"><i class="fas fa-map-marker-alt" style="color:var(--danger);font-size:9px"></i>${san(u.province)}</span>` : ''}
+        ${dateStr ? `<span style="font-size:10px;color:var(--tx3)">${dateStr}</span>` : ''}
+      </div>
 
-      <!-- الإجراءات -->
-      <td style="padding:11px 14px">
-        ${role !== 'admin' ? `
-        <div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">
-          <button class="btn ${isActive?'bda':'bg'} bsm" style="font-size:11px;padding:4px 9px;border-radius:7px"
-            title="${isActive?'إيقاف الحساب':'تفعيل الحساب'}"
-            onclick="adminToggleUser('${u.id}','${isActive?'inactive':'active'}','${san(u.name||'')}')">
-            <i class="fas ${isActive?'fa-ban':'fa-check'}"></i>${isActive?'إيقاف':'تفعيل'}
-          </button>
-          ${!u.verified && (role==='office'||role==='employer'||role==='seeker') ? `
-          <button class="btn bsm" style="background:${role==='seeker'&&u.verificationRequested?'var(--acc)':'var(--success)'};color:#fff;font-size:11px;padding:4px 9px;border-radius:7px"
-            title="${role==='seeker'&&u.verificationRequested?'طلب توثيق معلّق':'توثيق الحساب'}"
-            onclick="adminVerifyUser('${u.id}','${san(u.name||'')}','${role}')">
-            <i class="fas ${role==='seeker'&&u.verificationRequested?'fa-user-check':'fa-check-circle'}"></i>${role==='seeker'&&u.verificationRequested?'طلب توثيق':'توثيق'}
-          </button>` : ''}
-          <button class="btn bsm" style="background:none;border:1px solid var(--br);color:var(--tx3);font-size:11px;padding:4px 8px;border-radius:7px"
-            title="حذف المستخدم" onclick="adminDeleteUser('${u.id}','${san(u.name||'')}')">
-            <i class="fas fa-trash"></i>
-          </button>
-        </div>` : `
-        <div style="display:flex;align-items:center;gap:5px">
-          <span class="b b-am" style="font-size:10px"><i class="fas fa-shield-alt"></i>محمي</span>
-        </div>`}
-      </td>
-    </tr>`;
+      <!-- الصف الثالث: أزرار الإجراءات -->
+      ${role !== 'admin' ? `
+      <div style="display:flex;gap:5px;flex-wrap:wrap;padding-right:50px">
+        <button class="btn ${isActive?'bda':'bg'} bsm" style="font-size:11px;padding:5px 10px;border-radius:8px"
+          onclick="adminToggleUser('${u.id}','${isActive?'inactive':'active'}','${san(u.name||'')}')">
+          <i class="fas ${isActive?'fa-ban':'fa-check'}"></i>${isActive?'إيقاف':'تفعيل'}
+        </button>
+        ${!u.verified ? `
+        <button class="btn bsm" style="background:${u.verificationRequested?'var(--acc)':'var(--success)'};color:#fff;font-size:11px;padding:5px 10px;border-radius:8px"
+          onclick="adminVerifyUser('${u.id}','${san(u.name||'')}','${role}')">
+          <i class="fas ${u.verificationRequested?'fa-user-check':'fa-check-circle'}"></i>${u.verificationRequested?'طلب توثيق':'توثيق'}
+        </button>` : `<span class="b b-tl" style="font-size:10px;padding:5px 10px"><i class="fas fa-shield-alt"></i>موثّق</span>`}
+        <button class="btn bo bsm" style="font-size:11px;padding:5px 10px;border-radius:8px"
+          onclick="adminChangeRole('${u.id}','${role}','${san(u.name||'')}')">
+          <i class="fas fa-exchange-alt"></i>الدور
+        </button>
+        <button class="btn bsm" style="background:none;border:1px solid var(--br);color:var(--tx3);font-size:11px;padding:5px 8px;border-radius:8px"
+          onclick="adminDeleteUser('${u.id}','${san(u.name||'')}')">
+          <i class="fas fa-trash"></i>
+        </button>
+      </div>` : `
+      <div style="padding-right:50px">
+        <span class="b b-am" style="font-size:10px"><i class="fas fa-shield-alt"></i>حساب محمي</span>
+      </div>`}
+    </div>`;
   }).join('');
 
   if (pagDiv) {
