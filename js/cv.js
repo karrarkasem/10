@@ -65,7 +65,7 @@ async function _buildSeekerCVModal() {
       <span style="font-size:12px">سيرتك الذاتية محفوظة — تحريرها سيُحدّث النسخة المحفوظة${ivBadge}</span>
     </div>` : ''}
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px">
       <div>
         <!-- تبويبات -->
         <div class="tabs" style="margin-bottom:13px">

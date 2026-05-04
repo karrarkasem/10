@@ -33,7 +33,10 @@ function pgSeekerProfile(el) {
             </div>
             <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:7px;align-items:center">
               <span class="b b-tl"><i class="fas fa-user"></i>باحث عن عمل</span>
-              ${(()=>{ const hasIV=(p?.ivScore||0)>=60; const hasCV=!!(p?.cvUrl||p?.cvBuilt); return pct>=80&&hasIV&&hasCV ? '<span class="verified-badge"><i class="fas fa-certificate"></i>موثّق وجاهز</span>' : ''; })()}
+              ${p?.verified
+                ? '<span class="admin-verified-badge"><i class="fas fa-shield-alt"></i>موثّق من الأدمن</span>'
+                : (()=>{ const hasIV=(p?.ivScore||0)>=60; const hasCV=!!(p?.cvUrl||p?.cvBuilt); return pct>=80&&hasIV&&hasCV ? '<span class="verified-badge"><i class="fas fa-certificate"></i>موثّق وجاهز</span>' : ''; })()
+              }
             </div>
           </div>
           <div style="text-align:left">
@@ -58,17 +61,25 @@ function pgSeekerProfile(el) {
         </div>
 
         <!-- خطوات التوثيق -->
-        <div class="readiness-steps">
-          ${[
-            { ok: pct >= 80,                         label: 'الملف الشخصي مكتمل (80%+)',  ico: 'fa-user-check' },
-            { ok: (p?.ivScore||0) >= 60,             label: 'اجتاز المقابلة الافتراضية',  ico: 'fa-comments' },
-            { ok: !!(p?.cvUrl || p?.cvBuilt),        label: 'سيرة ذاتية مرفوعة أو منشأة', ico: 'fa-file-alt' },
-          ].map(s => `<div class="readiness-step ${s.ok?'ok':''}">
-            <i class="fas ${s.ok?'fa-check-circle':'fa-circle'} step-ico"></i>
-            <span>${s.label}</span>
-            ${!s.ok ? `<button class="btn bsm" style="margin-right:auto;font-size:10px;padding:3px 9px;background:var(--bgc2);border:1px solid var(--br)" onclick="goTo('${s.ico==='fa-comments'?'interview':s.ico==='fa-file-alt'?'cv':'profile'}')">أكمل</button>` : ''}
-          </div>`).join('')}
-        </div>
+        ${(() => {
+          const hasIV  = (p?.ivScore||0) >= 60;
+          const hasCV  = !!(p?.cvUrl || p?.cvBuilt);
+          const allDone = pct >= 80 && hasIV && hasCV;
+          const steps = [
+            { ok: pct >= 80,   label: 'الملف الشخصي مكتمل (80%+)',  dest: 'profile',   ico: 'fa-user-check' },
+            { ok: hasIV,       label: 'اجتاز المقابلة الافتراضية',  dest: 'interview', ico: 'fa-comments'   },
+            { ok: hasCV,       label: 'سيرة ذاتية مرفوعة أو منشأة', dest: 'cv',        ico: 'fa-file-alt'   },
+            { ok: !!p?.verified, label: p?.verified ? 'موثّق من الأدمن ✅' : (p?.verificationRequested ? 'قيد المراجعة من الأدمن...' : 'توثيق الأدمن'), dest: null, ico: 'fa-shield-alt' },
+          ];
+          return `<div class="readiness-steps">
+            ${steps.map(s => `<div class="readiness-step ${s.ok?'ok':''}">
+              <i class="fas ${s.ok?'fa-check-circle':s.ico==='fa-shield-alt'&&p?.verificationRequested?'fa-clock':'fa-circle'} step-ico" ${s.ok?'':'style="color:var(--tx3)"'}></i>
+              <span>${s.label}</span>
+              ${!s.ok && s.dest ? `<button class="btn bsm" style="margin-right:auto;font-size:10px;padding:3px 9px;background:var(--bgc2);border:1px solid var(--br)" onclick="goTo('${s.dest}')">أكمل</button>` : ''}
+              ${!s.ok && !s.dest && allDone && !p?.verificationRequested ? `<button class="btn bsm" style="margin-right:auto;font-size:10px;padding:3px 10px;background:linear-gradient(135deg,var(--p),var(--pd));color:#fff;border:none" onclick="requestSeekerVerification()"><i class="fas fa-paper-plane"></i>اطلب</button>` : ''}
+            </div>`).join('')}
+          </div>`;
+        })()}
 
         <div style="font-size:13px;font-weight:800;color:var(--tx);margin-bottom:14px;display:flex;align-items:center;gap:6px"><i class="fas fa-pencil-alt" style="color:var(--p)"></i>تعديل المعلومات</div>
         <div class="fr">
@@ -247,4 +258,23 @@ async function saveProfile() {
   updateUserUI();
   notify('تم الحفظ ✅', 'تم تحديث ملفك الشخصي بنجاح', 'success');
   setTimeout(() => pgSeekerProfile(document.getElementById('pcon')), 600);
+}
+
+async function requestSeekerVerification() {
+  if (DEMO || !window.db || !U) return;
+  if (P?.verificationRequested) { notify('تنبيه', 'طلبك قيد المراجعة بالفعل', 'info'); return; }
+  try {
+    await window.db.collection('users').doc(U.uid).update({
+      verificationRequested: true,
+      verificationRequestedAt: new Date().toISOString()
+    });
+    P = { ...P, verificationRequested: true };
+    await notifyAdmin(
+      `طلب توثيق باحث — ${P?.name||''}`,
+      `<b>الباحث:</b> ${P?.name||''} (${U.email})<br><b>المحافظة:</b> ${P?.province||'—'}<br><b>المسمى:</b> ${P?.jobTitle||'—'}`,
+      `✅ طلب توثيق باحث\nالاسم: ${P?.name||''}\nالبريد: ${U.email}\nالمحافظة: ${P?.province||'—'}`
+    );
+    notify('تم الإرسال ✅', 'طلبك وصل للأدمن وسيتم مراجعته قريباً', 'success');
+    pgSeekerProfile(document.getElementById('pcon'));
+  } catch(e) { notify('خطأ', e.message, 'error'); }
 }

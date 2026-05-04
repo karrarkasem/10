@@ -64,13 +64,13 @@ function pgSeekerHome(el) {
       </div>
     </div>
 
-    ${pct < 90 ? `
+    ${pct < 80 ? `
     <div class="comp-card fade-up del1">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
         <div style="flex:1;min-width:160px">
-          <div class="comp-label"><i class="fas fa-user-check"></i>اكتمال ملفك الشخصي</div>
+          <div class="comp-label"><i class="fas fa-user-check"></i>أكمل ملفك لتكون مرئياً ومنشوراً</div>
           <div class="comp-val" style="color:${pColor}">${pct}%</div>
-          <div class="comp-hint">ملف مكتمل = فرص توظيف أفضل</div>
+          <div class="comp-hint">المكاتب وأصحاب العمل لا يرون ملفك حتى تكمله</div>
         </div>
         <button class="btn bp bsm" onclick="goTo('profile')"><i class="fas fa-pencil-alt"></i>أكمل ملفي</button>
       </div>
@@ -80,12 +80,35 @@ function pgSeekerHome(el) {
         ${!P?.jobTitle ? '<span class="comp-tip"><i class="fas fa-times-circle" style="color:var(--danger)"></i>المسمى الوظيفي</span>' : ''}
         ${!P?.bio      ? '<span class="comp-tip"><i class="fas fa-times-circle" style="color:var(--danger)"></i>نبذة شخصية</span>' : ''}
       </div>
+    </div>` : P?.verified ? `
+    <div class="comp-card fade-up del1" style="border-color:rgba(13,148,136,.4);background:linear-gradient(135deg,rgba(13,148,136,.06),var(--bgc))">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--p),var(--pd));display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;flex-shrink:0"><i class="fas fa-shield-alt"></i></div>
+        <div>
+          <div style="font-size:13px;font-weight:800;color:var(--tx)">ملفك موثّق من الأدمن <span class="admin-verified-badge" style="vertical-align:middle"><i class="fas fa-shield-alt"></i>موثّق</span></div>
+          <div style="font-size:11px;color:var(--tx2);margin-top:2px">تظهر في نتائج البحث بأولوية للمكاتب وأصحاب العمل</div>
+        </div>
+        <div style="margin-right:auto;font-size:22px;font-weight:900;color:var(--p)">${pct}%</div>
+      </div>
+    </div>` : P?.verificationRequested ? `
+    <div class="comp-card fade-up del1" style="border-color:rgba(245,158,11,.35)">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:44px;height:44px;border-radius:50%;background:rgba(245,158,11,.12);display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--acc);flex-shrink:0"><i class="fas fa-clock"></i></div>
+        <div>
+          <div style="font-size:13px;font-weight:800;color:var(--tx)">طلب التوثيق قيد المراجعة</div>
+          <div style="font-size:11px;color:var(--tx2);margin-top:2px">سيراجع الأدمن طلبك ويوثّق ملفك قريباً</div>
+        </div>
+        <div style="margin-right:auto;font-size:22px;font-weight:900;color:var(--success)">${pct}%</div>
+      </div>
     </div>` : `
     <div class="comp-card fade-up del1" style="border-color:rgba(34,197,94,.3)">
-      <div style="display:flex;align-items:center;gap:12px">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
         <div style="width:44px;height:44px;border-radius:50%;background:rgba(34,197,94,.12);display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--success);flex-shrink:0"><i class="fas fa-check-circle"></i></div>
-        <div><div style="font-size:13px;font-weight:800;color:var(--tx)">ملفك الشخصي مكتمل ✅</div><div style="font-size:11px;color:var(--tx2)">أنت في وضع ممتاز للحصول على وظيفة</div></div>
-        <div style="margin-right:auto;font-size:22px;font-weight:900;color:var(--success)">${pct}%</div>
+        <div style="flex:1;min-width:120px">
+          <div style="font-size:13px;font-weight:800;color:var(--tx)">ملفك مكتمل ✅ — اطلب التوثيق</div>
+          <div style="font-size:11px;color:var(--tx2);margin-top:2px">توثيق الأدمن يجعلك مميّزاً ويظهرك في الأولويات</div>
+        </div>
+        <button class="btn bp bsm" onclick="goTo('profile')" style="flex-shrink:0"><i class="fas fa-shield-alt"></i>اطلب التوثيق</button>
       </div>
     </div>`}
 
@@ -826,10 +849,11 @@ function renderAdminUsersList() {
             onclick="adminToggleUser('${u.id}','${isActive?'inactive':'active'}','${san(u.name||'')}')">
             <i class="fas ${isActive?'fa-ban':'fa-check'}"></i>${isActive?'إيقاف':'تفعيل'}
           </button>
-          ${(role==='office'||role==='employer') && !u.verified ? `
-          <button class="btn bsm" style="background:var(--success);color:#fff;font-size:11px;padding:4px 9px;border-radius:7px"
-            title="توثيق الحساب" onclick="adminVerifyUser('${u.id}','${san(u.name||'')}','${role}')">
-            <i class="fas fa-check-circle"></i>توثيق
+          ${!u.verified && (role==='office'||role==='employer'||role==='seeker') ? `
+          <button class="btn bsm" style="background:${role==='seeker'&&u.verificationRequested?'var(--acc)':'var(--success)'};color:#fff;font-size:11px;padding:4px 9px;border-radius:7px"
+            title="${role==='seeker'&&u.verificationRequested?'طلب توثيق معلّق':'توثيق الحساب'}"
+            onclick="adminVerifyUser('${u.id}','${san(u.name||'')}','${role}')">
+            <i class="fas ${role==='seeker'&&u.verificationRequested?'fa-user-check':'fa-check-circle'}"></i>${role==='seeker'&&u.verificationRequested?'طلب توثيق':'توثيق'}
           </button>` : ''}
           <button class="btn bsm" style="background:none;border:1px solid var(--br);color:var(--tx3);font-size:11px;padding:4px 8px;border-radius:7px"
             title="حذف المستخدم" onclick="adminDeleteUser('${u.id}','${san(u.name||'')}')">
@@ -880,13 +904,13 @@ async function adminDeleteUser(uid, name) {
 }
 
 async function adminVerifyUser(uid, name, role) {
-  const lbl = role === 'office' ? 'المكتب' : role === 'employer' ? 'صاحب العمل' : 'المستخدم';
-  confirm2('توثيق الحساب', `هل تريد توثيق ${lbl} "${name}"؟\nسيظهر شارة "موثّق ✅" على ملفه ويُفعَّل حسابه.`, async () => {
+  const lbl = role === 'office' ? 'المكتب' : role === 'employer' ? 'صاحب العمل' : role === 'seeker' ? 'الباحث' : 'المستخدم';
+  confirm2('توثيق الحساب', `هل تريد توثيق ${lbl} "${name}"؟\nسيظهر شارة "موثّق" على ملفه وسيُفعَّل حسابه.`, async () => {
     if (DEMO || !window.db) { notify('تنبيه', 'يتطلب Firebase', 'info'); return; }
     try {
-      await window.db.collection('users').doc(uid).update({ verified: true, status: 'active' });
+      await window.db.collection('users').doc(uid).update({ verified: true, status: 'active', verificationRequested: false });
       const u = (window._adminUsers||[]).find(u => u.id === uid);
-      if (u) { u.verified = true; u.status = 'active'; }
+      if (u) { u.verified = true; u.status = 'active'; u.verificationRequested = false; }
       renderAdminUsersList();
       notify('تم التوثيق ✅', `تم توثيق ${lbl} "${name}" بنجاح`, 'success');
     } catch(e) { notify('خطأ', 'فشل التوثيق: ' + e.message, 'error'); }
