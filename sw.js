@@ -2,10 +2,11 @@
 // ║   عفراء للتوظيف — Service Worker v2                        ║
 // ╚══════════════════════════════════════════════════════════════╝
 
-const CACHE = 'afraa-v1';
+const CACHE = 'afraa-v2';
 
 const LOCAL_ASSETS = [
   './index.html',
+  './about.html',
   './css/variables.css',
   './css/components.css',
   './css/pages.css',
@@ -16,11 +17,14 @@ const LOCAL_ASSETS = [
   './js/cv.js',
   './js/interview.js',
   './js/office.js',
+  './js/employer.js',
   './js/booking.js',
   './js/quiz.js',
   './js/myapps.js',
   './js/home.js',
   './js/profile.js',
+  './js/contact.js',
+  './js/payment.js',
   './manifest.json',
 ];
 
