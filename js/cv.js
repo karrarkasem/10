@@ -161,7 +161,7 @@ async function _buildSeekerCVModal() {
 
         <!-- أزرار الإجراءات -->
         <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn bp bsm" onclick="upCV()"><i class="fas fa-eye"></i>معاينة</button>
+          <button class="btn bp bsm" onclick="upCV();document.getElementById('cvPrev')?.scrollIntoView({behavior:'smooth',block:'nearest'})"><i class="fas fa-eye"></i>معاينة</button>
           <button class="btn ba bsm" onclick="dlCV()"><i class="fas fa-download"></i>تحميل PDF</button>
           <button class="btn bo bsm" id="saveCvBtn" onclick="saveCV()"><i class="fas fa-save"></i>حفظ</button>
           <button class="btn bsm" id="aiCvBtn"
@@ -382,16 +382,16 @@ function upCV() {
 
       ${sm ? `
       <div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid #e2e8f0">
-        <div style="font-size:9px;font-weight:900;color:#0d9488;text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px">
-          <i class="fas fa-user" style="margin-left:4px"></i>الملخص المهني
+        <div style="font-size:11px;font-weight:800;color:#0d9488;margin-bottom:6px;display:flex;align-items:center;gap:5px">
+          <i class="fas fa-user"></i>الملخص المهني
         </div>
-        <p style="font-size:10px;color:#475569;line-height:1.75;margin:0">${san(sm)}</p>
+        <p style="font-size:11px;color:#475569;line-height:1.8;margin:0;white-space:pre-wrap">${san(sm)}</p>
       </div>` : ''}
 
       ${validExps.length ? `
       <div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid #e2e8f0">
-        <div style="font-size:9px;font-weight:900;color:#0d9488;letter-spacing:.8px;margin-bottom:7px">
-          <i class="fas fa-briefcase" style="margin-left:4px"></i>الخبرات العملية
+        <div style="font-size:11px;font-weight:800;color:#0d9488;margin-bottom:7px;display:flex;align-items:center;gap:5px">
+          <i class="fas fa-briefcase"></i>الخبرات العملية
         </div>
         ${validExps.map(e => `
           <div style="margin-bottom:9px;padding-right:9px;border-right:2.5px solid #99f6e4">
@@ -406,8 +406,8 @@ function upCV() {
 
       ${validEdus.length ? `
       <div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid #e2e8f0">
-        <div style="font-size:9px;font-weight:900;color:#0d9488;letter-spacing:.8px;margin-bottom:7px">
-          <i class="fas fa-graduation-cap" style="margin-left:4px"></i>التعليم والمؤهلات
+        <div style="font-size:11px;font-weight:800;color:#0d9488;margin-bottom:7px;display:flex;align-items:center;gap:5px">
+          <i class="fas fa-graduation-cap"></i>التعليم والمؤهلات
         </div>
         ${validEdus.map(e => `
           <div style="margin-bottom:7px;padding-right:9px;border-right:2.5px solid #99f6e4">
@@ -422,8 +422,8 @@ function upCV() {
 
       ${cvSkills.length ? `
       <div>
-        <div style="font-size:9px;font-weight:900;color:#0d9488;letter-spacing:.8px;margin-bottom:7px">
-          <i class="fas fa-tools" style="margin-left:4px"></i>المهارات والكفاءات
+        <div style="font-size:11px;font-weight:800;color:#0d9488;margin-bottom:7px;display:flex;align-items:center;gap:5px">
+          <i class="fas fa-tools"></i>المهارات والكفاءات
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:4px">
           ${cvSkills.map(s => `<span style="background:#f0fdf4;color:#0d9488;border:1px solid #86efac;
@@ -834,24 +834,24 @@ function upCP() {
 
       ${about ? `
       <div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #e2e8f0">
-        <div style="font-size:9px;font-weight:900;color:#0d9488;letter-spacing:.8px;margin-bottom:4px">
-          <i class="fas fa-building"></i> نبذة
+        <div style="font-size:11px;font-weight:800;color:#0d9488;margin-bottom:5px;display:flex;align-items:center;gap:5px">
+          <i class="fas fa-building"></i>نبذة
         </div>
-        <p style="font-size:10px;color:#475569;line-height:1.7;margin:0">${san(about)}</p>
+        <p style="font-size:11px;color:#475569;line-height:1.8;margin:0;white-space:pre-wrap">${san(about)}</p>
       </div>` : ''}
 
       ${srv ? `
       <div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #e2e8f0">
-        <div style="font-size:9px;font-weight:900;color:#0d9488;letter-spacing:.8px;margin-bottom:4px">
-          <i class="fas fa-list-check"></i> الخدمات
+        <div style="font-size:11px;font-weight:800;color:#0d9488;margin-bottom:5px;display:flex;align-items:center;gap:5px">
+          <i class="fas fa-list-check"></i>الخدمات
         </div>
-        <div style="font-size:10px;color:#475569;line-height:1.8">${san(srv).replace(/\n/g,'<br>')}</div>
+        <div style="font-size:11px;color:#475569;line-height:1.8">${san(srv).replace(/\n/g,'<br>')}</div>
       </div>` : ''}
 
       ${(addr || hours || lic || mapUrl) ? `
       <div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #e2e8f0">
-        <div style="font-size:9px;font-weight:900;color:#0d9488;letter-spacing:.8px;margin-bottom:6px">
-          <i class="fas fa-info-circle"></i> معلومات إضافية
+        <div style="font-size:11px;font-weight:800;color:#0d9488;margin-bottom:6px;display:flex;align-items:center;gap:5px">
+          <i class="fas fa-info-circle"></i>معلومات إضافية
         </div>
         ${addr  ? `<div style="font-size:10px;color:#475569;margin-bottom:3px"><i class="fas fa-location-dot" style="color:var(--danger);width:12px"></i> ${san(addr)}</div>` : ''}
         ${hours ? `<div style="font-size:10px;color:#475569;margin-bottom:3px"><i class="fas fa-clock" style="color:var(--p);width:12px"></i> ${san(hours)}</div>` : ''}
@@ -862,8 +862,8 @@ function upCP() {
 
       ${(phone || wa || tg || em || web) ? `
       <div>
-        <div style="font-size:9px;font-weight:900;color:#0d9488;letter-spacing:.8px;margin-bottom:6px">
-          <i class="fas fa-address-book"></i> التواصل
+        <div style="font-size:11px;font-weight:800;color:#0d9488;margin-bottom:6px;display:flex;align-items:center;gap:5px">
+          <i class="fas fa-address-book"></i>التواصل
         </div>
         <div style="display:flex;flex-direction:column;gap:4px;font-size:10px;color:#475569">
           ${phone ? `<span><i class="fas fa-phone" style="color:var(--p);width:12px"></i> ${san(phone)}</span>` : ''}
