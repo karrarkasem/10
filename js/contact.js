@@ -121,7 +121,10 @@ async function pgAdminCampaigns(el) {
     try {
       const snap = await window.db.collection('campaigns').orderBy('createdAt', 'desc').get();
       campaigns = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    } catch(e) { console.warn('campaigns admin:', e.message); }
+    } catch(e) {
+      console.error('campaigns admin:', e.code, e.message);
+      notify('تحذير', 'تعذّر تحميل الحملات: ' + e.message, 'error');
+    }
   }
 
   el.innerHTML = `
@@ -145,21 +148,24 @@ async function pgAdminCampaigns(el) {
 
     <div id="campaignsList">
       ${campaigns.length ? campaigns.map(c => _campaignCard(c)).join('') : `
-        <div class="card" style="text-align:center;padding:40px 20px;color:var(--tx3)">
-          <i class="fas fa-bullhorn" style="font-size:40px;margin-bottom:12px;opacity:.3"></i>
-          <div style="font-size:13px">لا توجد حملات بعد</div>
-          <div style="font-size:11px;margin-top:4px">أنشئ حملة لإتاحة أرقام التواصل لفترة محددة</div>
+        <div class="es">
+          <div class="es-ico"><i class="fas fa-bullhorn"></i></div>
+          <div class="es-tit">لا توجد حملات بعد</div>
+          <div class="es-desc">أنشئ حملة لإتاحة أرقام التواصل للمستخدمين في فترة ومنطقة محددة</div>
+          <button class="btn bp bsm" onclick="openAddCampaignModal()">
+            <i class="fas fa-plus"></i>أنشئ أول حملة
+          </button>
         </div>`}
     </div>
 
     <!-- مودال إضافة / تعديل حملة -->
-    <div id="moCampaign" class="mo" style="display:none" onclick="if(event.target===this)cmo('moCampaign')">
-      <div class="mob" style="max-width:500px">
+    <div id="moCampaign" class="mo" onclick="if(event.target===this)cmo('moCampaign')">
+      <div class="md" style="max-width:500px">
         <div class="mh">
           <div class="mt"><i class="fas fa-bullhorn" style="color:var(--p)"></i> <span id="campModalTitle">حملة جديدة</span></div>
           <div class="mc" onclick="cmo('moCampaign')"><i class="fas fa-times"></i></div>
         </div>
-        <div class="mbod" id="moCampaignB"></div>
+        <div class="mb" id="moCampaignB"></div>
       </div>
     </div>`;
 }
@@ -258,7 +264,7 @@ function _renderCampaignForm(c) {
         <span style="font-weight:700">تفعيل الحملة مباشرة</span>
       </label>
     </div>
-    <div class="mf" style="border:none;padding:0;margin-top:16px">
+    <div class="mf">
       <button class="btn bo" onclick="cmo('moCampaign')">إلغاء</button>
       <button class="btn bp bfu" id="saveCampBtn" onclick="adminSaveCampaign()">
         <i class="fas fa-save"></i>حفظ الحملة
