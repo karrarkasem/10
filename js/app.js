@@ -18,7 +18,18 @@ const CFG = {
   snapchat:  { accessToken: '', adAccountId: '', autoPost: false },
   youtube:   { apiKey: '', channelId: '' },
   gemini:    { key: '' },
-  general:   { maintenance: false, siteName: 'عفراء للتوظيف', siteUrl: '' },
+  general:   { maintenance: false, siteName: 'عفراء للتوظيف', siteUrl: 'https://afra-iq.com' },
+  site: {
+    email:          'afrahub.iq@gmail.com',
+    phone:          '',
+    address:        'بغداد، العراق',
+    facebookUrl:    '',
+    instagramUrl:   '',
+    tiktokUrl:      '',
+    telegramUrl:    '',
+    whatsappNum:    '',
+    founderPhotoURL:'',
+  },
 };
 
 // ═══════════════════════════════════════════════

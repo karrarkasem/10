@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0d9488"/>
+      <stop offset="100%" style="stop-color:#0f766e"/>
+    </linearGradient>
+    <linearGradient id="star" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff"/>
+      <stop offset="100%" style="stop-color:#e2f8f5"/>
+    </linearGradient>
+  </defs>
+  <!-- خلفية دائرية -->
+  <rect width="512" height="512" rx="96" ry="96" fill="url(#bg)"/>
+  <!-- نجمة مركزية كبيرة -->
+  <polygon points="256,80 278,200 310,178 280,256 310,334 278,312 256,432 234,312 202,334 232,256 202,178 234,200"
+    fill="url(#star)" opacity="0.95"/>
+  <!-- نجوم صغيرة جانبية -->
+  <polygon points="120,160 130,200 145,188 132,220 145,252 130,240 120,280 110,240 95,252 108,220 95,188 110,200"
+    fill="white" opacity="0.6"/>
+  <polygon points="392,160 402,200 417,188 404,220 417,252 402,240 392,280 382,240 367,252 380,220 367,188 382,200"
+    fill="white" opacity="0.6"/>
+  <!-- عنصر زخرفي سفلي -->
+  <ellipse cx="256" cy="420" rx="80" ry="8" fill="white" opacity="0.12"/>
+</svg>

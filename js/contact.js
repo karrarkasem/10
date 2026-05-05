@@ -15,7 +15,7 @@ async function loadContactCampaigns() {
     CONTACT_CAMPAIGNS = campSnap.docs.map(d => ({ id: d.id, ...d.data() }));
     if (cfgDoc.exists) {
       const s = cfgDoc.data();
-      ['telegram','emailjs','imgbb','facebook','instagram','twitter','linkedin','tiktok','snapchat','youtube','gemini','general'].forEach(k => {
+      ['telegram','emailjs','imgbb','facebook','instagram','twitter','linkedin','tiktok','snapchat','youtube','gemini','general','site'].forEach(k => {
         if (s[k]) CFG[k] = { ...CFG[k], ...s[k] };
       });
     }

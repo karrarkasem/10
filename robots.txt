@@ -1,0 +1,16 @@
+User-agent: *
+Allow: /
+
+# صفحات المنصة
+Allow: /index.html
+Allow: /landing.html
+Allow: /about.html
+Allow: /marketing.html
+
+# استثناءات
+Disallow: /rules/
+Disallow: /worker/
+Disallow: /seed.html
+Disallow: /map.html
+
+Sitemap: https://afra-iq.com/sitemap.xml

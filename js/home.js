@@ -1223,7 +1223,7 @@ async function pgAdminSettings(el) {
       const doc = await window.db.collection('config').doc('settings').get();
       if (doc.exists) {
         const s = doc.data();
-        ['telegram','emailjs','imgbb','facebook','instagram','twitter','linkedin','tiktok','snapchat','youtube','gemini','general'].forEach(k => {
+        ['telegram','emailjs','imgbb','facebook','instagram','twitter','linkedin','tiktok','snapchat','youtube','gemini','general','site'].forEach(k => {
           if (s[k]) CFG[k] = { ...CFG[k], ...s[k] };
         });
       }
@@ -1235,10 +1235,11 @@ async function pgAdminSettings(el) {
     <div class="sh"><div class="st"><div class="st-ico"><i class="fas fa-cog"></i></div>إعدادات النظام</div></div>
 
     <!-- تبويبات -->
-    <div class="tabs" style="margin-bottom:18px">
+    <div class="tabs" style="margin-bottom:18px;flex-wrap:wrap">
       <button class="tb2 on" onclick="swSettTab('social',this)"><i class="fas fa-share-alt"></i> السوشال ميديا</button>
       <button class="tb2"    onclick="swSettTab('services',this)"><i class="fas fa-plug"></i> الخدمات</button>
       <button class="tb2"    onclick="swSettTab('general',this)"><i class="fas fa-sliders-h"></i> عام</button>
+      <button class="tb2"    onclick="swSettTab('siteinfo',this)"><i class="fas fa-id-card"></i> معلومات الموقع</button>
     </div>
 
     <!-- ══ السوشال ميديا ══ -->
@@ -1451,6 +1452,96 @@ async function pgAdminSettings(el) {
       </div>
     </div>
 
+    <!-- ══ معلومات الموقع ══ -->
+    <div id="stSiteinfo" style="display:none">
+
+      <!-- صورة المؤسسة -->
+      <div class="card" style="margin-bottom:14px">
+        <div class="ch"><div class="cht"><i class="fas fa-user-circle" style="color:var(--p)"></i> صورة المؤسسة</div></div>
+        <div class="cp">
+          <div style="display:flex;align-items:center;gap:18px;margin-bottom:16px;flex-wrap:wrap">
+            <div id="founderPhotoPreview" style="width:90px;height:90px;border-radius:50%;overflow:hidden;border:3px solid var(--p);flex-shrink:0;background:var(--bgc2);display:flex;align-items:center;justify-content:center">
+              ${c.site?.founderPhotoURL
+                ? `<img src="${c.site.founderPhotoURL}" style="width:100%;height:100%;object-fit:cover" alt="صورة المؤسسة">`
+                : `<i class="fas fa-user" style="font-size:32px;color:var(--tx3)"></i>`}
+            </div>
+            <div style="flex:1;min-width:180px">
+              <div style="font-size:13px;font-weight:700;color:var(--tx);margin-bottom:6px">صورة المهندسة عفراء الهاشمي</div>
+              <div style="font-size:11px;color:var(--tx3);margin-bottom:10px">تُستخدم في صفحة "عن المنصة" — ارفع صورة بجودة عالية</div>
+              <button id="founderUploadBtn" class="btn bsm" style="background:var(--p);color:#fff;border:none;margin-bottom:6px"
+                onclick="uploadFounderPhoto()">
+                <i class="fas fa-upload"></i> رفع صورة جديدة
+              </button>
+            </div>
+          </div>
+          <div class="fg">
+            <label class="fl">أو الصق رابط الصورة مباشرة</label>
+            <input class="fc" id="founderPhotoURL" value="${c.site?.founderPhotoURL||''}" placeholder="https://i.ibb.co/...">
+            <div class="fh">يمكن رفع الصورة عبر ImgBB أو أي خدمة رفع صور — تأكد أن الرابط يفتح مباشرة كصورة</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- معلومات التواصل -->
+      <div class="card" style="margin-bottom:14px">
+        <div class="ch"><div class="cht"><i class="fas fa-address-card" style="color:var(--acc)"></i> معلومات التواصل</div></div>
+        <div class="cp">
+          <div class="fr">
+            <div class="fg">
+              <label class="fl">البريد الإلكتروني الرسمي</label>
+              <input type="email" class="fc" id="siteEmail" value="${c.site?.email||'afrahub.iq@gmail.com'}" placeholder="afrahub.iq@gmail.com">
+            </div>
+            <div class="fg">
+              <label class="fl">رقم الهاتف / واتساب</label>
+              <input type="tel" class="fc" id="sitePhone" value="${c.site?.phone||''}" placeholder="07XXXXXXXXX">
+              <div class="fh">سيظهر في فوتر الموقع ويُستخدم لزر واتساب</div>
+            </div>
+          </div>
+          <div class="fg">
+            <label class="fl">العنوان</label>
+            <input class="fc" id="siteAddress" value="${c.site?.address||'بغداد، العراق'}" placeholder="بغداد، العراق">
+          </div>
+        </div>
+      </div>
+
+      <!-- روابط صفحات التواصل الاجتماعي -->
+      <div class="card" style="margin-bottom:14px">
+        <div class="ch"><div class="cht"><i class="fas fa-link" style="color:var(--purple)"></i> روابط صفحات التواصل الاجتماعي</div></div>
+        <div class="cp">
+          <div class="al al-i" style="margin-bottom:12px">
+            <i class="fas fa-info-circle"></i>
+            <span>هذه روابط <b>صفحات</b> التواصل (مثال: facebook.com/afra-iq) — تُعرض في الفوتر لزوار الموقع</span>
+          </div>
+          <div class="fr">
+            <div class="fg">
+              <label class="fl"><i class="fab fa-facebook-f" style="color:#1877f2"></i> رابط صفحة فيسبوك</label>
+              <input class="fc" id="siteFbUrl" value="${c.site?.facebookUrl||''}" placeholder="https://facebook.com/afra-iq">
+            </div>
+            <div class="fg">
+              <label class="fl"><i class="fab fa-instagram" style="color:#e1306c"></i> رابط حساب إنستقرام</label>
+              <input class="fc" id="siteIgUrl" value="${c.site?.instagramUrl||''}" placeholder="https://instagram.com/afra_iq">
+            </div>
+          </div>
+          <div class="fr">
+            <div class="fg">
+              <label class="fl"><i class="fab fa-tiktok"></i> رابط حساب تيك توك</label>
+              <input class="fc" id="siteTtUrl" value="${c.site?.tiktokUrl||''}" placeholder="https://tiktok.com/@afra_iq">
+            </div>
+            <div class="fg">
+              <label class="fl"><i class="fab fa-telegram-plane" style="color:#0088cc"></i> رابط قناة / مجموعة تلغرام</label>
+              <input class="fc" id="siteTgUrl" value="${c.site?.telegramUrl||''}" placeholder="https://t.me/afra_iq">
+            </div>
+          </div>
+          <div class="fg">
+            <label class="fl"><i class="fab fa-whatsapp" style="color:#25d366"></i> رقم واتساب (بدون صفر أمامي)</label>
+            <input type="tel" class="fc" id="siteWaNum" value="${c.site?.whatsappNum||''}" placeholder="7XXXXXXXXX">
+            <div class="fh">مثال: 7701234567 — سيُحوَّل تلقائياً إلى رابط wa.me/9647701234567</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
     <div style="position:sticky;bottom:0;background:var(--bg);padding:12px 0;border-top:1px solid var(--br);margin-top:8px">
       <button class="btn bp bfu blg" style="width:100%" id="saveSettingsBtn" onclick="adminSaveSettings()">
         <i class="fas fa-save"></i>حفظ جميع الإعدادات
@@ -1459,7 +1550,7 @@ async function pgAdminSettings(el) {
 }
 
 function swSettTab(tab, btn) {
-  ['Social','Services','General'].forEach(t => {
+  ['Social','Services','General','Siteinfo'].forEach(t => {
     const el = document.getElementById('st' + t);
     if (el) el.style.display = t.toLowerCase() === tab ? 'block' : 'none';
   });
@@ -1514,6 +1605,45 @@ async function testFacebook() {
 
 function _gv(id) { return document.getElementById(id)?.value.trim() || ''; }
 function _gc(id) { return document.getElementById(id)?.checked || false; }
+
+// ── رفع صورة المؤسسة إلى ImgBB ──
+async function uploadFounderPhoto() {
+  const key = _gv('imgbbKey') || CFG.imgbb?.key;
+  if (!key) {
+    notify('مطلوب', 'انتقل لتبويب "الخدمات" وأدخل ImgBB API Key أولاً', 'warning');
+    return;
+  }
+  const inp = document.createElement('input');
+  inp.type = 'file';
+  inp.accept = 'image/*';
+  inp.onchange = async () => {
+    const file = inp.files[0];
+    if (!file) return;
+    const btn = document.getElementById('founderUploadBtn');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-circle-notch spin"></i> جارٍ الرفع...'; }
+    try {
+      const fd = new FormData();
+      fd.append('image', file);
+      const res  = await fetch(`https://api.imgbb.com/1/upload?key=${key}`, { method: 'POST', body: fd });
+      const data = await res.json();
+      if (data.success) {
+        const url = data.data.url;
+        const urlInp = document.getElementById('founderPhotoURL');
+        if (urlInp) urlInp.value = url;
+        const preview = document.getElementById('founderPhotoPreview');
+        if (preview) preview.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" alt="صورة المؤسسة">`;
+        notify('تم الرفع ✅', 'تم رفع الصورة — اضغط "حفظ جميع الإعدادات" لتطبيق التغيير', 'success');
+      } else {
+        notify('خطأ', data.error?.message || 'فشل الرفع — تحقق من API Key', 'error');
+      }
+    } catch(e) {
+      notify('خطأ', 'تعذّر الاتصال بـ ImgBB', 'error');
+    } finally {
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-upload"></i> رفع صورة جديدة'; }
+    }
+  };
+  inp.click();
+}
 
 async function adminSaveSettings() {
   const settings = {
@@ -1574,6 +1704,17 @@ async function adminSaveSettings() {
       siteName:    _gv('siteName'),
       siteUrl:     _gv('siteUrl'),
       maintenance: _gc('maintMode'),
+    },
+    site: {
+      email:          _gv('siteEmail')   || 'afrahub.iq@gmail.com',
+      phone:          _gv('sitePhone'),
+      address:        _gv('siteAddress') || 'بغداد، العراق',
+      facebookUrl:    _gv('siteFbUrl'),
+      instagramUrl:   _gv('siteIgUrl'),
+      tiktokUrl:      _gv('siteTtUrl'),
+      telegramUrl:    _gv('siteTgUrl'),
+      whatsappNum:    _gv('siteWaNum'),
+      founderPhotoURL:_gv('founderPhotoURL'),
     },
   };
 

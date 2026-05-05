@@ -3,7 +3,28 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>عفراء للتوظيف — ناصع البياض في سوق العمل العراقي</title>
+  <title>عفراء للتوظيف — منصة التوظيف الأولى في العراق</title>
+  <meta name="description" content="منصة عفراء للتوظيف — ناصع البياض في سوق العمل العراقي. آلاف الوظائف في جميع المحافظات. مجاني للباحثين بالكامل.">
+  <meta name="keywords" content="وظائف العراق, توظيف, عمل, وظائف بغداد, وظائف كربلاء, مكاتب توظيف, عفراء للتوظيف">
+  <meta name="author" content="عفراء للتوظيف">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://afra-iq.com/landing.html">
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://afra-iq.com/landing.html">
+  <meta property="og:site_name" content="عفراء للتوظيف">
+  <meta property="og:title" content="عفراء للتوظيف — منصة التوظيف الأولى في العراق">
+  <meta property="og:description" content="ابحث عن وظيفتك أو وظّف الكفاءة المناسبة — آلاف الوظائف في جميع محافظات العراق. مجاني للباحثين.">
+  <meta property="og:image" content="https://afra-iq.com/icons/og-image.svg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:locale" content="ar_IQ">
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="عفراء للتوظيف — منصة التوظيف الأولى في العراق">
+  <meta name="twitter:description" content="آلاف الوظائف في جميع محافظات العراق — ابدأ مجاناً">
+  <meta name="twitter:image" content="https://afra-iq.com/icons/og-image.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
@@ -1191,12 +1212,13 @@
     <div class="footer-brand">
       <h3>✨ عفراء للتوظيف</h3>
       <p>منصة رقمية عراقية ناصعة البياض تربط الكفاءات بأصحاب العمل في جميع المحافظات بشفافية تامة. نؤمن بأن كل شخص يستحق فرصة عمل كريمة.</p>
-      <div class="social-links">
-        <a href="#" class="social-link" title="فيسبوك">📘</a>
-        <a href="#" class="social-link" title="تلجرام">✈️</a>
-        <a href="#" class="social-link" title="واتساب">💬</a>
-        <a href="#" class="social-link" title="إنستقرام">📸</a>
-        <a href="#" class="social-link" title="تيك توك">🎵</a>
+      <div class="social-links" id="socialLinks">
+        <a id="slFb"  href="#" class="social-link" title="فيسبوك"   style="display:none">📘</a>
+        <a id="slTg"  href="#" class="social-link" title="تلجرام"   style="display:none">✈️</a>
+        <a id="slWa"  href="#" class="social-link" title="واتساب"   style="display:none">💬</a>
+        <a id="slIg"  href="#" class="social-link" title="إنستقرام" style="display:none">📸</a>
+        <a id="slTt"  href="#" class="social-link" title="تيك توك"  style="display:none">🎵</a>
+        <a href="mailto:afrahub.iq@gmail.com" class="social-link" title="البريد الإلكتروني">✉️</a>
       </div>
     </div>
     <div class="footer-col">
@@ -1221,20 +1243,74 @@
     </div>
     <div class="footer-col">
       <h4>تواصل معنا</h4>
-      <div class="footer-contact-item">📧 info@afraa.iq</div>
-      <div class="footer-contact-item">📱 07800000000</div>
+      <div class="footer-contact-item">📧 afrahub.iq@gmail.com</div>
+      <div id="ftPhone" class="footer-contact-item" style="display:none"></div>
       <div class="footer-contact-item">📍 بغداد، العراق</div>
       <div class="footer-contact-item">🕐 السبت–الخميس: 9ص–5م</div>
     </div>
   </div>
   <div class="footer-bottom">
-    <p>© 2025 عفراء للتوظيف — جميع الحقوق محفوظة</p>
+    <p>© 2026 عفراء للتوظيف — جميع الحقوق محفوظة</p>
     <p>صُنع بـ ❤️ في العراق</p>
   </div>
 </footer>
 
 <!-- FLOATING BUTTON -->
 <a href="marketing.html" class="floating-btn">📢 شارك إعلاناً</a>
+
+<!-- Firebase SDK (لتحميل الإحصائيات والروابط الاجتماعية) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+(function() {
+  try {
+    const app = firebase.initializeApp({
+      apiKey: "AIzaSyBKlAEuk3QQJBqWqR1zmBdHGwasIW86Y-I",
+      authDomain: "karbala-b4884.firebaseapp.com",
+      projectId: "karbala-b4884",
+    }, 'landing');
+    const db = firebase.firestore(app);
+
+    // تحميل الإعدادات والإحصائيات
+    Promise.all([
+      db.collection('config').doc('settings').get(),
+      db.collection('users').where('role','==','seeker').get(),
+      db.collection('jobs').where('status','==','active').get(),
+      db.collection('users').where('role','==','office').get(),
+    ]).then(([cfg, seekers, jobs, offices]) => {
+      // إحصائيات حية
+      const seekerCount = seekers.size;
+      const jobCount    = jobs.size;
+      const officeCount = offices.size;
+      if (jobCount > 0) {
+        document.querySelectorAll('.stat-num').forEach((el, i) => {
+          if (i === 0 && jobCount > 0)    el.textContent = '+' + jobCount;
+          if (i === 2 && officeCount > 0) el.textContent = '+' + officeCount;
+          if (i === 4 && seekerCount > 0) el.textContent = '+' + seekerCount;
+        });
+      }
+      // روابط التواصل الاجتماعي
+      if (cfg.exists) {
+        const s = cfg.data()?.site || {};
+        const set = (id, url) => { const el = document.getElementById(id); if (el && url) { el.href = url; el.style.display = 'flex'; } };
+        set('slFb', s.facebookUrl);
+        set('slTg', s.telegramUrl);
+        set('slIg', s.instagramUrl);
+        set('slTt', s.tiktokUrl);
+        if (s.whatsappNum) {
+          const wa = document.getElementById('slWa');
+          if (wa) { wa.href = 'https://wa.me/964' + s.whatsappNum.replace(/^0/,'').replace(/\D/g,''); wa.style.display = 'flex'; }
+        }
+        // رقم الهاتف في الفوتر
+        if (s.phone) {
+          const ph = document.getElementById('ftPhone');
+          if (ph) { ph.style.display = 'flex'; ph.textContent = '📱 ' + s.phone; }
+        }
+      }
+    }).catch(() => {});
+  } catch(e) {}
+})();
+</script>
 
 <script>
   // ── Hamburger menu ──

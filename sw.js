@@ -1,12 +1,14 @@
 // ╔══════════════════════════════════════════════════════════════╗
-// ║   عفراء للتوظيف — Service Worker v2                        ║
+// ║   عفراء للتوظيف — Service Worker v3                        ║
 // ╚══════════════════════════════════════════════════════════════╝
 
-const CACHE = 'afraa-v2';
+const CACHE = 'afraa-v3';
 
 const LOCAL_ASSETS = [
   './index.html',
+  './landing.html',
   './about.html',
+  './marketing.html',
   './css/variables.css',
   './css/components.css',
   './css/pages.css',
@@ -26,6 +28,7 @@ const LOCAL_ASSETS = [
   './js/contact.js',
   './js/payment.js',
   './manifest.json',
+  './icons/icon.svg',
 ];
 
 // ── تثبيت: precache الأصول المحلية ──
@@ -53,7 +56,7 @@ const SKIP_HOSTS = [
   'cdnjs.cloudflare.com', 'cdn.jsdelivr.net', 'gstatic.com',
   'emailjs.com', 'api.telegram.org', 'wa.me',
   'facebook.com', 'twitter.com', 'linkedin.com', 't.me',
-  'imgbb.com',
+  'imgbb.com', 'unpkg.com',
 ];
 
 self.addEventListener('fetch', e => {

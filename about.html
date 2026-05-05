@@ -4,7 +4,25 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>عن المنصة — عفراء للتوظيف</title>
-  <meta name="description" content="اعرف أكثر عن منصة عفراء للتوظيف — قصتنا، رؤيتنا، رسالتنا، وفريقنا" />
+  <meta name="description" content="اعرف أكثر عن منصة عفراء للتوظيف — قصتنا ورؤيتنا ورسالتنا في بناء سوق عمل عراقي نقي ومزدهر" />
+  <meta name="keywords" content="عفراء للتوظيف, منصة توظيف عراق, قصة عفراء, رؤية المنصة, توظيف عراقي">
+  <meta name="author" content="عفراء للتوظيف">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://afra-iq.com/about.html">
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://afra-iq.com/about.html">
+  <meta property="og:site_name" content="عفراء للتوظيف">
+  <meta property="og:title" content="قصة عفراء — منصة التوظيف الأولى في العراق">
+  <meta property="og:description" content="اسم يحمل معنى ورسالة تحمل حلماً عراقياً — تعرّف على قصة منصة عفراء للتوظيف ورؤيتها في تغيير سوق العمل العراقي">
+  <meta property="og:image" content="https://afra-iq.com/icons/og-image.svg">
+  <meta property="og:locale" content="ar_IQ">
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="قصة عفراء — منصة التوظيف الأولى في العراق">
+  <meta name="twitter:description" content="اسم يحمل معنى ورسالة تحمل حلماً عراقياً">
+  <meta name="twitter:image" content="https://afra-iq.com/icons/og-image.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
@@ -963,13 +981,9 @@
 
     <!-- Photo -->
     <div class="founder-photo-wrap">
-      <div class="founder-photo">
-        <!--
-          ضع صورة الأستاذة عفراء هنا لاحقاً:
-          <img src="images/afra-hashimi.jpg" alt="المهندسة عفراء الهاشمي" />
-        -->
-        <i class="fas fa-user ph-icon"></i>
-        <span class="ph-hint">الصورة قريباً</span>
+      <div class="founder-photo" id="founderPhotoEl">
+        <i class="fas fa-user ph-icon" id="founderPhotoPlaceholder"></i>
+        <span class="ph-hint" id="founderPhotoHint">الصورة قريباً</span>
       </div>
       <div>
         <div class="founder-name">المهندسة عفراء الهاشمي</div>
@@ -1025,7 +1039,7 @@
 <!-- ══════════════ FOOTER ══════════════ -->
 <footer class="about-footer">
   <div class="footer-logo">✨ <span>عفراء للتوظيف</span></div>
-  <div class="footer-copy">© 2026 — جميع الحقوق محفوظة لمنصة عفراء للتوظيف</div>
+  <div class="footer-copy" id="ftCopy">© 2026 — جميع الحقوق محفوظة لمنصة عفراء للتوظيف</div>
   <div class="footer-links">
     <a href="index.html">الرئيسية</a>
     <a href="landing.html">الصفحة التعريفية</a>
@@ -1033,6 +1047,9 @@
   </div>
 </footer>
 
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
   // Navbar scroll effect
   window.addEventListener('scroll', () => {
@@ -1047,6 +1064,32 @@
     });
   }, { threshold: 0.12 });
   revealEls.forEach(el => io.observe(el));
+
+  // ── تحميل صورة المؤسسة من Firebase ──
+  (function() {
+    try {
+      const app = firebase.initializeApp({
+        apiKey: "AIzaSyBKlAEuk3QQJBqWqR1zmBdHGwasIW86Y-I",
+        authDomain: "karbala-b4884.firebaseapp.com",
+        projectId: "karbala-b4884",
+      }, 'about');
+      const db = firebase.firestore(app);
+      db.collection('config').doc('settings').get().then(doc => {
+        if (!doc.exists) return;
+        const s = doc.data()?.site || {};
+        if (s.founderPhotoURL) {
+          const photoEl = document.getElementById('founderPhotoEl');
+          if (photoEl) {
+            photoEl.innerHTML = `<img src="${s.founderPhotoURL}" alt="المهندسة عفراء الهاشمي" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+          }
+        }
+        // تحديث الإحصائيات أيضاً إن كانت موجودة في config
+        if (s.phone) {
+          document.querySelectorAll('.founder-phone').forEach(el => el.textContent = s.phone);
+        }
+      }).catch(() => {});
+    } catch(e) {}
+  })();
 </script>
 
 </body>
