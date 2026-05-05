@@ -228,7 +228,16 @@ async function doGoogleLogin() {
   if (DEMO) { enterDemo(); return; }
   try {
     const provider = new firebase.auth.GoogleAuthProvider();
-    const res = await window.auth.signInWithPopup(provider);
+    provider.setCustomParameters({ prompt: 'select_account' });
+    // Redirect works on HTTP and restricted environments; popup preferred on HTTPS
+    const isHttps = location.protocol === 'https:';
+    let res;
+    if (isHttps) {
+      res = await window.auth.signInWithPopup(provider);
+    } else {
+      await window.auth.signInWithRedirect(provider);
+      return; // redirect will reload the page; result handled by getRedirectResult below
+    }
     const uid = res.user.uid;
     const doc = await window.db.collection('users').doc(uid).get();
     if (!doc.exists) {
@@ -259,7 +268,51 @@ async function doGoogleLogin() {
       if (d.avatar && !d.photoURL) upd.photoURL = d.avatar;
       if (Object.keys(upd).length) await window.db.collection('users').doc(uid).update(upd);
     }
-  } catch (e) { notify('خطأ', 'فشل تسجيل الدخول بـ Google', 'error'); }
+  } catch (e) {
+    console.error('Google login error:', e.code, e.message);
+    // If popup was blocked, fall back to redirect automatically
+    if (e.code === 'auth/popup-blocked' || e.code === 'auth/popup-closed-by-user') {
+      try {
+        const provider2 = new firebase.auth.GoogleAuthProvider();
+        provider2.setCustomParameters({ prompt: 'select_account' });
+        await window.auth.signInWithRedirect(provider2);
+        return;
+      } catch (e2) { console.error('Redirect fallback error:', e2.code); }
+    }
+    notify('خطأ', fbErr(e.code), 'error');
+  }
+}
+
+// ── معالجة نتيجة Redirect بعد العودة من Google ──
+async function handleGoogleRedirect() {
+  try {
+    const res = await window.auth.getRedirectResult();
+    if (!res || !res.user) return;
+    const uid = res.user.uid;
+    const doc = await window.db.collection('users').doc(uid).get();
+    if (!doc.exists) {
+      const gEmail = (res.user.email || '').toLowerCase();
+      let gRole = SEL_ROLE || 'seeker';
+      try {
+        const invDoc = await window.db.collection('invites').doc(gEmail).get();
+        if (invDoc.exists && !invDoc.data().used) {
+          gRole = invDoc.data().role || gRole;
+          await window.db.collection('invites').doc(gEmail).update({ used: true, usedAt: firebase.firestore.FieldValue.serverTimestamp() });
+        }
+      } catch(_) {}
+      await window.db.collection('users').doc(uid).set({
+        name: res.user.displayName || 'مستخدم',
+        email: res.user.email,
+        photoURL: res.user.photoURL || null,
+        role: gRole,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        status: 'active',
+      });
+    }
+  } catch (e) {
+    console.error('Google redirect result error:', e.code, e.message);
+    if (e.code !== 'auth/no-auth-event') notify('خطأ', fbErr(e.code), 'error');
+  }
 }
 
 // ── نسيت كلمة المرور ──
@@ -319,12 +372,19 @@ function fbErr(c) {
     'auth/popup-closed-by-user'  : 'أُغلقت نافذة تسجيل الدخول، حاول مرة أخرى',
     'auth/cancelled-popup-request': 'تم إلغاء تسجيل الدخول',
     'auth/account-exists-with-different-credential': 'البريد مرتبط بطريقة تسجيل دخول أخرى',
+    'auth/unauthorized-domain'   : 'النطاق غير مصرح به في Firebase — أضف afra-iq.com إلى الدومينات المصرح بها',
+    'auth/operation-not-allowed' : 'تسجيل الدخول بـ Google غير مفعّل في Firebase',
+    'auth/popup-blocked'         : 'النافذة المنبثقة محجوبة — سيتم التحويل إلى Google...',
+    'auth/internal-error'        : 'خطأ داخلي، تحقق من إعدادات Firebase أو حاول مجدداً',
   };
-  return m[c] || 'حدث خطأ، يرجى المحاولة مرة أخرى';
+  return m[c] || `حدث خطأ (${c || 'unknown'})، يرجى المحاولة مرة أخرى`;
 }
 
 // ── مراقب حالة المصادقة ──
 if (!DEMO && typeof firebase !== 'undefined') {
+  // معالجة نتيجة تسجيل الدخول بعد Redirect (HTTP env)
+  handleGoogleRedirect().catch(() => {});
+
   firebase.auth().onAuthStateChanged(async user => {
     if (user) {
       U = user;
