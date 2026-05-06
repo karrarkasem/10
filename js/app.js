@@ -277,7 +277,7 @@ async function notifyAdmin(subj, html, tg) {
 // ═══════════════════════════════════════════════
 function initTheme() {
   let t = localStorage.getItem('afraa_theme');
-  if (!t) t = window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  if (!t) t = 'light';
   document.documentElement.setAttribute('data-theme', t);
   const ic = document.getElementById('thIco');
   if (ic) ic.className = t === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
