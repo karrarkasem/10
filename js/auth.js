@@ -283,6 +283,8 @@ async function doRegister() {
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       status: 'active',
     });
+    // إرسال بريد التحقق فور إنشاء الحساب
+    try { await cred.user.sendEmailVerification(); } catch(_) {}
   } catch (err) {
     loading('regBtn', false);
     showErr('rerr', fbErr(err.code));
@@ -446,6 +448,68 @@ function fbErr(c) {
   return m[c] || `حدث خطأ (${c || 'unknown'})، يرجى المحاولة مرة أخرى`;
 }
 
+// ══════════════════════════════════════════════
+// التحقق من البريد الإلكتروني
+// ══════════════════════════════════════════════
+
+function showVerifyScreen(user) {
+  document.getElementById('onboarding').style.display  = 'none';
+  document.getElementById('authScreen').style.display  = 'none';
+  document.getElementById('app').style.display         = 'none';
+  document.getElementById('verifyScreen').style.display = 'flex';
+  const el = document.getElementById('verifyEmailTxt');
+  if (el) el.textContent = user.email || '';
+}
+
+async function checkVerification() {
+  if (!window.auth?.currentUser) return;
+  try {
+    await window.auth.currentUser.reload();
+    if (window.auth.currentUser.emailVerified) {
+      document.getElementById('verifyScreen').style.display = 'none';
+      // إعادة تحميل الصفحة لتشغيل onAuthStateChanged من جديد
+      window.location.reload();
+    } else {
+      notify('لم يتم التفعيل بعد', 'افتح بريدك وانقر على رابط التفعيل ثم حاول مجدداً', 'warning');
+    }
+  } catch(e) {
+    notify('خطأ', 'حدث خطأ، حاول مجدداً', 'error');
+  }
+}
+
+async function resendVerification() {
+  if (!window.auth?.currentUser) return;
+  const btn = document.getElementById('resendVerifyBtn');
+  const COOLDOWN_KEY = 'afra_resend_ts';
+  const lastSent = parseInt(localStorage.getItem(COOLDOWN_KEY) || '0');
+  const remaining = 60 - Math.floor((Date.now() - lastSent) / 1000);
+  if (remaining > 0) {
+    notify('انتظر قليلاً', `يمكنك إعادة الإرسال بعد ${remaining} ثانية`, 'warning');
+    return;
+  }
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-circle-notch spin"></i> جارٍ الإرسال...'; }
+  try {
+    await window.auth.currentUser.sendEmailVerification();
+    localStorage.setItem(COOLDOWN_KEY, Date.now().toString());
+    notify('تم الإرسال ✅', 'تحقق من بريدك الإلكتروني (وصندوق الرسائل المزعجة)', 'success');
+    // cooldown 60 ثانية
+    setTimeout(() => {
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-redo"></i> إعادة إرسال البريد'; }
+    }, 60000);
+  } catch(e) {
+    const msg = e.code === 'auth/too-many-requests' ? 'كثرت المحاولات، انتظر دقيقة' : 'فشل الإرسال، حاول لاحقاً';
+    notify('خطأ', msg, 'error');
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-redo"></i> إعادة إرسال البريد'; }
+  }
+}
+
+async function logoutFromVerify() {
+  if (window.auth) await window.auth.signOut();
+  document.getElementById('verifyScreen').style.display = 'none';
+  document.getElementById('authScreen').style.display   = 'flex';
+  mainSwitchTab('login');
+}
+
 // ── مراقب حالة المصادقة ──
 if (!DEMO && typeof firebase !== 'undefined') {
   // معالجة نتيجة تسجيل الدخول بعد Redirect (HTTP env)
@@ -464,6 +528,12 @@ if (!DEMO && typeof firebase !== 'undefined') {
           JOBS = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         } catch (_) { JOBS = []; }
         bootApp();
+        return;
+      }
+
+      // ── تحقق من البريد الإلكتروني (بريد/كلمة مرور فقط — Google دائماً محقق) ──
+      if (!user.emailVerified && user.providerData?.[0]?.providerId === 'password') {
+        showVerifyScreen(user);
         return;
       }
 

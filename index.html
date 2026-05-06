@@ -179,6 +179,31 @@
 </div>
 
 <!-- ══════════════════════════════════════════════
+     شاشة التحقق من البريد الإلكتروني
+══════════════════════════════════════════════ -->
+<div id="verifyScreen" class="auth-bg" style="display:none">
+  <div class="auth-card" style="text-align:center">
+    <div style="font-size:56px;margin-bottom:16px;animation:pulse2 2.5s ease-in-out infinite;display:inline-block">📧</div>
+    <h2 style="color:#fff;font-size:20px;font-weight:900;margin:0 0 8px">تحقق من بريدك الإلكتروني</h2>
+    <p style="color:rgba(255,255,255,.55);font-size:13px;margin:0 0 6px">أرسلنا رابط التفعيل إلى</p>
+    <div id="verifyEmailTxt" style="color:var(--pl);font-weight:800;font-size:14px;margin-bottom:20px;direction:ltr;word-break:break-all"></div>
+    <p style="color:rgba(255,255,255,.45);font-size:12px;margin:0 0 22px;line-height:1.8;padding:12px 14px;background:rgba(255,255,255,.05);border-radius:12px;border:1px solid rgba(255,255,255,.08)">
+      <i class="fas fa-info-circle" style="color:var(--acc);margin-left:5px"></i>
+      افتح بريدك وانقر على رابط التفعيل،<br>ثم عد هنا وانقر الزر أدناه
+    </p>
+    <button class="btn bp bfu" onclick="checkVerification()" style="margin-bottom:10px;width:100%;font-size:14px">
+      <i class="fas fa-check-circle"></i> لقد فعّلت حسابي ✅
+    </button>
+    <button id="resendVerifyBtn" onclick="resendVerification()" style="width:100%;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:11px;color:rgba(255,255,255,.6);font-size:13px;font-family:Cairo,sans-serif;cursor:pointer;font-weight:700;margin-bottom:10px;transition:all .2s">
+      <i class="fas fa-redo"></i> إعادة إرسال البريد
+    </button>
+    <button onclick="logoutFromVerify()" style="width:100%;background:none;border:none;color:rgba(255,255,255,.3);font-size:12px;font-family:Cairo,sans-serif;cursor:pointer;font-weight:600;padding:8px">
+      <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
+    </button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
      شاشة تسجيل الدخول
 ══════════════════════════════════════════════ -->
 <div id="authScreen" class="auth-bg" style="display:none">

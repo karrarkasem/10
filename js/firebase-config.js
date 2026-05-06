@@ -14,6 +14,7 @@ const firebaseConfig = {
 try {
   firebase.initializeApp(firebaseConfig);
   window.auth    = firebase.auth();
+  window.auth.languageCode = 'ar';
   window.db      = firebase.firestore();
   window.storage = firebase.storage();
 
