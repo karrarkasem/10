@@ -93,11 +93,11 @@
     <h1 class="lnd-title">نور طريقك<br>نحو <span class="lnd-title-hl">فرصتك</span></h1>
     <p class="lnd-tagline">آلاف الوظائف في كل محافظات العراق — قدّم طلبك في ثوانٍ</p>
     <div class="lnd-stats-bar">
-      <div class="lnd-stat"><span class="lnd-stat-n">+1000</span><span class="lnd-stat-l">وظيفة</span></div>
+      <div class="lnd-stat"><span class="lnd-stat-n" id="cnt-jobs">0</span><span class="lnd-stat-l">وظيفة</span></div>
       <div class="lnd-stat-sep"></div>
-      <div class="lnd-stat"><span class="lnd-stat-n">18</span><span class="lnd-stat-l">محافظة</span></div>
+      <div class="lnd-stat"><span class="lnd-stat-n" id="cnt-provs">0</span><span class="lnd-stat-l">محافظة</span></div>
       <div class="lnd-stat-sep"></div>
-      <div class="lnd-stat"><span class="lnd-stat-n">+5000</span><span class="lnd-stat-l">مستخدم</span></div>
+      <div class="lnd-stat"><span class="lnd-stat-n" id="cnt-users">0</span><span class="lnd-stat-l">مستخدم</span></div>
     </div>
   </div>
 
@@ -108,6 +108,46 @@
       <div class="lnd-skel"></div>
       <div class="lnd-skel"></div>
       <div class="lnd-skel"></div>
+    </div>
+  </div>
+
+  <!-- كيف تعمل المنصة — 3 خطوات -->
+  <div class="lnd-section">
+    <div class="lnd-sec-head"><i class="fas fa-route" style="color:var(--acc)"></i> كيف تبدأ في 3 خطوات؟</div>
+    <div class="lnd-how">
+      <div class="lnd-how-step lnd-how-1">
+        <div class="lnd-how-num">١</div>
+        <div class="lnd-how-icon">📝</div>
+        <div class="lnd-how-title">سجّل مجاناً</div>
+        <div class="lnd-how-desc">حساب جديد في 30 ثانية — بدون بطاقة ائتمانية</div>
+      </div>
+      <div class="lnd-how-arrow"><i class="fas fa-arrow-left"></i></div>
+      <div class="lnd-how-step lnd-how-2">
+        <div class="lnd-how-num">٢</div>
+        <div class="lnd-how-icon">🎯</div>
+        <div class="lnd-how-title">أكمل ملفك</div>
+        <div class="lnd-how-desc">أضف مهاراتك لتظهر لأصحاب العمل والمكاتب</div>
+      </div>
+      <div class="lnd-how-arrow"><i class="fas fa-arrow-left"></i></div>
+      <div class="lnd-how-step lnd-how-3">
+        <div class="lnd-how-num">٣</div>
+        <div class="lnd-how-icon">🚀</div>
+        <div class="lnd-how-title">قدّم بنقرة</div>
+        <div class="lnd-how-desc">تابع حالة طلبك لحظة بلحظة من لوحتك</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- شريط المميزات -->
+  <div class="lnd-section lnd-features-section">
+    <div class="lnd-features-strip">
+      <div class="lnd-feat"><span class="lnd-feat-ico">🆓</span><span>مجاني للباحثين</span></div>
+      <div class="lnd-feat-div"></div>
+      <div class="lnd-feat"><span class="lnd-feat-ico">🤖</span><span>مقابلة ذكية بالذكاء الاصطناعي</span></div>
+      <div class="lnd-feat-div"></div>
+      <div class="lnd-feat"><span class="lnd-feat-ico">📄</span><span>سيرة ذاتية PDF</span></div>
+      <div class="lnd-feat-div"></div>
+      <div class="lnd-feat"><span class="lnd-feat-ico">📍</span><span>18 محافظة عراقية</span></div>
     </div>
   </div>
 
@@ -465,6 +505,15 @@
     <div id="officesMapEl" style="height:500px;width:100%"></div>
   </div>
 </div>
+
+<!-- مودال الترحيب بالمستخدم الجديد -->
+<div class="mo" id="moWelcome"><div class="md" style="max-width:460px">
+  <div class="mh">
+    <div class="mt" id="moWelcomeTitle"><i class="fas fa-hand-sparkles" style="color:var(--acc)"></i> مرحباً بك!</div>
+    <div class="mc" onclick="cmo('moWelcome')"><i class="fas fa-times"></i></div>
+  </div>
+  <div class="mb" id="moWelcomeB"></div>
+</div></div>
 
 <!-- JSON-LD Structured Data -->
 <script type="application/ld+json">

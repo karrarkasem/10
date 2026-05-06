@@ -527,3 +527,251 @@
   .app-card-body   { padding: 12px 14px; }
   .app-card-logo   { width: 36px; height: 36px; font-size: 15px; }
 }
+
+/* ═══════════════════════════════════════════════
+   Landing: How It Works + Features Strip
+═══════════════════════════════════════════════ */
+
+/* ── كيف تعمل — 3 خطوات ── */
+.lnd-how {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 20px;
+  padding: 18px 12px;
+  overflow: hidden;
+}
+
+.lnd-how-step {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 10px 8px;
+  border-radius: 14px;
+  transition: background .22s, transform .22s;
+  cursor: default;
+  animation: fadeUp .5s cubic-bezier(.4,0,.2,1) both;
+}
+.lnd-how-1 { animation-delay: .1s; }
+.lnd-how-2 { animation-delay: .2s; }
+.lnd-how-3 { animation-delay: .3s; }
+
+.lnd-how-step:hover {
+  background: rgba(255,255,255,.06);
+  transform: translateY(-3px);
+}
+
+.lnd-how-num {
+  font-size: 11px;
+  font-weight: 900;
+  color: var(--p);
+  background: rgba(13,148,136,.18);
+  border: 1px solid rgba(13,148,136,.3);
+  border-radius: 99px;
+  padding: 2px 9px;
+  margin-bottom: 8px;
+  letter-spacing: .5px;
+}
+
+.lnd-how-icon {
+  font-size: 28px;
+  margin-bottom: 7px;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,.3));
+}
+
+.lnd-how-title {
+  font-size: 12px;
+  font-weight: 900;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.lnd-how-desc {
+  font-size: 10px;
+  color: rgba(255,255,255,.38);
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.lnd-how-arrow {
+  font-size: 13px;
+  color: rgba(255,255,255,.15);
+  flex-shrink: 0;
+  padding: 0 4px;
+}
+
+@media (max-width: 460px) {
+  .lnd-how { flex-direction: column; padding: 14px; gap: 4px; }
+  .lnd-how-step { flex-direction: row; text-align: right; gap: 12px; align-items: flex-start; padding: 10px; width: 100%; }
+  .lnd-how-icon { font-size: 22px; margin-bottom: 0; }
+  .lnd-how-title { font-size: 13px; margin-bottom: 2px; }
+  .lnd-how-desc  { font-size: 11px; }
+  .lnd-how-num   { margin-bottom: 4px; }
+  .lnd-how-arrow { transform: rotate(-90deg); color: rgba(255,255,255,.1); margin: 0 auto; }
+  .lnd-how-step .lnd-how-num,
+  .lnd-how-step .lnd-how-icon { flex-shrink: 0; }
+}
+
+/* ── شريط المميزات ── */
+.lnd-features-section { padding-top: 0; padding-bottom: 10px; }
+
+.lnd-features-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0;
+  background: rgba(255,255,255,.025);
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: 14px;
+  padding: 10px 14px;
+  animation: fadeUp .5s .4s both;
+}
+
+.lnd-feat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255,255,255,.5);
+  white-space: nowrap;
+}
+.lnd-feat-ico { font-size: 14px; }
+
+.lnd-feat-div {
+  width: 1px;
+  height: 16px;
+  background: rgba(255,255,255,.09);
+  flex-shrink: 0;
+}
+
+@media (max-width: 420px) {
+  .lnd-features-strip { gap: 0; }
+  .lnd-feat { padding: 4px 8px; font-size: 10px; }
+}
+
+/* ── عداد متحرك: نبض عند وصول الرقم ── */
+@keyframes numPop {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.25); color: #2dd4bf; }
+  100% { transform: scale(1); }
+}
+.cnt-done { animation: numPop .4s cubic-bezier(.34,1.56,.64,1) forwards; }
+
+/* ═══════════════════════════════════════════════
+   Welcome Modal — مودال الترحيب
+═══════════════════════════════════════════════ */
+
+.welcome-step {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 14px;
+  border-radius: 13px;
+  border: 1px solid var(--br);
+  background: var(--bgc2);
+  cursor: pointer;
+  transition: all .2s;
+  animation: fadeUp .35s cubic-bezier(.4,0,.2,1) both;
+}
+.welcome-step:hover {
+  border-color: var(--p);
+  background: rgba(13,148,136,.06);
+  transform: translateX(-3px);
+}
+.welcome-step:active { transform: translateX(-3px) scale(.98); }
+
+.welcome-step-ico {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--p), var(--pl));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(13,148,136,.28);
+}
+
+.welcome-role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 800;
+  margin-bottom: 10px;
+}
+.welcome-role-badge.seeker  { background: rgba(13,148,136,.12); color: var(--pl); border: 1px solid rgba(13,148,136,.3); }
+.welcome-role-badge.office  { background: rgba(139,92,246,.12); color: #a78bfa; border: 1px solid rgba(139,92,246,.3); }
+.welcome-role-badge.employer{ background: rgba(245,158,11,.12); color: var(--acc); border: 1px solid rgba(245,158,11,.3); }
+
+/* ── Quick-action cards on dashboard (seeker home) ── */
+.qact-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 18px;
+}
+@media (max-width: 400px) { .qact-grid { grid-template-columns: 1fr; } }
+
+.qact {
+  background: var(--bgc);
+  border: 1px solid var(--br);
+  border-radius: 15px;
+  padding: 14px;
+  cursor: pointer;
+  transition: all .22s;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  animation: fadeUp .38s cubic-bezier(.4,0,.2,1) both;
+}
+.qact:hover { transform: translateY(-2px); box-shadow: var(--shl); border-color: var(--p); }
+.qact:active { transform: scale(.98); }
+
+.qact-ico {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  color: #fff;
+  flex-shrink: 0;
+}
+.qact-tit { font-size: 12px; font-weight: 800; color: var(--tx); }
+.qact-sub { font-size: 10px; color: var(--tx3); margin-top: 1px; }
+
+/* ── Skeleton shimmer enhanced ── */
+.skel-row {
+  height: 18px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, var(--bgc2) 25%, var(--br) 50%, var(--bgc2) 75%);
+  background-size: 200% 100%;
+  animation: skelShimmer 1.4s ease-in-out infinite;
+  margin-bottom: 8px;
+}
+.skel-card {
+  background: var(--bgc);
+  border: 1px solid var(--br);
+  border-radius: var(--r);
+  padding: 18px;
+  margin-bottom: 12px;
+}
+
+/* ── Page Transition Fade ── */
+@keyframes pageEnter {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.page-enter { animation: pageEnter .28s cubic-bezier(.4,0,.2,1) both; }

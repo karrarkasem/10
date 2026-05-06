@@ -478,21 +478,110 @@ function bootApp() {
   initTheme();
   buildNav();
   updateUserUI();
-  // إظهار شارة الإشعارات إذا كان هناك طلبات
   const ndot = document.getElementById('ndot');
   if (ndot && MY_APPS.length > 0) ndot.style.display = 'block';
-  // تحديث شارة الدفعات المعلقة للأدمن
   if (ROLE === 'admin') {
     updatePaymentBadge();
-    // تحديث دوري كل دقيقتين
     setInterval(updatePaymentBadge, 120000);
   }
-  // استعادة آخر صفحة من URL hash
   const hash = location.hash.replace('#', '');
   const nav = getNav();
   const validPages = nav.map(p => p.id);
   const startPage = validPages.includes(hash) ? hash : (nav[0]?.id || 'home');
   goTo(startPage);
+  // عرض مودال الترحيب للمستخدم الجديد (مرة واحدة فقط)
+  if (!U?.isAnonymous && ROLE !== 'guest') setTimeout(maybeShowWelcome, 700);
+}
+
+// ═══════════════════════════════════════════════
+// مودال الترحيب — يظهر مرة واحدة لكل مستخدم
+// ═══════════════════════════════════════════════
+function maybeShowWelcome() {
+  if (!U || U.isAnonymous) return;
+  const key = 'afra_welcomed_' + U.uid;
+  if (localStorage.getItem(key)) return;
+  localStorage.setItem(key, '1');
+  showWelcomeModal();
+}
+
+function showWelcomeModal() {
+  const el = document.getElementById('moWelcomeB');
+  if (!el) return;
+  const nm = (P?.name || '').split(' ')[0] || 'مستخدم';
+
+  const configs = {
+    seeker: {
+      emoji: '🧑‍💼', roleLbl: 'باحث عن عمل', roleClass: 'seeker',
+      title: `أهلاً ${nm}! 👋`,
+      sub: 'رحلتك نحو وظيفتك المثالية تبدأ الآن',
+      steps: [
+        { ico: '👤', bg: 'linear-gradient(135deg,var(--p),var(--pl))',  tit: 'أكمل ملفك الشخصي', desc: 'أضف مهاراتك وخبراتك لتظهر لأصحاب العمل', fn: "cmo('moWelcome');goTo('profile')" },
+        { ico: '🔍', bg: 'linear-gradient(135deg,#3b82f6,#60a5fa)',      tit: 'ابحث عن وظيفة',    desc: 'آلاف الوظائف في كل محافظات العراق',    fn: "cmo('moWelcome');goTo('jobs')" },
+        { ico: '📄', bg: 'linear-gradient(135deg,var(--purple),#a78bfa)',tit: 'أنشئ سيرتك الذاتية',desc: 'احترافية وجاهزة للتحميل بصيغة PDF',    fn: "cmo('moWelcome');oMo('moCV');buildCVModal()" },
+      ],
+      cta: "cmo('moWelcome');goTo('jobs')", ctaLbl: 'ابدأ البحث عن وظيفة',
+    },
+    office: {
+      emoji: '🏢', roleLbl: 'مكتب توظيف', roleClass: 'office',
+      title: `أهلاً ${nm}! 👋`,
+      sub: 'لوحة إدارة مكتب التوظيف جاهزة',
+      steps: [
+        { ico: '📢', bg: 'linear-gradient(135deg,var(--p),var(--pl))',  tit: 'انشر وظيفتك الأولى',  desc: 'بضع خطوات وتصل لآلاف الباحثين',        fn: "cmo('moWelcome');openAddJob()" },
+        { ico: '👥', bg: 'linear-gradient(135deg,#3b82f6,#60a5fa)',      tit: 'تصفح طلبات المتقدمين', desc: 'راجع وأدر كل الطلبات من مكان واحد',   fn: "cmo('moWelcome');goTo('apps')" },
+        { ico: '⚙️', bg: 'linear-gradient(135deg,var(--acc),var(--accl))',tit: 'أكمل ملف مكتبك',     desc: 'ملف قوي يزيد ثقة الباحثين بمكتبك',    fn: "cmo('moWelcome');goTo('profile')" },
+      ],
+      cta: "cmo('moWelcome');openAddJob()", ctaLbl: 'انشر وظيفتك الأولى',
+    },
+    employer: {
+      emoji: '🏪', roleLbl: 'صاحب عمل', roleClass: 'employer',
+      title: `أهلاً ${nm}! 👋`,
+      sub: 'لوحة تحكم صاحب العمل جاهزة',
+      steps: [
+        { ico: '📢', bg: 'linear-gradient(135deg,var(--acc),var(--accl))',tit: 'انشر وظيفتك الأولى',  desc: 'الوصول للكفاءات المناسبة بسهولة',       fn: "cmo('moWelcome');openAddJob()" },
+        { ico: '🏢', bg: 'linear-gradient(135deg,var(--purple),#a78bfa)', tit: 'أكمل ملف شركتك',      desc: 'ملف قوي يجذب المتقدمين المناسبين',      fn: "cmo('moWelcome');goTo('profile')" },
+        { ico: '👁️', bg: 'linear-gradient(135deg,#3b82f6,#60a5fa)',       tit: 'تصفح ملفات الباحثين', desc: 'اكتشف المواهب المناسبة لشركتك',         fn: "cmo('moWelcome');goTo('home')" },
+      ],
+      cta: "cmo('moWelcome');openAddJob()", ctaLbl: 'انشر وظيفتك الأولى',
+    },
+  };
+
+  const cfg = configs[ROLE] || configs.seeker;
+
+  el.innerHTML = `
+    <div style="text-align:center;padding:4px 0 18px">
+      <div style="font-size:48px;margin-bottom:8px;display:inline-block;animation:pulse2 2.5s ease-in-out infinite">${cfg.emoji}</div>
+      <div class="welcome-role-badge ${cfg.roleClass}"><i class="fas fa-user-check"></i> ${cfg.roleLbl}</div>
+      <h2 style="font-size:18px;font-weight:900;color:var(--tx);margin:0 0 5px">${cfg.title}</h2>
+      <p style="font-size:12px;color:var(--tx2);margin:0">${cfg.sub}</p>
+    </div>
+
+    <div style="margin-bottom:18px">
+      <p style="font-size:11px;font-weight:800;color:var(--tx3);margin:0 0 10px;letter-spacing:.5px">— ماذا تريد أن تفعل الآن؟ —</p>
+      ${cfg.steps.map((s, i) => `
+        <div class="welcome-step" onclick="${s.fn}" style="animation-delay:${i * .08 + .1}s">
+          <div class="welcome-step-ico" style="background:${s.bg}">${s.ico}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:800;color:var(--tx)">${s.tit}</div>
+            <div style="font-size:11px;color:var(--tx2);margin-top:2px">${s.desc}</div>
+          </div>
+          <i class="fas fa-arrow-left" style="color:var(--tx3);font-size:11px;flex-shrink:0"></i>
+        </div>
+      `).join('')}
+    </div>
+
+    <button class="btn bp bfu" onclick="${cfg.cta}" style="margin-bottom:10px">
+      <i class="fas fa-rocket"></i> ${cfg.ctaLbl}
+    </button>
+    <button onclick="cmo('moWelcome')" style="width:100%;background:none;border:none;color:var(--tx3);font-size:12px;font-family:Cairo,sans-serif;cursor:pointer;font-weight:600;padding:5px">
+      سأستكشف بنفسي
+    </button>
+  `;
+
+  // تحديث عنوان المودال
+  const titleEl = document.getElementById('moWelcomeTitle');
+  if (titleEl) titleEl.innerHTML = `<i class="fas fa-hand-sparkles" style="color:var(--acc)"></i> مرحباً في عفراء!`;
+
+  oMo('moWelcome');
 }
 
 // إغلاق المودالات بالنقر خارجها

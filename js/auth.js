@@ -19,6 +19,66 @@ function initApp() {
   document.getElementById('authScreen').style.display = 'none';
   document.getElementById('onboarding').style.display = 'block';
   loadLandingJobs();
+  animateLandingCounters();
+  initLandingScrollAnim();
+}
+
+function initLandingScrollAnim() {
+  const ob = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.style.opacity = '1';
+        e.target.style.transform = 'translateY(0)';
+        ob.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.12 });
+
+  // نطبق الأنيميشن على أقسام الـ landing عند التمرير
+  const container = document.getElementById('onboarding');
+  if (!container) return;
+  container.querySelectorAll('.lnd-section, .lnd-how, .lnd-features-strip').forEach((sec, i) => {
+    sec.style.opacity = '0';
+    sec.style.transform = 'translateY(20px)';
+    sec.style.transition = `opacity .45s ease ${i * .07}s, transform .45s ease ${i * .07}s`;
+    ob.observe(sec);
+  });
+}
+
+function _updateLandingCount(id, val, animate) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (!animate) { el.textContent = val; return; }
+}
+
+function animateLandingCounters() {
+  const targets = [
+    { id: 'cnt-jobs',  to: 1000, prefix: '+' },
+    { id: 'cnt-provs', to: 18,   prefix: ''  },
+    { id: 'cnt-users', to: 5000, prefix: '+' },
+  ];
+  targets.forEach(({ id, to, prefix }, idx) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const delay = idx * 120;
+    const dur   = 1600;
+    setTimeout(() => {
+      const t0 = performance.now();
+      function tick(now) {
+        const p = Math.min((now - t0) / dur, 1);
+        const eased = 1 - Math.pow(1 - p, 3);
+        const val = Math.round(eased * to);
+        el.textContent = prefix + val.toLocaleString();
+        if (p < 1) {
+          requestAnimationFrame(tick);
+        } else {
+          el.textContent = prefix + to.toLocaleString();
+          el.classList.add('cnt-done');
+        }
+      }
+      requestAnimationFrame(tick);
+    }, delay);
+  });
 }
 
 function landingChooseRole(role) {
@@ -51,6 +111,8 @@ async function loadLandingJobs() {
         .limit(6)
         .get();
       jobs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      // تحديث العداد بالأرقام الحقيقية
+      _updateLandingCount('cnt-jobs', jobs.length >= 6 ? '+' + snap.size : snap.size, false);
     } catch(e) { console.warn('landingJobs:', e.message); }
   }
   if (!jobs.length) {
