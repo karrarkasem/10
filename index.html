@@ -580,6 +580,31 @@ if ('serviceWorker' in navigator) {
       .then(() => console.log('✅ SW registered'))
       .catch(e => console.warn('SW error:', e));
   });
+
+  // إشعار عند تفعيل SW جديد (تحديث جاهز)
+  navigator.serviceWorker.addEventListener('message', e => {
+    if (e.data?.type === 'SW_UPDATED') _showUpdateBanner();
+  });
+}
+
+function _showUpdateBanner() {
+  if (document.getElementById('_swBanner')) return;
+  const b = document.createElement('div');
+  b.id = '_swBanner';
+  b.style.cssText = [
+    'position:fixed', 'bottom:72px', 'left:50%', 'transform:translateX(-50%)',
+    'background:linear-gradient(135deg,#0d9488,#6d28d9)', 'color:#fff',
+    'padding:10px 16px', 'border-radius:13px',
+    'font-family:Cairo,sans-serif', 'font-size:13px', 'font-weight:700',
+    'box-shadow:0 4px 24px rgba(0,0,0,.4)', 'z-index:99999',
+    'display:flex', 'align-items:center', 'gap:10px', 'white-space:nowrap',
+  ].join(';');
+  b.innerHTML = [
+    '<i class="fas fa-sync-alt"></i> تحديث جديد متاح!',
+    '<button onclick="window.location.reload()" style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);color:#fff;padding:4px 14px;border-radius:8px;cursor:pointer;font-family:Cairo,sans-serif;font-weight:700;font-size:12px">تحديث الآن</button>',
+    '<button onclick="this.parentElement.remove()" style="background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;font-size:16px;line-height:1;padding:0 2px">✕</button>',
+  ].join('');
+  document.body.appendChild(b);
 }
 </script>
 
