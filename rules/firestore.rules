@@ -162,7 +162,8 @@ service cloud.firestore {
     // CONFIG
     // ══════════════════════════════════════
     match /config/{docId} {
-      allow read: if true;
+      // مسجّل فقط — يمنع قراءة مفاتيح API (imgbb, telegram, emailjs...) من الخارج
+      allow read: if isLoggedIn();
       allow write: if isAdmin();
     }
 
@@ -308,7 +309,7 @@ service cloud.firestore {
     // CAMPAIGNS — حملات ظهور أرقام التواصل
     // ══════════════════════════════════════
     match /campaigns/{campId} {
-      allow read: if true;
+      allow read: if isLoggedIn();
       allow write: if isAdmin();
     }
 
