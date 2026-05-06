@@ -527,7 +527,7 @@ function showWelcomeModal() {
       sub: 'لوحة إدارة مكتب التوظيف جاهزة',
       steps: [
         { ico: '📢', bg: 'linear-gradient(135deg,var(--p),var(--pl))',  tit: 'انشر وظيفتك الأولى',  desc: 'بضع خطوات وتصل لآلاف الباحثين',        fn: "cmo('moWelcome');openAddJob()" },
-        { ico: '👥', bg: 'linear-gradient(135deg,#3b82f6,#60a5fa)',      tit: 'تصفح طلبات المتقدمين', desc: 'راجع وأدر كل الطلبات من مكان واحد',   fn: "cmo('moWelcome');goTo('apps')" },
+        { ico: '👥', bg: 'linear-gradient(135deg,#3b82f6,#60a5fa)',      tit: 'تصفح طلبات المتقدمين', desc: 'راجع وأدر كل الطلبات من مكان واحد',   fn: "cmo('moWelcome');goTo('candidates')" },
         { ico: '⚙️', bg: 'linear-gradient(135deg,var(--acc),var(--accl))',tit: 'أكمل ملف مكتبك',     desc: 'ملف قوي يزيد ثقة الباحثين بمكتبك',    fn: "cmo('moWelcome');goTo('profile')" },
       ],
       cta: "cmo('moWelcome');openAddJob()", ctaLbl: 'انشر وظيفتك الأولى',

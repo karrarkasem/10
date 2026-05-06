@@ -29,7 +29,7 @@ function jCard(j) {
 
   return `<div class="jc${j.featured ? ' jc-featured' : ''}" onclick="openJob('${j.id}')">
     <div class="jc-top">
-      <div class="jlo">${j.logo || j.company?.charAt(0) || '🏢'}</div>
+      <div class="jlo">${san(j.logo) || san(j.company?.charAt(0)) || '🏢'}</div>
       <div class="ji" style="flex:1;min-width:0">
         <div style="display:flex;align-items:flex-start;gap:6px;flex-wrap:wrap;margin-bottom:3px">
           <div class="jtit">${j.title}</div>
@@ -264,7 +264,7 @@ function openJob(id) {
   document.getElementById('moJobB').innerHTML = `
     <!-- رأس الوظيفة -->
     <div style="display:flex;align-items:flex-start;gap:14px;margin-bottom:20px">
-      <div class="jlo" style="width:64px;height:64px;border-radius:18px;font-size:26px;flex-shrink:0">${j.logo || '🏢'}</div>
+      <div class="jlo" style="width:64px;height:64px;border-radius:18px;font-size:26px;flex-shrink:0">${san(j.logo) || '🏢'}</div>
       <div style="flex:1">
         <div style="display:flex;align-items:flex-start;gap:8px;flex-wrap:wrap">
           <h2 style="font-size:20px;font-weight:900;color:var(--tx);margin-bottom:4px">${j.title}</h2>
@@ -415,7 +415,7 @@ function openApply(id, quizScore = null, quizFeedback = '') {
   document.getElementById('moApplyB').innerHTML = `
     <!-- معلومات الوظيفة -->
     <div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--bgc2);border-radius:12px;margin-bottom:20px;border:1px solid var(--br)">
-      <div class="jlo" style="width:46px;height:46px;border-radius:12px;font-size:19px;flex-shrink:0">${j.logo || '🏢'}</div>
+      <div class="jlo" style="width:46px;height:46px;border-radius:12px;font-size:19px;flex-shrink:0">${san(j.logo) || '🏢'}</div>
       <div>
         <div style="font-size:14px;font-weight:800;color:var(--tx)">${j.title}</div>
         <div style="font-size:11px;color:var(--tx2)">${j.company} • ${j.province || ''}</div>
@@ -646,7 +646,7 @@ function referCandidate(jobId) {
   if (!el) return;
   el.innerHTML = `
     <div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--bgc2);border-radius:12px;margin-bottom:20px;border:1px solid var(--br)">
-      <div class="jlo" style="width:46px;height:46px;border-radius:12px;font-size:19px;flex-shrink:0">${j.logo || '🏢'}</div>
+      <div class="jlo" style="width:46px;height:46px;border-radius:12px;font-size:19px;flex-shrink:0">${san(j.logo) || '🏢'}</div>
       <div>
         <div style="font-size:14px;font-weight:800;color:var(--tx)">${san(j.title)}</div>
         <div style="font-size:11px;color:var(--tx2)">${san(j.company)} • ${san(j.province || '')}</div>

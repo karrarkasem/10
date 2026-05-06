@@ -108,12 +108,12 @@ function requestPlanUpgrade(plan) {
     mo.id = '_upgradeModal';
     mo.className = 'mo';
     mo.onclick = e => { if (e.target === mo) cmo('_upgradeModal'); };
-    mo.innerHTML = `<div class="mob" style="max-width:440px">
+    mo.innerHTML = `<div class="md" style="max-width:440px">
       <div class="mh">
         <div class="mt" id="_upgModalTitle"></div>
         <div class="mc" onclick="cmo('_upgradeModal')"><i class="fas fa-times"></i></div>
       </div>
-      <div class="mbod" id="_upgModalBody"></div>
+      <div class="mb" id="_upgModalBody"></div>
     </div>`;
     document.body.appendChild(mo);
   }

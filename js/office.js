@@ -178,7 +178,7 @@ function pgOfficeJobs(el) {
       : jobs.map(j => `
       <div class="oj-card">
         <div class="oj-header">
-          <div class="jlo" style="width:48px;height:48px;border-radius:13px;font-size:20px;flex-shrink:0">${j.logo || '🏢'}</div>
+          <div class="jlo" style="width:48px;height:48px;border-radius:13px;font-size:20px;flex-shrink:0">${san(j.logo) || '🏢'}</div>
           <div style="flex:1;min-width:0">
             <div style="font-size:14px;font-weight:800;color:var(--tx);margin-bottom:3px">${j.title}</div>
             <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">

@@ -111,8 +111,12 @@ async function loadLandingJobs() {
         .limit(6)
         .get();
       jobs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      // تحديث العداد بالأرقام الحقيقية
-      _updateLandingCount('cnt-jobs', jobs.length >= 6 ? '+' + snap.size : snap.size, false);
+      // تحديث العداد بالعدد الحقيقي عبر count()
+      try {
+        const countSnap = await window.db.collection('jobs').where('status', '==', 'active').count().get();
+        const total = countSnap.data().count;
+        if (total > 0) _updateLandingCount('cnt-jobs', '+' + total, false);
+      } catch(_) { /* count() غير متاح في بعض البيئات — نترك الأنيميشن */ }
     } catch(e) { console.warn('landingJobs:', e.message); }
   }
   if (!jobs.length) {
@@ -132,7 +136,7 @@ async function loadLandingJobs() {
       onmouseleave="this.style.background='rgba(255,255,255,.04)';this.style.transform=''">
       <div style="display:flex;align-items:center;gap:11px">
         <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,var(--p),var(--pl));display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0">
-          ${j.logo || '🏢'}
+          ${san(j.logo) || '🏢'}
         </div>
         <div style="flex:1;min-width:0">
           <div style="font-size:13px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${j.title || ''}</div>

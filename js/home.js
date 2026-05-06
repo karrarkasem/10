@@ -190,7 +190,7 @@ function pgSeekerHome(el) {
       </div>
       <button class="btn bg bsm" onclick="goTo('jobs')">عرض الكل <i class="fas fa-arrow-left"></i></button>
     </div>
-    <div class="jg fade-up del5">${JOBS.slice(0, 4).map(j => jCard(j)).join('')}</div>`;
+    <div class="jg fade-up del5">${JOBS.filter(j => isJobLive(j)).slice(0, 4).map(j => jCard(j)).join('')}</div>`;
 }
 
 // ════════════════════════════════════════════
@@ -1078,12 +1078,12 @@ function _showAdminModal(title, body) {
     mo.id = '_adminModal';
     mo.className = 'mo';
     mo.onclick = e => { if (e.target === mo) cmo('_adminModal'); };
-    mo.innerHTML = `<div class="mob" style="max-width:460px">
+    mo.innerHTML = `<div class="md" style="max-width:460px">
       <div class="mh">
         <div class="mt" id="_adminModalTitle"></div>
         <div class="mc" onclick="cmo('_adminModal')"><i class="fas fa-times"></i></div>
       </div>
-      <div class="mbod" id="_adminModalB"></div>
+      <div class="mb" id="_adminModalB"></div>
     </div>`;
     document.body.appendChild(mo);
   }
