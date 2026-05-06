@@ -775,3 +775,94 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 .page-enter { animation: pageEnter .28s cubic-bezier(.4,0,.2,1) both; }
+
+/* ═══════════════════════════════════════════════════════
+   صفحة الهبوط — الثيم الفاتح (landing light theme)
+═══════════════════════════════════════════════════════ */
+
+/* خلفية الـ onboarding */
+html:not([data-theme="dark"]) #onboarding {
+  background: linear-gradient(160deg, #f0f4fb 0%, #e8f4f2 60%, #f0f4fb 100%) !important;
+}
+
+/* الأوربز: أقل حدة على الخلفية الفاتحة */
+html:not([data-theme="dark"]) .land-orb-1 {
+  background: radial-gradient(circle, rgba(13,148,136,.2) 0%, transparent 70%);
+}
+html:not([data-theme="dark"]) .land-orb-2 {
+  background: radial-gradient(circle, rgba(139,92,246,.13) 0%, transparent 70%);
+}
+html:not([data-theme="dark"]) .land-orb-3 {
+  background: radial-gradient(circle, rgba(245,158,11,.1) 0%, transparent 70%);
+}
+
+/* ── عناصر land-* (القديم) ── */
+html:not([data-theme="dark"]) .land-title {
+  background: linear-gradient(135deg, #0f172a 25%, var(--p) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+html:not([data-theme="dark"]) .land-sub { color: var(--tx2); }
+html:not([data-theme="dark"]) .land-stats {
+  background: rgba(255,255,255,.75);
+  border-color: rgba(13,20,52,.08);
+  box-shadow: 0 2px 12px rgba(13,20,52,.07);
+}
+html:not([data-theme="dark"]) .land-stat-num { color: var(--p); }
+html:not([data-theme="dark"]) .land-stat-lbl { color: var(--tx2); }
+html:not([data-theme="dark"]) .land-stat-div { background: rgba(13,20,52,.1); }
+html:not([data-theme="dark"]) .land-q { color: var(--tx3); letter-spacing: .5px; }
+html:not([data-theme="dark"]) .land-role {
+  background: rgba(255,255,255,.72);
+  border-color: rgba(13,20,52,.1);
+  box-shadow: 0 2px 8px rgba(13,20,52,.05);
+}
+html:not([data-theme="dark"]) .land-role:hover     { box-shadow: 0 8px 28px rgba(13,148,136,.15); border-color: rgba(13,148,136,.35); }
+html:not([data-theme="dark"]) .land-role-name      { color: var(--tx); }
+html:not([data-theme="dark"]) .land-role-desc      { color: var(--tx2); }
+html:not([data-theme="dark"]) .land-role-arr       { color: var(--tx3); }
+html:not([data-theme="dark"]) .land-role:hover .land-role-arr { color: var(--p); }
+html:not([data-theme="dark"]) .land-browse {
+  background: rgba(255,255,255,.72); border-color: rgba(13,20,52,.1); color: var(--tx2);
+}
+html:not([data-theme="dark"]) .land-browse:hover   { background: rgba(255,255,255,.95); color: var(--tx); border-color: rgba(13,148,136,.3); }
+html:not([data-theme="dark"]) .land-login-link     { color: var(--tx3); }
+html:not([data-theme="dark"]) .land-login-link:hover { color: var(--tx); }
+html:not([data-theme="dark"]) .fw { color: rgba(13,20,52,.04); }
+
+/* ── عناصر lnd-* (الجديد) ── */
+html:not([data-theme="dark"]) .lnd-topbar {
+  background: rgba(255,255,255,.88);
+  border-bottom-color: rgba(13,20,52,.07);
+  backdrop-filter: blur(16px);
+}
+html:not([data-theme="dark"]) .lnd-logo         { color: var(--tx); }
+html:not([data-theme="dark"]) .lnd-logo span    { color: var(--tx2); }
+html:not([data-theme="dark"]) .lnd-login-btn    {
+  background: rgba(13,148,136,.1); border-color: rgba(13,148,136,.35); color: var(--p);
+}
+html:not([data-theme="dark"]) .lnd-login-btn:hover { background: rgba(13,148,136,.2); color: var(--pd); }
+html:not([data-theme="dark"]) .lnd-title        { color: var(--tx); }
+html:not([data-theme="dark"]) .lnd-tagline      { color: var(--tx2); }
+html:not([data-theme="dark"]) .lnd-stats-bar {
+  background: rgba(255,255,255,.75); border-color: rgba(13,20,52,.08);
+  box-shadow: 0 2px 12px rgba(13,20,52,.06);
+}
+html:not([data-theme="dark"]) .lnd-stat-n  { color: var(--p); }
+html:not([data-theme="dark"]) .lnd-stat-l  { color: var(--tx2); }
+html:not([data-theme="dark"]) .lnd-stat-sep { background: rgba(13,20,52,.1); }
+html:not([data-theme="dark"]) .lnd-sec-head { color: var(--tx2); }
+html:not([data-theme="dark"]) .lnd-skel {
+  background: linear-gradient(90deg, rgba(13,20,52,.04) 25%, rgba(13,20,52,.08) 50%, rgba(13,20,52,.04) 75%);
+  background-size: 200% 100%;
+}
+html:not([data-theme="dark"]) .lnd-role-mini {
+  background: rgba(255,255,255,.72); border-color: rgba(13,20,52,.1);
+  box-shadow: 0 2px 8px rgba(13,20,52,.05);
+}
+html:not([data-theme="dark"]) .lnd-rm-name { color: var(--tx); }
+html:not([data-theme="dark"]) .lnd-rm-desc { color: var(--tx2); }
+html:not([data-theme="dark"]) .lnd-cta-lbl { color: var(--tx3); }
+html:not([data-theme="dark"]) .lnd-browse-btn {
+  background: rgba(255,255,255,.72); border-color: rgba(13,20,52,.1); color: var(--tx2);
+}
+html:not([data-theme="dark"]) .lnd-browse-btn:hover { background: #fff; color: var(--tx); border-color: rgba(13,148,136,.3); }

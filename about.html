@@ -758,31 +758,112 @@
       transform: translateY(0);
     }
 
-    /* ── Light theme overrides ── */
-    [data-theme="light"] body { background: var(--bg); color: var(--text); }
-    [data-theme="light"] .hero { background: linear-gradient(160deg, #e0f7f5 0%, #f0fdf9 55%, #e8f4f2 100%); }
-    [data-theme="light"] .hero::before { background: radial-gradient(circle, rgba(13,148,136,0.12) 0%, transparent 70%); }
-    [data-theme="light"] .hero::after  { background: radial-gradient(circle, rgba(139,92,246,0.08) 0%, transparent 70%); }
-    [data-theme="light"] .hero-title .hl-white { color: var(--text); }
-    [data-theme="light"] .stats-bar { background: #ffffff; border-color: #e2e8f0; }
-    [data-theme="light"] .stat-num  { color: var(--primary); }
-    [data-theme="light"] .section   { background: var(--bg); }
-    [data-theme="light"] .section:nth-child(even) { background: #f8fafc; }
-    [data-theme="light"] .serve-card { background: var(--card); border-color: var(--border); color: var(--text); }
-    [data-theme="light"] .serve-card p { color: var(--text-muted); }
-    [data-theme="light"] .vmg-card { background: var(--card); border-color: var(--border); }
-    [data-theme="light"] .vmg-card p { color: var(--text-muted); }
-    [data-theme="light"] .why-section { background: #f8fafc; }
-    [data-theme="light"] .why-quote blockquote { color: var(--text); }
-    [data-theme="light"] .goals-full .goal-card { background: var(--card); border-color: var(--border); }
-    [data-theme="light"] .goals-full .goal-card p { color: var(--text-muted); }
-    [data-theme="light"] .founder-card { background: var(--card); border-color: var(--border); }
-    [data-theme="light"] .founder-name, [data-theme="light"] .founder-title { color: var(--text); }
-    [data-theme="light"] .founder-bio  { color: var(--text-muted); }
-    [data-theme="light"] .footer-section { background: #1e293b; }
+    /* ══════════════════════════════════════════════
+       الثيم الفاتح — تعديلات شاملة ومحكمة
+    ══════════════════════════════════════════════ */
+
+    /* ── Body ── */
+    [data-theme="light"] body {
+      background: var(--bg); color: var(--text);
+      background-image:
+        radial-gradient(ellipse 60% 40% at 5% 5%,  rgba(13,148,136,.07) 0%, transparent 55%),
+        radial-gradient(ellipse 50% 35% at 95% 95%, rgba(59,130,246,.05) 0%, transparent 55%);
+      background-attachment: fixed;
+    }
+
+    /* ── Navbar ── */
+    [data-theme="light"] #navbar { background: rgba(255,255,255,.88); border-bottom-color: rgba(13,20,52,.07); }
+    [data-theme="light"] #navbar.scrolled { background: rgba(255,255,255,.98); }
     [data-theme="light"] .nav-logo span { color: var(--text); }
-    [data-theme="light"] .nav-back { color: var(--text-muted); background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.1); }
-    [data-theme="light"] .nav-back:hover { color: var(--text); background: rgba(0,0,0,0.09); }
+    [data-theme="light"] .nav-back { color: var(--text-muted); background: rgba(0,0,0,.05); border-color: rgba(0,0,0,.1); }
+    [data-theme="light"] .nav-back:hover { color: var(--text); background: rgba(0,0,0,.09); }
+
+    /* ── Hero: يبقى داكناً دائماً (احترافي) ── */
+    [data-theme="light"] .hero {
+      background: linear-gradient(160deg, #060d1a 0%, #0d1b35 55%, #0a1628 100%);
+    }
+
+    /* ── Stats bar ── */
+    [data-theme="light"] .stats-bar {
+      background: #ffffff; border-color: rgba(13,20,52,.08);
+      box-shadow: 0 4px 24px rgba(13,20,52,.08), 0 1px 3px rgba(13,20,52,.04);
+    }
+    [data-theme="light"] .stat-num   { color: var(--primary); }
+    [data-theme="light"] .stat-label { color: var(--text-muted); }
+    [data-theme="light"] .stat-sep   { background: rgba(13,20,52,.1); }
+
+    /* ── General sections ── */
+    [data-theme="light"] .section         { background: var(--bg); }
+    [data-theme="light"] .section:nth-child(even) { background: #f8fafc; }
+    [data-theme="light"] .sec-title       { color: var(--text); }
+    [data-theme="light"] .sec-desc        { color: var(--text-muted); }
+
+    /* ── Serve cards (من نخدم) ── */
+    [data-theme="light"] .serve-card {
+      background: #ffffff;
+      border-color: rgba(13,20,52,.07);
+      box-shadow: 0 2px 8px rgba(13,20,52,.05), 0 8px 24px rgba(13,20,52,.06);
+    }
+    [data-theme="light"] .serve-card:hover {
+      box-shadow: 0 8px 24px rgba(13,148,136,.12), 0 20px 48px rgba(13,20,52,.1);
+    }
+    [data-theme="light"] .sc-title { color: var(--text); }
+    [data-theme="light"] .sc-desc  { color: var(--text-muted); }
+    [data-theme="light"] .sc-icon  {
+      background: rgba(13,148,136,.1);
+      border-color: rgba(13,148,136,.2);
+    }
+
+    /* ── VMG section (الرؤية والرسالة) ── */
+    [data-theme="light"] .vmg-section {
+      background: linear-gradient(135deg, #eef2fb 0%, #f0f9f8 100%);
+    }
+    [data-theme="light"] .vmg-card {
+      background: #ffffff;
+      border-color: rgba(13,20,52,.07);
+      box-shadow: 0 2px 8px rgba(13,20,52,.05), 0 8px 24px rgba(13,20,52,.06);
+    }
+    [data-theme="light"] .vmg-card:hover {
+      box-shadow: 0 8px 24px rgba(13,148,136,.12), 0 20px 48px rgba(13,20,52,.1);
+    }
+    [data-theme="light"] .vmg-title       { color: var(--text); }
+    [data-theme="light"] .vmg-text        { color: var(--text-muted); }
+    [data-theme="light"] .vmg-card .vmg-bg-num { color: var(--primary); opacity: .05; }
+
+    /* ── Why section (لماذا عفراء) ── */
+    [data-theme="light"] .why-section { background: #f8fafc; }
+    [data-theme="light"] .why-quote {
+      background: rgba(13,148,136,.06);
+      border-right-color: var(--primary);
+    }
+    [data-theme="light"] .why-quote blockquote { color: var(--text); }
+    [data-theme="light"] .why-circle {
+      background: radial-gradient(circle at 40% 40%, rgba(13,148,136,.2), rgba(13,148,136,.06));
+      border-color: rgba(13,148,136,.3);
+      box-shadow: 0 0 0 20px rgba(13,148,136,.05), 0 12px 40px rgba(13,148,136,.15);
+    }
+    [data-theme="light"] .why-circle::before { border-color: rgba(13,148,136,.2); }
+    [data-theme="light"] .why-circle .w-word { color: var(--text); }
+
+    /* ── Goal items ── */
+    [data-theme="light"] .goal-item { background: #f8fafc; border-color: rgba(13,20,52,.08); }
+    [data-theme="light"] .goal-text { color: var(--text); }
+
+    /* ── Founder section ── */
+    [data-theme="light"] .founder-card {
+      background: #ffffff;
+      border-color: rgba(13,20,52,.07);
+      box-shadow: 0 4px 16px rgba(13,20,52,.07), 0 20px 60px rgba(13,20,52,.08);
+    }
+    [data-theme="light"] .founder-name  { color: var(--text); }
+    [data-theme="light"] .founder-title { color: var(--text-muted); }
+    [data-theme="light"] .founder-bio   { color: var(--text-muted); }
+    [data-theme="light"] .founder-photo {
+      box-shadow: 0 0 0 6px rgba(13,148,136,.12), 0 20px 50px rgba(13,20,52,.18);
+    }
+
+    /* ── Footer: يبقى داكناً في كلا الثيمين ── */
+    [data-theme="light"] .footer-section { background: #0d1b33; }
   </style>
 </head>
 <body>
