@@ -67,11 +67,13 @@ service firebase.storage {
     match /job_images/{jobId}/{fileName} {
       allow read: if true;
 
-      // رفع: مكاتب التوظيف فقط (التحقق من الملكية عبر Firestore)
+      // رفع: مكاتب التوظيف وأصحاب العمل فقط
       allow create, update: if isLoggedIn()
         && isValidImage();
 
-      allow delete: if isLoggedIn();
+      // حذف: صاحب الوظيفة فقط — نتحقق من Firestore
+      allow delete: if isLoggedIn()
+        && firestore.get(/databases/(default)/documents/jobs/$(jobId)).data.postedBy == request.auth.uid;
     }
 
 
@@ -87,7 +89,7 @@ service firebase.storage {
         && isOwner(userId)
         && (isValidDocument() || isValidImage());
 
-      // حذف: صاحب السيرة
+      // حذف: صاحب السيرة فقط
       allow delete: if isLoggedIn() && isOwner(userId);
     }
 
@@ -101,7 +103,9 @@ service firebase.storage {
       allow create: if isLoggedIn()
         && (isValidDocument() || isValidImage());
 
-      allow delete: if isLoggedIn();
+      // حذف: صاحب الطلب فقط — نتحقق من Firestore
+      allow delete: if isLoggedIn()
+        && firestore.get(/databases/(default)/documents/applications/$(appId)).data.applicantId == request.auth.uid;
     }
 
 
@@ -110,8 +114,8 @@ service firebase.storage {
     // ══════════════════════════════════════
     match /banners/{fileName} {
       allow read: if true;
-      // رفع: الأدمن فقط (يجب التحقق من الدور)
-      allow write: if isLoggedIn() && isValidImage();
+      // رفع: مغلق — الأدمن يستخدم Firebase Console مباشرة
+      allow write: if false;
     }
 
 

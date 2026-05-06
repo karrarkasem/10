@@ -102,28 +102,36 @@ service cloud.firestore {
     // APPLICATIONS — مع Rate Limiting
     // ══════════════════════════════════════
     match /applications/{appId} {
-      // المتقدم يرى طلبه، الأدمن يرى الكل، صاحب الوظيفة (مكتب أو صاحب عمل) يرى طلبات وظيفته
+      // المتقدم يرى طلبه، الأدمن يرى الكل، المكتب يرى ترشيحاته، صاحب الوظيفة يرى طلبات وظيفته
       allow read: if isAdmin()
         || (isLoggedIn() && resource.data.applicantId == request.auth.uid)
+        || (isOffice() && resource.data.referredBy == request.auth.uid)
         || (isJobPoster()
             && get(/databases/$(database)/documents/jobs/$(resource.data.jobId)).data.postedBy == request.auth.uid);
 
       allow create: if isLoggedIn() && isActive()
-        && request.resource.data.applicantId == request.auth.uid
         && validSize(request.resource.data)
-        && hasFields(request.resource.data, ['jobId', 'applicantId', 'name', 'phone', 'email', 'cover', 'status'])
+        && hasFields(request.resource.data, ['jobId', 'name', 'phone', 'email', 'cover', 'status'])
         && validStr(request.resource.data.name,  2, 80)
-        && validStr(request.resource.data.cover, 30, 3000)
         && validStr(request.resource.data.phone,  9, 20)
         && validStr(request.resource.data.email,  5, 120)
-        && request.resource.data.status == 'pending';
+        && request.resource.data.status == 'pending'
+        && (
+          // باحث يتقدم بنفسه
+          (request.resource.data.applicantId == request.auth.uid
+           && validStr(request.resource.data.cover, 30, 3000))
+          // مكتب يرشّح موظفاً — applicantId يكون 'ref_...' وليس UID
+          || (isOffice()
+              && request.resource.data.isReferral == true
+              && request.resource.data.referredBy == request.auth.uid
+              && validStr(request.resource.data.cover, 1, 3000))
+        );
 
       // صاحب الوظيفة (مكتب أو صاحب عمل) يستطيع تحديث حالة الطلب
       allow update: if isAdmin()
         || (isJobPoster()
             && get(/databases/$(database)/documents/jobs/$(resource.data.jobId)).data.postedBy == request.auth.uid
-            && request.resource.data.applicantId == resource.data.applicantId
-            && request.resource.data.jobId       == resource.data.jobId);
+            && request.resource.data.jobId == resource.data.jobId);
 
       allow delete: if isAdmin();
     }
