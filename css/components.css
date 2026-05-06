@@ -25,13 +25,17 @@
 .sidebar {
   width: 256px; background: var(--bgs);
   display: flex; flex-direction: column;
-  position: fixed; right: 0; top: 0; bottom: 0; z-index: 300;
+  position: fixed; right: 0; top: 0; bottom: 0; z-index: 400;
   transition: transform .3s cubic-bezier(.4,0,.2,1);
 }
 .sidebar::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(13,148,136,.18) 0%, transparent 35%); pointer-events: none; }
 @media (min-width: 769px) and (max-width: 1024px) { .sidebar { width: 210px; } }
-@media (max-width: 768px) { .sidebar { transform: translateX(100%); } .sidebar.open { transform: translateX(0); } }
-.ov { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.65); z-index: 299; backdrop-filter: blur(3px); animation: fadeIn .2s ease; }
+@media (max-width: 768px) {
+  .sidebar { transform: translateX(100%); }
+  .sidebar.open { transform: translateX(0); }
+  .sbot { padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
+}
+.ov { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.65); z-index: 399; backdrop-filter: blur(3px); animation: fadeIn .2s ease; }
 
 .sbl       { padding: 22px 18px 18px; border-bottom: 1px solid rgba(255,255,255,.07); position: relative; z-index: 1; }
 .sbl-mark  { display: flex; align-items: center; gap: 10px; }

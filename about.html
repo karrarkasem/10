@@ -2,7 +2,8 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+  <script>(function(){var t=localStorage.getItem('afraa_theme')||(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t);})();</script>
   <title>عن المنصة — عفراء للتوظيف</title>
   <meta name="description" content="اعرف أكثر عن منصة عفراء للتوظيف — قصتنا ورؤيتنا ورسالتنا في بناء سوق عمل عراقي نقي ومزدهر" />
   <meta name="keywords" content="عفراء للتوظيف, منصة توظيف عراق, قصة عفراء, رؤية المنصة, توظيف عراقي">
@@ -46,6 +47,15 @@
       --radius:       18px;
     }
 
+    [data-theme="light"] {
+      --bg:        #f0fdf9;
+      --card:      #ffffff;
+      --card2:     #f1f5f9;
+      --text:      #0f172a;
+      --text-muted:#64748b;
+      --border:    #e2e8f0;
+    }
+
     html { scroll-behavior: smooth; overflow-x: hidden; }
 
     body {
@@ -65,8 +75,8 @@
       position: fixed;
       top: 0; right: 0; left: 0;
       z-index: 1000;
-      height: 64px;
-      padding: 0 28px;
+      height: calc(64px + env(safe-area-inset-top, 0px));
+      padding: env(safe-area-inset-top, 0px) 28px 0;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -76,7 +86,19 @@
       border-bottom: 1px solid rgba(255,255,255,0.06);
       transition: background 0.3s;
     }
+    [data-theme="light"] #navbar { background: rgba(255,255,255,0.88); border-bottom-color: rgba(0,0,0,0.08); }
+    [data-theme="light"] #navbar.scrolled { background: rgba(255,255,255,0.98); }
     #navbar.scrolled { background: rgba(15,23,42,0.98); }
+    .theme-btn {
+      width: 36px; height: 36px; border-radius: 9px;
+      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
+      color: var(--text-muted); font-size: 14px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.2s; flex-shrink: 0;
+    }
+    [data-theme="light"] .theme-btn { background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.1); }
+    .theme-btn:hover { background: rgba(255,255,255,0.15); color: var(--text); }
+    .nav-actions { display: flex; align-items: center; gap: 8px; }
 
     .nav-logo {
       font-size: 1.25rem;
@@ -735,6 +757,32 @@
       opacity: 1;
       transform: translateY(0);
     }
+
+    /* ── Light theme overrides ── */
+    [data-theme="light"] body { background: var(--bg); color: var(--text); }
+    [data-theme="light"] .hero { background: linear-gradient(160deg, #e0f7f5 0%, #f0fdf9 55%, #e8f4f2 100%); }
+    [data-theme="light"] .hero::before { background: radial-gradient(circle, rgba(13,148,136,0.12) 0%, transparent 70%); }
+    [data-theme="light"] .hero::after  { background: radial-gradient(circle, rgba(139,92,246,0.08) 0%, transparent 70%); }
+    [data-theme="light"] .hero-title .hl-white { color: var(--text); }
+    [data-theme="light"] .stats-bar { background: #ffffff; border-color: #e2e8f0; }
+    [data-theme="light"] .stat-num  { color: var(--primary); }
+    [data-theme="light"] .section   { background: var(--bg); }
+    [data-theme="light"] .section:nth-child(even) { background: #f8fafc; }
+    [data-theme="light"] .serve-card { background: var(--card); border-color: var(--border); color: var(--text); }
+    [data-theme="light"] .serve-card p { color: var(--text-muted); }
+    [data-theme="light"] .vmg-card { background: var(--card); border-color: var(--border); }
+    [data-theme="light"] .vmg-card p { color: var(--text-muted); }
+    [data-theme="light"] .why-section { background: #f8fafc; }
+    [data-theme="light"] .why-quote blockquote { color: var(--text); }
+    [data-theme="light"] .goals-full .goal-card { background: var(--card); border-color: var(--border); }
+    [data-theme="light"] .goals-full .goal-card p { color: var(--text-muted); }
+    [data-theme="light"] .founder-card { background: var(--card); border-color: var(--border); }
+    [data-theme="light"] .founder-name, [data-theme="light"] .founder-title { color: var(--text); }
+    [data-theme="light"] .founder-bio  { color: var(--text-muted); }
+    [data-theme="light"] .footer-section { background: #1e293b; }
+    [data-theme="light"] .nav-logo span { color: var(--text); }
+    [data-theme="light"] .nav-back { color: var(--text-muted); background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.1); }
+    [data-theme="light"] .nav-back:hover { color: var(--text); background: rgba(0,0,0,0.09); }
   </style>
 </head>
 <body>
@@ -742,10 +790,13 @@
 <!-- ══════════════ NAVBAR ══════════════ -->
 <nav id="navbar">
   <a href="index.html" class="nav-logo">✨ <span>عفراء للتوظيف</span></a>
-  <a href="index.html" class="nav-back">
-    <i class="fas fa-arrow-right"></i>
-    <span>العودة للمنصة</span>
-  </a>
+  <div class="nav-actions">
+    <button class="theme-btn" id="abtThemeBtn" onclick="abtToggleTheme()" title="تغيير الثيم"><i class="fas fa-moon" id="abtThIco"></i></button>
+    <a href="index.html" class="nav-back">
+      <i class="fas fa-arrow-right"></i>
+      <span>العودة للمنصة</span>
+    </a>
+  </div>
 </nav>
 
 <!-- ══════════════ HERO ══════════════ -->
@@ -1051,6 +1102,21 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
+  // Theme toggle
+  function abtToggleTheme() {
+    const cur = document.documentElement.getAttribute('data-theme') === 'dark';
+    const nxt = cur ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', nxt);
+    localStorage.setItem('afraa_theme', nxt);
+    document.getElementById('abtThIco').className = nxt === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+  }
+  // Sync theme icon on load
+  (function() {
+    const t = document.documentElement.getAttribute('data-theme');
+    const ic = document.getElementById('abtThIco');
+    if (ic) ic.className = t === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+  })();
+
   // Navbar scroll effect
   window.addEventListener('scroll', () => {
     document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 30);
