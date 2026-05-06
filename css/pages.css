@@ -866,3 +866,83 @@ html:not([data-theme="dark"]) .lnd-browse-btn {
   background: rgba(255,255,255,.72); border-color: rgba(13,20,52,.1); color: var(--tx2);
 }
 html:not([data-theme="dark"]) .lnd-browse-btn:hover { background: #fff; color: var(--tx); border-color: rgba(13,148,136,.3); }
+
+/* ── بطاقات الوظائف في الهبوط ── */
+.lnd-jc {
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 16px;
+  padding: 14px 15px;
+  cursor: pointer;
+  transition: background .18s, transform .18s, box-shadow .18s;
+}
+.lnd-jc:hover { background: rgba(255,255,255,.07); transform: translateY(-1px); }
+.lnd-jc-inner { display: flex; align-items: center; gap: 11px; }
+.lnd-jc-logo {
+  width: 44px; height: 44px; border-radius: 12px;
+  background: linear-gradient(135deg, var(--p), var(--pl));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 19px; flex-shrink: 0;
+}
+.lnd-jc-info { flex: 1; min-width: 0; }
+.lnd-jc-title {
+  font-size: 13px; font-weight: 800; color: #fff;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.lnd-jc-sub  { font-size: 11px; color: rgba(255,255,255,.45); margin-top: 2px; }
+.lnd-jc-meta { text-align: left; flex-shrink: 0; }
+.lnd-jc-sal  { font-size: 11px; font-weight: 800; color: var(--pl); }
+.lnd-jc-type {
+  margin-top: 4px; font-size: 10px; font-weight: 700;
+  padding: 2px 8px; border-radius: 8px; color: rgba(255,255,255,.7);
+}
+.lnd-jc-type-full   { background: rgba(13,148,136,.25); }
+.lnd-jc-type-part   { background: rgba(245,158,11,.2); }
+.lnd-jc-type-remote { background: rgba(59,130,246,.2); }
+.lnd-jc-type-gig    { background: rgba(139,92,246,.2); }
+.lnd-jc-empty {
+  text-align: center; padding: 28px 0;
+  color: rgba(255,255,255,.3); font-size: 13px;
+}
+.lnd-jc-empty-ico { font-size: 28px; display: block; margin-bottom: 8px; opacity: .3; }
+
+/* بطاقات الوظائف — الثيم الفاتح */
+html:not([data-theme="dark"]) .lnd-jc {
+  background: rgba(255,255,255,.82);
+  border-color: rgba(13,20,52,.1);
+  box-shadow: 0 2px 10px rgba(13,20,52,.06);
+}
+html:not([data-theme="dark"]) .lnd-jc:hover {
+  background: #fff;
+  box-shadow: 0 6px 24px rgba(13,20,52,.11);
+  transform: translateY(-2px);
+}
+html:not([data-theme="dark"]) .lnd-jc-title        { color: var(--tx); }
+html:not([data-theme="dark"]) .lnd-jc-sub           { color: var(--tx2); }
+html:not([data-theme="dark"]) .lnd-jc-type-full   { background: rgba(13,148,136,.12); color: var(--pd); }
+html:not([data-theme="dark"]) .lnd-jc-type-part   { background: rgba(245,158,11,.12);  color: #b45309; }
+html:not([data-theme="dark"]) .lnd-jc-type-remote { background: rgba(59,130,246,.12);  color: #1d4ed8; }
+html:not([data-theme="dark"]) .lnd-jc-type-gig    { background: rgba(139,92,246,.12);  color: #6d28d9; }
+html:not([data-theme="dark"]) .lnd-jc-empty        { color: var(--tx3); }
+html:not([data-theme="dark"]) .lnd-jc-empty-ico    { opacity: .35; }
+
+/* قسم "كيف تعمل" — الثيم الفاتح */
+html:not([data-theme="dark"]) .lnd-how {
+  background: rgba(255,255,255,.72);
+  border-color: rgba(13,20,52,.1);
+  box-shadow: 0 2px 10px rgba(13,20,52,.05);
+}
+html:not([data-theme="dark"]) .lnd-how-step:hover  { background: rgba(13,148,136,.06); }
+html:not([data-theme="dark"]) .lnd-how-title        { color: var(--tx); }
+html:not([data-theme="dark"]) .lnd-how-desc         { color: var(--tx2); }
+html:not([data-theme="dark"]) .lnd-how-arrow        { color: rgba(13,20,52,.15); }
+html:not([data-theme="dark"]) .lnd-how-icon         { filter: none; }
+
+/* شريط المميزات — الثيم الفاتح */
+html:not([data-theme="dark"]) .lnd-features-strip {
+  background: rgba(255,255,255,.72);
+  border-color: rgba(13,20,52,.1);
+  box-shadow: 0 2px 8px rgba(13,20,52,.05);
+}
+html:not([data-theme="dark"]) .lnd-feat     { color: var(--tx2); }
+html:not([data-theme="dark"]) .lnd-feat-div { background: rgba(13,20,52,.1); }

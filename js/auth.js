@@ -120,8 +120,8 @@ async function loadLandingJobs() {
     } catch(e) { console.warn('landingJobs:', e.message); }
   }
   if (!jobs.length) {
-    el.innerHTML = `<div style="text-align:center;padding:28px 0;color:rgba(255,255,255,.3);font-size:13px">
-      <i class="fas fa-briefcase" style="font-size:28px;display:block;margin-bottom:8px;opacity:.3"></i>
+    el.innerHTML = `<div class="lnd-jc-empty">
+      <i class="fas fa-briefcase lnd-jc-empty-ico"></i>
       لا توجد وظائف بعد
     </div>`;
     return;
@@ -129,22 +129,17 @@ async function loadLandingJobs() {
   el.innerHTML = jobs.map(j => {
     const sal = j.salary ? `${Number(j.salary).toLocaleString()} ${j.currency || 'IQD'}` : 'قابل للتفاوض';
     const types = { full:'دوام كامل', part:'دوام جزئي', remote:'عن بُعد', gig:'مهمة' };
-    const colors = { full:'rgba(13,148,136,.25)', part:'rgba(245,158,11,.2)', remote:'rgba(59,130,246,.2)', gig:'rgba(139,92,246,.2)' };
     return `
-    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:14px 15px;cursor:pointer;transition:background .18s,transform .18s" onclick="landingBrowse()"
-      onmouseenter="this.style.background='rgba(255,255,255,.07)';this.style.transform='translateY(-1px)'"
-      onmouseleave="this.style.background='rgba(255,255,255,.04)';this.style.transform=''">
-      <div style="display:flex;align-items:center;gap:11px">
-        <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,var(--p),var(--pl));display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0">
-          ${san(j.logo) || '🏢'}
+    <div class="lnd-jc" onclick="landingBrowse()">
+      <div class="lnd-jc-inner">
+        <div class="lnd-jc-logo">${san(j.logo) || '🏢'}</div>
+        <div class="lnd-jc-info">
+          <div class="lnd-jc-title">${j.title || ''}</div>
+          <div class="lnd-jc-sub">${j.company || ''} • ${j.province || ''}</div>
         </div>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:13px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${j.title || ''}</div>
-          <div style="font-size:11px;color:rgba(255,255,255,.45);margin-top:2px">${j.company || ''} • ${j.province || ''}</div>
-        </div>
-        <div style="text-align:left;flex-shrink:0">
-          <div style="font-size:11px;font-weight:800;color:var(--pl)">${sal}</div>
-          <div style="margin-top:4px;font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;background:${colors[j.type]||colors.full};color:rgba(255,255,255,.7)">${types[j.type]||'وظيفة'}</div>
+        <div class="lnd-jc-meta">
+          <div class="lnd-jc-sal">${sal}</div>
+          <div class="lnd-jc-type lnd-jc-type-${j.type||'full'}">${types[j.type]||'وظيفة'}</div>
         </div>
       </div>
     </div>`;
