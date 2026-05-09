@@ -115,6 +115,12 @@ function landingBrowse() {
   enterGuest();
 }
 
+function landingGoogleLogin() {
+  document.getElementById('onboarding').style.display = 'none';
+  SEL_ROLE = 'seeker';
+  doGoogleLogin();
+}
+
 function landingLogin() {
   document.getElementById('onboarding').style.display = 'none';
   document.getElementById('authScreen').style.display = 'flex';
@@ -258,13 +264,10 @@ async function doLogin() {
 async function doRegister() {
   hideErr('rerr');
   const name  = document.getElementById('rn').value.trim();
-  const phone = document.getElementById('rph').value.trim();
-  const prov  = document.getElementById('rprov').value;
   const email = document.getElementById('re').value.trim();
   const pass  = document.getElementById('rp2').value;
-  if (!name || !phone || !prov || !email || !pass) { showErr('rerr', 'أكمل جميع الحقول المطلوبة'); return; }
-  if (!/^07[3-9]\d{8}$/.test(phone.replace(/\s/g,''))) { showErr('rerr', 'رقم الهاتف يجب أن يكون عراقياً صحيحاً (07XXXXXXXXX)'); return; }
-  if (pass.length < 8) { showErr('rerr', 'كلمة المرور يجب أن تكون 8 أحرف على الأقل'); return; }
+  if (!name || !email || !pass) { showErr('rerr', 'أدخل الاسم والبريد وكلمة المرور'); return; }
+  if (pass.length < 6) { showErr('rerr', 'كلمة المرور 6 أحرف على الأقل'); return; }
   if (SEL_ROLE === 'employer') {
     const empName = document.getElementById('remp_name')?.value.trim();
     const empType = document.getElementById('remp_type')?.value;
@@ -291,7 +294,8 @@ async function doRegister() {
     } catch(_) {}
 
     await window.db.collection('users').doc(cred.user.uid).set({
-      name, phone, province: prov, email,
+      name, email,
+      phone: '', province: '',
       role: assignedRole,
       officeName:    offN || null,
       licenseNum:    offL || null,
