@@ -181,6 +181,14 @@ function pgSeekerHome(el) {
         <div class="qact-sub">${P?.cvPublished ? 'المكاتب وأصحاب العمل يستطيعون رؤية ملفك' : 'اجعل ملفك مرئياً للمكاتب وأصحاب العمل'}</div>
         <i class="fas fa-arrow-left qact-arr"></i>
       </div>
+      <div class="qact-card" onclick="toggleJobAlerts(this)">
+        <div class="qact-ico" style="background:linear-gradient(135deg,${P?.jobAlerts ? '#22c55e' : '#64748b'},${P?.jobAlerts ? '#4ade80' : '#94a3b8'})">
+          <i class="fas fa-bell"></i>
+        </div>
+        <div class="qact-tit">${P?.jobAlerts ? 'التنبيهات مفعّلة 🔔' : 'تنبيهات الوظائف'}</div>
+        <div class="qact-sub">${P?.jobAlerts ? 'ستصلك إشعارات عند نشر وظائف جديدة' : 'فعّل الإشعارات لتعلم بأحدث الوظائف'}</div>
+        <i class="fas fa-arrow-left qact-arr"></i>
+      </div>
     </div>
 
     <div class="sh fade-up del5">

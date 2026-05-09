@@ -273,6 +273,59 @@ async function notifyAdmin(subj, html, tg) {
 }
 
 // ═══════════════════════════════════════════════
+// زر واتساب العائم
+// ═══════════════════════════════════════════════
+function _refreshWaFloat() {
+  const btn = document.getElementById('waFloat');
+  if (!btn) return;
+  const num = (CFG.site?.whatsappNum || '').replace(/\D/g, '');
+  btn.style.display = num ? '' : 'none';
+  if (num) btn.href = `https://wa.me/${num}`;
+}
+
+// ═══════════════════════════════════════════════
+// تنبيهات الوظائف (Job Alerts)
+// ═══════════════════════════════════════════════
+async function toggleJobAlerts(card) {
+  if (!('Notification' in window)) {
+    notify('غير مدعوم', 'متصفحك لا يدعم الإشعارات', 'error');
+    return;
+  }
+  const isEnabled = P?.jobAlerts;
+  if (isEnabled) {
+    P = { ...P, jobAlerts: false };
+    if (window.db && U) {
+      try { await window.db.collection('users').doc(U.uid).update({ jobAlerts: false }); } catch(e) {}
+    }
+    _updateAlertsCard(card, false);
+    notify('تم الإيقاف', 'لن تصلك تنبيهات الوظائف', 'info');
+  } else {
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') {
+      notify('تعذّر التفعيل', 'اسمح بالإشعارات في إعدادات المتصفح ثم أعد المحاولة', 'warning');
+      return;
+    }
+    P = { ...P, jobAlerts: true };
+    if (window.db && U) {
+      try { await window.db.collection('users').doc(U.uid).update({ jobAlerts: true, jobAlertsProvince: P?.province || '' }); } catch(e) {}
+    }
+    _updateAlertsCard(card, true);
+    notify('تم التفعيل 🔔', 'ستصلك إشعارات عند نشر وظائف جديدة في محافظتك', 'success');
+  }
+}
+
+function _updateAlertsCard(card, enabled) {
+  const ico = card?.querySelector('.qact-ico');
+  const tit = card?.querySelector('.qact-tit');
+  const sub = card?.querySelector('.qact-sub');
+  if (ico) ico.style.background = enabled
+    ? 'linear-gradient(135deg,#22c55e,#4ade80)'
+    : 'linear-gradient(135deg,#64748b,#94a3b8)';
+  if (tit) tit.textContent = enabled ? 'التنبيهات مفعّلة 🔔' : 'تنبيهات الوظائف';
+  if (sub) sub.textContent = enabled ? 'ستصلك إشعارات عند نشر وظائف جديدة' : 'فعّل الإشعارات لتعلم بأحدث الوظائف';
+}
+
+// ═══════════════════════════════════════════════
 // الثيم
 // ═══════════════════════════════════════════════
 function initTheme() {

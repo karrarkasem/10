@@ -21,6 +21,28 @@ function initApp() {
   loadLandingJobs();
   animateLandingCounters();
   initLandingScrollAnim();
+  initLandingSearch();
+}
+
+function initLandingSearch() {
+  const sel = document.getElementById('lndProv');
+  if (sel && sel.options.length <= 1 && typeof PROVS !== 'undefined') {
+    PROVS.forEach(p => {
+      const o = document.createElement('option');
+      o.value = o.textContent = p;
+      sel.appendChild(o);
+    });
+  }
+  const inp = document.getElementById('lndQ');
+  if (inp) inp.addEventListener('keydown', e => { if (e.key === 'Enter') landingSearch(); });
+}
+
+function landingSearch() {
+  const q    = (document.getElementById('lndQ')?.value  || '').trim();
+  const prov = document.getElementById('lndProv')?.value || '';
+  if (typeof JF    !== 'undefined') JF    = { type: '', cat: '', prov, q, skill: '' };
+  if (typeof JSORT !== 'undefined') JSORT = 'newest';
+  landingBrowse();
 }
 
 function initLandingScrollAnim() {

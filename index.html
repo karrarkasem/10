@@ -68,6 +68,11 @@
 <!-- ═══ Toast Notifications ═══ -->
 <div id="nc"></div>
 
+<!-- ═══ WhatsApp Float Button ═══ -->
+<a id="waFloat" class="wa-float" href="#" target="_blank" rel="noopener noreferrer" style="display:none" title="تواصل معنا على واتساب">
+  <i class="fab fa-whatsapp"></i>
+</a>
+
 <!-- ═══ Sidebar Overlay ═══ -->
 <div class="ov" id="ov" onclick="closeSidebar()" style="display:none"></div>
 
@@ -92,6 +97,21 @@
     <div class="lnd-badge"><i class="fas fa-map-marker-alt"></i> منصة التوظيف الأولى في العراق</div>
     <h1 class="lnd-title">نور طريقك<br>نحو <span class="lnd-title-hl">فرصتك</span></h1>
     <p class="lnd-tagline">آلاف الوظائف في كل محافظات العراق — قدّم طلبك في ثوانٍ</p>
+
+    <!-- محرك البحث السريع -->
+    <div class="lnd-search-wrap">
+      <div class="lnd-sf-row">
+        <div class="lnd-sf-field">
+          <i class="fas fa-search lnd-sf-ico"></i>
+          <input id="lndQ" type="text" class="lnd-sf-inp" placeholder="ابحث: مهنة، شركة، مهارة...">
+        </div>
+        <select id="lndProv" class="lnd-sf-sel">
+          <option value="">📍 كل المحافظات</option>
+        </select>
+        <button class="lnd-sf-btn" onclick="landingSearch()"><i class="fas fa-search"></i> ابحث</button>
+      </div>
+    </div>
+
     <div class="lnd-stats-bar">
       <div class="lnd-stat"><span class="lnd-stat-n" id="cnt-jobs">0</span><span class="lnd-stat-l">وظيفة</span></div>
       <div class="lnd-stat-sep"></div>

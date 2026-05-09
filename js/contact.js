@@ -18,6 +18,7 @@ async function loadContactCampaigns() {
       ['telegram','emailjs','imgbb','facebook','instagram','twitter','linkedin','tiktok','snapchat','youtube','gemini','general','site'].forEach(k => {
         if (s[k]) CFG[k] = { ...CFG[k], ...s[k] };
       });
+      _refreshWaFloat();
     }
   } catch(e) { console.warn('boot config load:', e.message); }
 }
