@@ -555,7 +555,7 @@ async function submitApply(quizScore = null, quizFeedback = '') {
 
 // رابط الوظيفة المخصص — يمر عبر Worker لإنشاء بطاقة OG احترافية لواتساب
 function _getJobShareURL(jobId) {
-  return `https://fanoos-ai.karrarkasem.workers.dev/job/${jobId}`;
+  return `https://api.afra-iq.com/job/${jobId}`;
 }
 
 function _buildShareText(j, long = false) {
