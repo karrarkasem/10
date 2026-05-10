@@ -101,6 +101,9 @@ function pgJobs(el) {
           <option value="">كل المحافظات</option>
           ${PROVS.map(p => `<option ${p === P?.province ? 'selected' : ''}>${p}</option>`).join('')}
         </select>
+        <button id="geoBtn" class="btn bo bsm" onclick="geoFilterJobs()" title="وظائف قريبة من موقعك الحالي" style="white-space:nowrap;flex-shrink:0">
+          <i class="fas fa-map-marker-alt" style="color:var(--danger)"></i> قريبة مني
+        </button>
         <select class="sort-select" onchange="JSORT=this.value;rJobs()" title="ترتيب النتائج">
           <option value="newest">الأحدث أولاً</option>
           <option value="salary_high">أعلى راتب</option>
@@ -390,8 +393,13 @@ function openJob(id) {
       </button>
       <button onclick="shareJobWhatsApp('${j.id}')"
         style="width:46px;height:46px;border-radius:11px;background:#25D366;color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0"
-        title="مشاركة عبر WhatsApp">
+        title="مشاركة عبر واتساب">
         <i class="fab fa-whatsapp"></i>
+      </button>
+      <button onclick="shareJobTelegram('${j.id}')"
+        style="width:46px;height:46px;border-radius:11px;background:#229ed9;color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0"
+        title="مشاركة عبر تيليغرام">
+        <i class="fab fa-telegram-plane"></i>
       </button>
       <button onclick="shareJobGeneral('${j.id}')"
         style="width:46px;height:46px;border-radius:11px;background:linear-gradient(135deg,#0ea5e9,#6366f1);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0"
@@ -545,16 +553,22 @@ async function submitApply(quizScore = null, quizFeedback = '') {
 // نظام المشاركة على التواصل الاجتماعي
 // ══════════════════════════════════════════════════════════
 
+// رابط الوظيفة المخصص — يمر عبر Worker لإنشاء بطاقة OG احترافية لواتساب
+function _getJobShareURL(jobId) {
+  return `https://fanoos-ai.karrarkasem.workers.dev/job/${jobId}`;
+}
+
 function _buildShareText(j, long = false) {
-  const sal  = j.salary ? `${fmt(j.salary)}${j.salaryMax ? '–' + fmt(j.salaryMax) : ''} ${j.currency || 'IQD'}` : 'قابل للتفاوض';
-  const type = jobTypeLabel(j.type);
+  const sal     = j.salary ? `${fmt(j.salary)}${j.salaryMax ? '–' + fmt(j.salaryMax) : ''} ${j.currency || 'IQD'}` : 'قابل للتفاوض';
+  const type    = jobTypeLabel(j.type);
+  const shareURL = _getJobShareURL(j.id);
   if (long) {
     return `🔔 *فرصة عمل — عفراء للتوظيف*\n\n` +
       `💼 *${j.title}*\n🏢 ${j.company}\n📍 ${j.province || '—'} | ${type}\n💰 ${sal}\n⏳ آخر موعد: ${j.deadline || '—'}\n\n` +
       `${j.desc ? j.desc.slice(0, 150) + '...' : ''}\n\n` +
-      `👆 تقدّم الآن عبر منصة عفراء للتوظيف ✨\n${location.href}`;
+      `👆 تقدّم الآن عبر منصة عفراء للتوظيف ✨\n${shareURL}`;
   }
-  return `فرصة عمل: ${j.title} — ${j.company} | ${j.province || ''} | ${type} | ${sal} — عفراء للتوظيف ✨ ${location.href}`;
+  return `فرصة عمل: ${j.title} — ${j.company} | ${j.province || ''} | ${type} | ${sal} — عفراء للتوظيف ✨ ${shareURL}`;
 }
 
 // ── مشاركة الوظيفة عبر WhatsApp ──
@@ -564,23 +578,33 @@ function shareJobWhatsApp(id) {
   window.open(`https://wa.me/?text=${encodeURIComponent(_buildShareText(j, true))}`, '_blank');
 }
 
+// ── مشاركة الوظيفة عبر تيليغرام ──
+function shareJobTelegram(id) {
+  const j = JOBS.find(x => x.id === id);
+  if (!j) return;
+  const shareURL = _getJobShareURL(id);
+  window.open(`https://t.me/share/url?url=${encodeURIComponent(shareURL)}&text=${encodeURIComponent(_buildShareText(j, false))}`, '_blank');
+}
+
 // ── نافذة المشاركة الشاملة ──
 function shareJobGeneral(id) {
   const j = JOBS.find(x => x.id === id);
   if (!j) return;
+  const shareURL = _getJobShareURL(id);
   _openSharePanel({
-    title: j.title,
-    text:  _buildShareText(j, false),
+    title:    j.title,
+    text:     _buildShareText(j, false),
     longText: _buildShareText(j, true),
-    url:   location.href,
+    url:      shareURL,
   });
 }
 
 // ── مشاركة المنصة نفسها ──
 function sharePlatform() {
-  const text = `✨ عفراء للتوظيف — منصة التوظيف الأولى في العراق!\n\nآلاف الوظائف في 18 محافظة، تقدّم بنقرة واحدة وتابع طلبك لحظة بلحظة.\nذكاء اصطناعي يساعدك في المقابلة والسيرة الذاتية.\n\n${location.href}`;
-  const short = `عفراء للتوظيف — منصة التوظيف الأولى في العراق ✨ ${location.href}`;
-  _openSharePanel({ title: 'عفراء للتوظيف', text: short, longText: text, url: location.href });
+  const base  = 'https://afra-iq.com';
+  const text  = `✨ عفراء للتوظيف — منصة التوظيف الأولى في العراق!\n\nآلاف الوظائف في 18 محافظة، تقدّم بنقرة واحدة وتابع طلبك لحظة بلحظة.\nذكاء اصطناعي يساعدك في المقابلة والسيرة الذاتية.\n\n${base}`;
+  const short = `عفراء للتوظيف — منصة التوظيف الأولى في العراق ✨ ${base}`;
+  _openSharePanel({ title: 'عفراء للتوظيف', text: short, longText: text, url: base });
 }
 
 // ── بناء نافذة المشاركة ──
@@ -593,7 +617,7 @@ function _openSharePanel({ title, text, longText, url }) {
     return;
   }
 
-  const enc  = encodeURIComponent;
+  const enc   = encodeURIComponent;
   const panel = document.createElement('div');
   panel.id    = '_sharePanel';
   panel.className = 'share-panel';
@@ -628,13 +652,163 @@ function _copyShareLink(url, btn) {
   navigator.clipboard?.writeText(url).then(() => {
     btn.innerHTML = '<i class="fas fa-check"></i><span>تم النسخ!</span>';
     btn.style.background = 'rgba(34,197,94,.15)';
-    btn.style.color = 'var(--success)';
+    btn.style.color      = 'var(--success)';
     btn.style.borderColor = 'var(--success)';
     setTimeout(() => {
       btn.innerHTML = '<i class="fas fa-link"></i><span>نسخ الرابط</span>';
       btn.style = '';
     }, 2000);
   }).catch(() => notify('تنبيه', 'انسخ الرابط يدوياً من شريط العنوان', 'info'));
+}
+
+// ══════════════════════════════════════════════════════════
+// الفلتر الجغرافي — وظائف قريبة مني
+// ══════════════════════════════════════════════════════════
+const PROV_COORDS = {
+  'بغداد':       [33.3152, 44.3661],
+  'كربلاء':      [32.6147, 44.0242],
+  'النجف':       [32.0056, 44.3371],
+  'البصرة':      [30.5085, 47.7834],
+  'نينوى':       [36.3352, 43.1189],
+  'أربيل':       [36.1912, 44.0092],
+  'كركوك':       [35.4681, 44.3922],
+  'بابل':        [32.4772, 44.4421],
+  'ذي قار':      [31.0467, 46.2762],
+  'ميسان':       [31.8349, 47.1459],
+  'القادسية':    [31.9904, 44.9260],
+  'واسط':        [32.5999, 45.8178],
+  'المثنى':      [29.3616, 45.2978],
+  'الأنبار':     [33.3750, 41.2500],
+  'صلاح الدين':  [34.5600, 43.4850],
+  'ديالى':       [33.7631, 44.9887],
+  'دهوك':        [36.8575, 42.9895],
+  'السليمانية':  [35.5564, 45.4357],
+};
+
+function geoFilterJobs() {
+  if (!navigator.geolocation) {
+    notify('غير مدعوم', 'متصفحك لا يدعم تحديد الموقع', 'error');
+    return;
+  }
+  const btn = document.getElementById('geoBtn');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-circle-notch spin"></i> جارٍ...'; }
+
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      const { latitude: lat, longitude: lng } = pos.coords;
+      let nearest = null, minDist = Infinity;
+      for (const [name, [pLat, pLng]] of Object.entries(PROV_COORDS)) {
+        const d = (lat - pLat) ** 2 + (lng - pLng) ** 2;
+        if (d < minDist) { minDist = d; nearest = name; }
+      }
+      if (btn) { btn.disabled = false; btn.innerHTML = `<i class="fas fa-map-marker-alt"></i> ${nearest || 'قريبة'}`; }
+      if (nearest) {
+        JF.prov = nearest;
+        const sel = document.querySelector('select[onchange*="JF.prov"]');
+        if (sel) sel.value = nearest;
+        rJobs();
+        notify('تم التحديد 📍', `يعرض وظائف ${nearest}`, 'success');
+      }
+    },
+    () => {
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-map-marker-alt"></i> قريبة مني'; }
+      notify('تعذّر التحديد', 'اسمح بالوصول للموقع من إعدادات المتصفح', 'warning');
+    },
+    { timeout: 10000, maximumAge: 300000 }
+  );
+}
+
+// ══════════════════════════════════════════════════════════
+// التقديم السريع بدون حساب (Guest Mode)
+// ══════════════════════════════════════════════════════════
+function guestQuickApply(jobId) {
+  const j = JOBS.find(x => x.id === jobId);
+  if (!j) return;
+
+  document.getElementById('moApplyB').innerHTML = `
+    <div style="background:linear-gradient(135deg,rgba(13,148,136,.1),rgba(13,148,136,.03));border:1px solid rgba(13,148,136,.25);border-radius:12px;padding:12px 14px;margin-bottom:16px">
+      <div style="font-size:12px;font-weight:700;color:var(--p);margin-bottom:3px"><i class="fas fa-bolt"></i> تقديم سريع — بدون حساب</div>
+      <div style="font-size:11px;color:var(--tx2)">قدّم الآن ثم سجّل حساباً لمتابعة طلبك وزيادة فرصك</div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--bgc2);border-radius:12px;margin-bottom:16px;border:1px solid var(--br)">
+      <div class="jlo" style="width:44px;height:44px;border-radius:10px;font-size:18px;flex-shrink:0">${san(j.logo) || '🏢'}</div>
+      <div>
+        <div style="font-size:13px;font-weight:800;color:var(--tx)">${san(j.title)}</div>
+        <div style="font-size:11px;color:var(--tx2)">${san(j.company)} • ${san(j.province || '')}</div>
+      </div>
+    </div>
+
+    <div class="fr">
+      <div class="fg"><label class="fl req">الاسم الكامل</label><input type="text" id="ga_n" class="fc" placeholder="محمد علي الحسيني"></div>
+      <div class="fg"><label class="fl req">رقم الهاتف</label><input type="tel" id="ga_ph" class="fc" placeholder="07XXXXXXXXX"></div>
+    </div>
+    <div class="fg">
+      <label class="fl">رسالة مختصرة <span style="color:var(--tx3);font-weight:400">(اختياري)</span></label>
+      <textarea id="ga_cv" class="fc" rows="3" placeholder="لماذا أنت مناسب لهذه الوظيفة؟"></textarea>
+    </div>
+    <div class="al al-i" style="margin-bottom:14px;font-size:11px">
+      <i class="fas fa-shield-alt"></i>
+      <span>بياناتك محمية ولن تُشارك إلا مع صاحب الوظيفة المباشر</span>
+    </div>
+    <div class="mf" style="padding:0;border:none">
+      <button class="btn bo" onclick="cmo('moApply')"><i class="fas fa-times"></i>إلغاء</button>
+      <button class="btn bp blg" id="guestApplyBtn" onclick="submitGuestApply('${j.id}')">
+        <i class="fas fa-paper-plane"></i>تقديم سريع
+      </button>
+    </div>
+    <div style="text-align:center;margin-top:14px;padding-top:12px;border-top:1px solid var(--br)">
+      <span style="font-size:11px;color:var(--tx3)">لديك حساب؟ </span>
+      <button onclick="cmo('moApply');showAuth()" style="background:none;border:none;color:var(--p);font-size:11px;font-family:Cairo,sans-serif;cursor:pointer;font-weight:800">سجّل الدخول وقدّم بملف كامل</button>
+    </div>`;
+  oMo('moApply');
+}
+
+async function submitGuestApply(jobId) {
+  const j    = JOBS.find(x => x.id === jobId);
+  const name = document.getElementById('ga_n')?.value.trim();
+  const ph   = document.getElementById('ga_ph')?.value.trim();
+  const cv   = document.getElementById('ga_cv')?.value.trim() || 'طلب تقديم سريع';
+
+  if (!name) { notify('خطأ', 'أدخل اسمك الكامل', 'error'); return; }
+  const cleanPh = ph.replace(/[\s\-]/g, '');
+  if (!/^(07[3-9]\d{8}|\+9647[3-9]\d{8}|009647[3-9]\d{8})$/.test(cleanPh)) {
+    notify('خطأ', 'رقم الهاتف يجب أن يكون عراقياً (07XXXXXXXXX)', 'error'); return;
+  }
+
+  loading('guestApplyBtn', true);
+  const app = {
+    jobId,
+    jobTitle:    j?.title,
+    company:     j?.company,
+    postedBy:    j?.postedBy || null,
+    applicantId: 'guest_' + Date.now(),
+    name, phone: ph, email: '',
+    cover:       cv,
+    exp:         'غير محدد',
+    isGuestApply: true,
+    status:      'pending',
+    appliedAt:   new Date().toISOString(),
+  };
+
+  if (!DEMO && window.db) {
+    try {
+      await window.db.collection('applications').add({ ...app, appliedAt: firebase.firestore.FieldValue.serverTimestamp() });
+      await window.db.collection('jobs').doc(jobId).update({ applicants: firebase.firestore.FieldValue.increment(1) });
+    } catch(e) { console.warn('guestApply:', e); }
+  }
+
+  cmo('moApply');
+  j.applicants = (j.applicants || 0) + 1;
+  notify('تم الإرسال ✅', 'سجّل حساباً لمتابعة طلبك وزيادة فرصك!', 'success');
+
+  setTimeout(() => {
+    confirm2(
+      'سجّل لمتابعة طلبك',
+      `تم إرسال طلبك على "${j?.title}" بنجاح! سجّل حساباً مجانياً الآن لمتابعة حالة طلبك وتحسين فرصك في القبول.`,
+      () => showAuth()
+    );
+  }, 1500);
 }
 
 // ── ترشيح موظف من مكتب التوظيف ──

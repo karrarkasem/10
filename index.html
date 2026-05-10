@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#0d9488">
 <meta name="description" content="عفراء للتوظيف — ناصع البياض في سوق العمل العراقي. آلاف الوظائف في جميع المحافظات العراقية — سجّل مجاناً وابدأ رحلتك المهنية اليوم.">
-<meta name="keywords" content="وظائف العراق, توظيف, عمل, وظائف بغداد, وظائف كربلاء, وظائف النجف, مكاتب توظيف, باحث عن عمل, عفراء">
+<meta name="keywords" content="وظائف العراق, تعيينات العراق, توظيف, عمل, وظائف القطاع الخاص, وظائف بغداد, وظائف كربلاء, وظائف النجف, وظائف البصرة, وظائف نينوى, وظائف أربيل, وظائف كركوك, وظائف بابل, وظائف ذي قار, وظائف ميسان, وظائف القادسية, وظائف واسط, وظائف المثنى, وظائف الأنبار, وظائف صلاح الدين, وظائف ديالى, وظائف دهوك, وظائف السليمانية, مكاتب توظيف بغداد, مكاتب توظيف العراق, باحث عن عمل, فرص عمل عراق, سوق عمل العراق, وظائف شاغرة, عفراء للتوظيف, منصة توظيف عراقية, مقابلة ذكاء اصطناعي, سيرة ذاتية PDF">
 <meta name="author" content="عفراء للتوظيف">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://afra-iq.com/">
@@ -558,34 +558,73 @@
 
 <!-- JSON-LD Structured Data -->
 <script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "WebSite",
-  "name": "عفراء للتوظيف",
-  "url": "https://afra-iq.com",
-  "description": "منصة التوظيف الأولى في العراق — ناصع البياض في سوق العمل",
-  "inLanguage": "ar",
-  "potentialAction": {
-    "@type": "SearchAction",
-    "target": "https://afra-iq.com/#jobs?q={search_term_string}",
-    "query-input": "required name=search_term_string"
+[
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "عفراء للتوظيف",
+    "url": "https://afra-iq.com",
+    "description": "منصة التوظيف الأولى في العراق — آلاف الوظائف في 18 محافظة",
+    "inLanguage": "ar",
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": "https://afra-iq.com/#jobs?q={search_term_string}",
+      "query-input": "required name=search_term_string"
+    }
   },
-  "publisher": {
+  {
+    "@context": "https://schema.org",
     "@type": "Organization",
     "name": "عفراء للتوظيف",
     "url": "https://afra-iq.com",
-    "logo": {
-      "@type": "ImageObject",
-      "url": "https://afra-iq.com/icons/icon.svg"
+    "logo": "https://afra-iq.com/icons/icon.svg",
+    "sameAs": [],
+    "address": {
+      "@type": "PostalAddress",
+      "addressCountry": "IQ",
+      "addressLocality": "بغداد"
     },
     "contactPoint": {
       "@type": "ContactPoint",
       "email": "afrahub.iq@gmail.com",
       "contactType": "customer support",
       "availableLanguage": "Arabic"
+    },
+    "areaServed": {
+      "@type": "Country",
+      "name": "Iraq"
     }
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "JobPosting",
+    "hiringOrganization": {
+      "@type": "Organization",
+      "name": "عفراء للتوظيف",
+      "sameAs": "https://afra-iq.com"
+    },
+    "jobLocation": {
+      "@type": "Place",
+      "address": {
+        "@type": "PostalAddress",
+        "addressCountry": "IQ"
+      }
+    },
+    "description": "آلاف الوظائف المتاحة في جميع محافظات العراق — قدّم طلبك مجاناً",
+    "title": "وظائف في العراق — عفراء للتوظيف"
   }
-}
+]
+</script>
+
+<!-- ── Deep Link via Query Param: ?job=ID (fallback لروابط الـ Worker) ── -->
+<script>
+(function() {
+  const sp  = new URLSearchParams(location.search);
+  const jid = sp.get('job');
+  if (jid && !location.hash.startsWith('#job/')) {
+    history.replaceState(null, '', '#job/' + jid + location.search.replace(/[?&]job=[^&]*/g, '').replace(/^[?&]/, '?'));
+  }
+})();
 </script>
 
 <!-- ── Service Worker ── -->

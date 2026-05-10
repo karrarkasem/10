@@ -540,8 +540,21 @@ function bootApp() {
   const hash = location.hash.replace('#', '');
   const nav = getNav();
   const validPages = nav.map(p => p.id);
-  const startPage = validPages.includes(hash) ? hash : (nav[0]?.id || 'home');
-  goTo(startPage);
+
+  // Deep link: /#job/{jobId} — يُفتح بعد بناء الصفحة
+  if (hash.startsWith('job/')) {
+    const jobId = hash.replace('job/', '').split('?')[0];
+    const defaultPg = validPages.includes('jobs') ? 'jobs' : (nav[0]?.id || 'home');
+    goTo(defaultPg);
+    const tryOpen = () => {
+      if (JOBS.length) { openJob(jobId); }
+      else { setTimeout(() => JOBS.length && openJob(jobId), 1200); }
+    };
+    setTimeout(tryOpen, 400);
+  } else {
+    const startPage = validPages.includes(hash) ? hash : (nav[0]?.id || 'home');
+    goTo(startPage);
+  }
   // عرض مودال الترحيب للمستخدم الجديد (مرة واحدة فقط)
   if (!U?.isAnonymous && ROLE !== 'guest') setTimeout(maybeShowWelcome, 700);
 }

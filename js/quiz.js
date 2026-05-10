@@ -10,6 +10,11 @@ let QUIZ_FB      = '';
 
 // ── فتح الاختبار ──
 function openQuiz(jobId) {
+  // الضيوف وغير المسجلين → تقديم سريع بدون حساب
+  if (!U || ROLE === 'guest') {
+    guestQuickApply(jobId);
+    return;
+  }
   if (!requireAuth('seeker')) return;
   const j = JOBS.find(x => x.id === jobId);
   if (!j) return;

@@ -1,8 +1,8 @@
 {
   "name": "عفراء للتوظيف",
   "short_name": "عفراء",
-  "description": "منصة عفراء للتوظيف — ناصع البياض في سوق العمل العراقي",
-  "start_url": "/",
+  "description": "منصة التوظيف الأولى في العراق — آلاف الوظائف في 18 محافظة",
+  "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
@@ -11,21 +11,49 @@
   "lang": "ar",
   "dir": "rtl",
   "categories": ["business", "productivity"],
+  "prefer_related_applications": false,
   "icons": [
-    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
-    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
-    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    { "src": "icons/icon.svg",     "sizes": "any",     "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png",     "purpose": "any maskable" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png",     "purpose": "any maskable" }
   ],
   "shortcuts": [
     {
       "name": "تصفح الوظائف",
+      "short_name": "الوظائف",
       "url": "/#jobs",
-      "description": "عرض أحدث الوظائف المتاحة"
+      "description": "عرض أحدث الوظائف المتاحة في العراق",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "نشر وظيفة",
+      "short_name": "نشر",
       "url": "/#myjobs",
-      "description": "انشر وظيفة جديدة"
+      "description": "انشر وظيفة جديدة لشركتك",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "سيرتي الذاتية",
+      "short_name": "السيرة",
+      "url": "/#cv",
+      "description": "أنشئ سيرتك الذاتية PDF احترافية",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "طلباتي",
+      "short_name": "طلباتي",
+      "url": "/#myapps",
+      "description": "تابع حالة طلبات التوظيف",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "icons/og-image.svg",
+      "sizes": "1200x630",
+      "type": "image/svg+xml",
+      "form_factor": "wide",
+      "label": "صفحة الوظائف — عفراء للتوظيف"
     }
   ]
 }
