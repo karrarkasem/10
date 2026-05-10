@@ -1,0 +1,6 @@
+name = "fanoos-ai"
+main = "index.js"
+compatibility_date = "2024-01-01"
+
+[vars]
+# المتغيرات العامة (غير السرية) — السرية تُضاف من لوحة Cloudflare أو GitHub Secrets
