@@ -2052,6 +2052,7 @@ async function publishImportedJob() {
     document.getElementById('importText').value = '';
     _saveImportHistory({ title, company, province: job.province, id: job.id });
     _loadImportHistory();
+    if (typeof autoPostJob === 'function') autoPostJob(job);
   } catch (e) {
     notify('خطأ', 'فشل النشر: ' + e.message, 'error');
   } finally {

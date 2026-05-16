@@ -355,32 +355,33 @@ async function adminToggleUserPlus(uid, newVal, name) {
 async function autoPostJob(job) {
   if (!job) return;
   const sal   = job.salary ? `${job.salary.toLocaleString('ar')} IQD` : 'قابل للتفاوض';
-  const site  = CFG.general?.siteUrl || location.href;
+  const jobURL = job.id ? `https://api.afra-iq.com/job/${job.id}` : (CFG.general?.siteUrl || 'https://afra-iq.com');
   const prov  = job.province || '';
-  const type  = job.type === 'full' ? 'دوام كامل' : job.type === 'part' ? 'دوام جزئي' : 'مستقل';
+  const TYPE_AR = { full:'دوام كامل', part:'دوام جزئي', remote:'عن بُعد', gig:'مهمة' };
+  const type  = TYPE_AR[job.type] || job.type || '';
 
   const tgText =
 `📢 <b>وظيفة جديدة — عفراء للتوظيف</b>
 
 🏢 <b>${job.title}</b>
-🏛 ${job.company}
-📍 ${prov} | ${type}
+🏛 ${job.company || ''}
+📍 ${prov}${type ? ' | ' + type : ''}
 💰 ${sal}
 
 ${job.desc ? job.desc.slice(0, 200) + (job.desc.length > 200 ? '...' : '') : ''}
 
-🔗 للتقديم: ${site}
-#وظائف #${prov.replace(/\s/g,'')} #العراق`;
+🔗 <a href="${jobURL}">تقدّم الآن</a>
+#وظائف #${prov.replace(/\s/g,'_')} #العراق #عفراء`;
 
   const fbText =
 `📢 وظيفة جديدة — ${job.title}
-🏛 ${job.company} | 📍 ${prov}
+🏛 ${job.company || ''} | 📍 ${prov}
 💰 ${sal}
 
 ${job.desc ? job.desc.slice(0, 300) : ''}
 
-سجّل وتقدّم الآن: ${site}
-#وظائف_العراق #${prov.replace(/\s/g,'')}`;
+سجّل وتقدّم الآن: ${jobURL}
+#وظائف_العراق #${prov.replace(/\s/g,'_')} #عفراء`;
 
   const results = [];
 
