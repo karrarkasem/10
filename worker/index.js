@@ -2,6 +2,7 @@
 // ║  Afra AI — Cloudflare Worker                        ║
 // ║  1. Gemini Proxy (POST /)                           ║
 // ║  2. WhatsApp OG Preview (GET /job/:id)              ║
+// ║  3. AI Job Parser (POST /parse-job)                 ║
 // ╚══════════════════════════════════════════════════════╝
 
 const GEMINI_MODEL   = 'gemini-2.0-flash';
@@ -31,6 +32,11 @@ export default {
     if (request.method === 'GET' && url.pathname.startsWith('/job/')) {
       const jobId = url.pathname.replace('/job/', '').split('?')[0].trim();
       if (jobId) return handleJobOG(jobId);
+    }
+
+    // ── POST /parse-job → AI Job Parser ──
+    if (request.method === 'POST' && url.pathname === '/parse-job') {
+      return handleParseJob(request, env);
     }
 
     // ── POST / → Gemini Proxy ──
@@ -119,6 +125,77 @@ async function handleJobOG(jobId) {
       ...CORS,
     },
   });
+}
+
+// ═══════════════════════════════════════════════
+// AI Job Parser — يحلّل نص إعلان وظيفة ويرجع JSON
+// ═══════════════════════════════════════════════
+async function handleParseJob(request, env) {
+  let body;
+  try { body = await request.json(); }
+  catch { return json({ error: 'Invalid JSON' }, 400); }
+
+  const { text } = body;
+  if (!text || typeof text !== 'string' || !text.trim())
+    return json({ error: 'text is required' }, 400);
+  if (text.length > 6000)
+    return json({ error: 'text too long' }, 400);
+  if (!env.GEMINI_KEY)
+    return json({ error: 'AI not configured' }, 503);
+
+  const prompt = `أنت مساعد ذكي متخصص في تحليل إعلانات الوظائف العراقية. استخرج المعلومات من النص التالي وأرجع JSON فقط بدون أي نص إضافي.
+
+النص:
+"""
+${text}
+"""
+
+أرجع JSON بهذا الشكل بالضبط (لا تضف أي تعليق أو markdown):
+{
+  "title": "المسمى الوظيفي",
+  "company": "اسم الشركة أو الجهة",
+  "province": "اسم المحافظة العراقية (بغداد/كربلاء/النجف/البصرة/نينوى/أربيل/كركوك/بابل/ذي قار/ميسان/القادسية/واسط/المثنى/الأنبار/صلاح الدين/ديالى/دهوك/السليمانية) أو فارغ",
+  "type": "full أو part أو remote أو gig",
+  "cat": "tech أو business أو medical أو education أو engineering أو trade أو legal أو media أو admin أو other",
+  "salary": رقم أو null,
+  "salaryMax": رقم أو null,
+  "currency": "IQD أو USD",
+  "exp": "none أو 1-2 أو 3-5 أو 5+",
+  "gender": "any أو male أو female",
+  "desc": "وصف الوظيفة كامل",
+  "reqs": ["متطلب1", "متطلب2"],
+  "bens": ["ميزة1", "ميزة2"],
+  "phone": "رقم الهاتف أو فارغ",
+  "telegram": "معرف تلغرام بدون @ أو فارغ"
+}`;
+
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${env.GEMINI_KEY}`,
+      {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { maxOutputTokens: 1500, temperature: 0.1 },
+        }),
+      }
+    );
+
+    if (!res.ok) return json({ error: 'AI service error' }, res.status);
+
+    const data    = await res.json();
+    const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const cleaned = rawText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+
+    let parsed;
+    try { parsed = JSON.parse(cleaned); }
+    catch { return json({ error: 'AI parse failed', raw: rawText }, 422); }
+
+    return json({ job: parsed });
+  } catch (e) {
+    return json({ error: 'Internal error' }, 500);
+  }
 }
 
 // ═══════════════════════════════════════════════

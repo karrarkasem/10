@@ -385,6 +385,7 @@ const NAV_ADMIN = [
   { id:'admin_seekers',   icon:'fa-user-tie',       label:'الموظفون المُدارون', btm:false },
   { id:'payments',        icon:'fa-credit-card',    label:'الاشتراكات',       btm:false },
   { id:'campaigns',       icon:'fa-bullhorn',       label:'حملات التواصل',    btm:false },
+  { id:'import',          icon:'fa-cloud-download-alt', label:'استيراد وظائف', btm:false },
   { id:'settings',        icon:'fa-cog',            label:'الإعدادات',        btm:true  },
 ];
 
@@ -490,6 +491,7 @@ function renderPage(pg) {
     if (pg === 'settings')      return pgAdminSettings(el);
     if (pg === 'campaigns')     return pgAdminCampaigns(el);
     if (pg === 'payments')      return pgAdminPayments(el);
+    if (pg === 'import')        return pgAdminImport(el);
     return pgAdminHome(el); // catch-all
   }
   // seeker (default)

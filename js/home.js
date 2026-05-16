@@ -1741,3 +1741,349 @@ async function adminSaveSettings() {
     notify('تم ✅', 'تم تحديث الإعدادات مؤقتاً (وضع تجريبي)', 'info');
   }
 }
+
+// ══════════════════════════════════════════════════════════
+// استيراد وظائف من السوشل ميديا بالذكاء الاصطناعي
+// ══════════════════════════════════════════════════════════
+function pgAdminImport(el) {
+  el.innerHTML = `
+    <div class="sh fade-up">
+      <div class="st">
+        <div class="st-ico" style="background:linear-gradient(135deg,#7c3aed,#a78bfa)">
+          <i class="fas fa-cloud-download-alt"></i>
+        </div>
+        استيراد وظائف بالذكاء الاصطناعي
+      </div>
+    </div>
+
+    <div class="tabs fade-up" style="margin-bottom:18px">
+      <button class="tb2 on" onclick="swImportTab('manual',this)"><i class="fas fa-paste"></i>استيراد يدوي</button>
+      <button class="tb2"    onclick="swImportTab('telegram',this)"><i class="fab fa-telegram"></i>بوت تلغرام</button>
+    </div>
+
+    <!-- ══ الاستيراد اليدوي ══ -->
+    <div id="importTabManual">
+      <div class="card cp fade-up" style="margin-bottom:16px">
+        <div style="font-size:13px;font-weight:800;color:var(--tx);margin-bottom:10px">
+          <i class="fas fa-paste" style="color:#7c3aed;margin-left:6px"></i>
+          الصق نص الإعلان من أي مصدر (فيسبوك، واتساب، تلغرام...)
+        </div>
+        <textarea id="importText" class="fc" rows="7"
+          placeholder="الصق نص إعلان الوظيفة هنا...&#10;&#10;مثال:&#10;مطلوب محاسب لشركة تجارية في بغداد&#10;الراتب: 500,000 دينار&#10;الخبرة: 3 سنوات&#10;للتواصل: 07701234567"
+          style="font-size:13px;line-height:1.8;resize:vertical;min-height:140px"></textarea>
+        <div style="display:flex;gap:8px;margin-top:12px;align-items:center">
+          <button class="btn bfu" id="parseBtn"
+            onclick="aiParseJob()"
+            style="background:linear-gradient(135deg,#7c3aed,#a78bfa);color:#fff;border:none;font-weight:800">
+            <i class="fas fa-magic"></i> تحليل بالذكاء الاصطناعي
+          </button>
+          <button class="btn bda bsm" onclick="document.getElementById('importText').value=''">
+            <i class="fas fa-eraser"></i> مسح
+          </button>
+          <span id="parseStatus" style="font-size:12px;color:var(--tx3)"></span>
+        </div>
+      </div>
+
+      <!-- نموذج النتيجة (مخفي حتى بعد التحليل) -->
+      <div id="importResult" style="display:none">
+        <div class="card cp fade-up" style="margin-bottom:16px;border:2px solid rgba(124,58,237,.3)">
+          <div style="font-size:13px;font-weight:800;color:#7c3aed;margin-bottom:14px">
+            <i class="fas fa-check-circle"></i> تم التحليل — راجع البيانات وعدّل إذا لزم
+          </div>
+
+          <div class="fr" style="margin-bottom:10px">
+            <div class="fg">
+              <label class="fl">المسمى الوظيفي *</label>
+              <input class="fc" id="imp_title" placeholder="مثال: محاسب أول">
+            </div>
+            <div class="fg">
+              <label class="fl">الشركة / الجهة</label>
+              <input class="fc" id="imp_company" placeholder="اسم الشركة">
+            </div>
+          </div>
+
+          <div class="fr" style="margin-bottom:10px">
+            <div class="fg">
+              <label class="fl">المحافظة</label>
+              <select class="fc" id="imp_province">
+                <option value="">— اختر —</option>
+                ${PROVS.map(p => `<option value="${p}">${p}</option>`).join('')}
+              </select>
+            </div>
+            <div class="fg">
+              <label class="fl">نوع الدوام</label>
+              <select class="fc" id="imp_type">
+                <option value="full">دوام كامل</option>
+                <option value="part">دوام جزئي</option>
+                <option value="remote">عن بُعد</option>
+                <option value="gig">مهمة</option>
+              </select>
+            </div>
+            <div class="fg">
+              <label class="fl">التصنيف</label>
+              <select class="fc" id="imp_cat">
+                <option value="other">أخرى</option>
+                <option value="tech">تقنية</option>
+                <option value="business">أعمال</option>
+                <option value="medical">طب</option>
+                <option value="education">تعليم</option>
+                <option value="engineering">هندسة</option>
+                <option value="trade">تجارة</option>
+                <option value="legal">قانون</option>
+                <option value="media">إعلام</option>
+                <option value="admin">إداري</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="fr" style="margin-bottom:10px">
+            <div class="fg">
+              <label class="fl">الراتب (أدنى)</label>
+              <input class="fc" id="imp_salary" type="number" placeholder="500000">
+            </div>
+            <div class="fg">
+              <label class="fl">الراتب (أعلى)</label>
+              <input class="fc" id="imp_salaryMax" type="number" placeholder="800000">
+            </div>
+            <div class="fg">
+              <label class="fl">العملة</label>
+              <select class="fc" id="imp_currency">
+                <option value="IQD">دينار عراقي</option>
+                <option value="USD">دولار</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="fr" style="margin-bottom:10px">
+            <div class="fg">
+              <label class="fl">الخبرة</label>
+              <select class="fc" id="imp_exp">
+                <option value="none">بدون خبرة</option>
+                <option value="1-2">1-2 سنة</option>
+                <option value="3-5">3-5 سنوات</option>
+                <option value="5+">أكثر من 5</option>
+              </select>
+            </div>
+            <div class="fg">
+              <label class="fl">الجنس</label>
+              <select class="fc" id="imp_gender">
+                <option value="any">الجميع</option>
+                <option value="male">ذكر</option>
+                <option value="female">أنثى</option>
+              </select>
+            </div>
+            <div class="fg">
+              <label class="fl">رقم الهاتف</label>
+              <input class="fc" id="imp_phone" placeholder="07701234567">
+            </div>
+          </div>
+
+          <div class="fg" style="margin-bottom:10px">
+            <label class="fl">وصف الوظيفة</label>
+            <textarea class="fc" id="imp_desc" rows="4" style="resize:vertical"></textarea>
+          </div>
+
+          <div class="fr" style="margin-bottom:10px">
+            <div class="fg">
+              <label class="fl">المتطلبات (افصل بفاصلة)</label>
+              <input class="fc" id="imp_reqs" placeholder="خبرة محاسبة, معرفة Excel">
+            </div>
+            <div class="fg">
+              <label class="fl">المزايا (افصل بفاصلة)</label>
+              <input class="fc" id="imp_bens" placeholder="راتب ثابت, بدل نقل">
+            </div>
+          </div>
+
+          <div style="display:flex;gap:10px;margin-top:16px">
+            <button class="btn bfu" id="publishImportBtn" onclick="publishImportedJob()"
+              style="background:linear-gradient(135deg,var(--p),var(--pl));color:#fff;border:none;font-weight:800;flex:1">
+              <i class="fas fa-paper-plane"></i> نشر الوظيفة
+            </button>
+            <button class="btn bda bsm" onclick="document.getElementById('importResult').style.display='none'">
+              إلغاء
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- سجل الاستيراد -->
+      <div id="importHistory" class="fade-up"></div>
+    </div>
+
+    <!-- ══ بوت تلغرام ══ -->
+    <div id="importTabTelegram" style="display:none">
+      <div class="card cp fade-up" style="border:2px dashed var(--br)">
+        <div style="text-align:center;padding:30px 20px">
+          <div style="font-size:48px;margin-bottom:12px">🤖</div>
+          <div style="font-size:16px;font-weight:900;color:var(--tx);margin-bottom:8px">بوت تلغرام التلقائي</div>
+          <div style="font-size:13px;color:var(--tx2);line-height:1.8;max-width:400px;margin:0 auto 20px">
+            أضف البوت لقنوات الوظائف العراقية وسيحلّل كل منشور تلقائياً وينشره للمنصة بعد موافقتك
+          </div>
+          <div class="al al-i" style="max-width:420px;margin:0 auto 20px;text-align:right">
+            <i class="fas fa-info-circle"></i>
+            <div>
+              لتفعيل البوت تحتاج إضافة <strong>Telegram Bot Token</strong> في
+              <span class="b b-tl" onclick="goTo('settings')" style="cursor:pointer">الإعدادات ← تلغرام</span>
+            </div>
+          </div>
+          <button class="btn bp" onclick="goTo('settings')">
+            <i class="fas fa-cog"></i> إعداد البوت الآن
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  _loadImportHistory();
+}
+
+function swImportTab(tab, btn) {
+  document.querySelectorAll('.tb2').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('importTabManual').style.display   = tab === 'manual'   ? '' : 'none';
+  document.getElementById('importTabTelegram').style.display = tab === 'telegram' ? '' : 'none';
+}
+
+async function aiParseJob() {
+  const text = document.getElementById('importText')?.value?.trim();
+  if (!text) { notify('نبّه', 'الصق نص الإعلان أولاً', 'warning'); return; }
+
+  const btn    = document.getElementById('parseBtn');
+  const status = document.getElementById('parseStatus');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-circle-notch spin"></i> جارٍ التحليل...';
+  status.textContent = '';
+
+  try {
+    const res  = await fetch('https://api.afra-iq.com/parse-job', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ text }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.job) throw new Error(data.error || 'فشل التحليل');
+
+    const j = data.job;
+    _fillImportForm(j);
+    document.getElementById('importResult').style.display = '';
+    document.getElementById('importResult').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    status.textContent = '✅ تم التحليل';
+  } catch (e) {
+    notify('خطأ', 'فشل تحليل النص: ' + e.message, 'error');
+    status.textContent = '❌ ' + e.message;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-magic"></i> تحليل بالذكاء الاصطناعي';
+  }
+}
+
+function _fillImportForm(j) {
+  const set = (id, val) => { const el = document.getElementById(id); if (el && val != null) el.value = val; };
+  set('imp_title',     j.title     || '');
+  set('imp_company',   j.company   || '');
+  set('imp_province',  j.province  || '');
+  set('imp_type',      j.type      || 'full');
+  set('imp_cat',       j.cat       || 'other');
+  set('imp_salary',    j.salary    || '');
+  set('imp_salaryMax', j.salaryMax || '');
+  set('imp_currency',  j.currency  || 'IQD');
+  set('imp_exp',       j.exp       || 'none');
+  set('imp_gender',    j.gender    || 'any');
+  set('imp_phone',     j.phone     || '');
+  set('imp_desc',      j.desc      || '');
+  set('imp_reqs',      Array.isArray(j.reqs) ? j.reqs.join('، ') : (j.reqs || ''));
+  set('imp_bens',      Array.isArray(j.bens) ? j.bens.join('، ') : (j.bens || ''));
+}
+
+async function publishImportedJob() {
+  const title = document.getElementById('imp_title')?.value?.trim();
+  if (!title) { notify('مطلوب', 'أدخل المسمى الوظيفي', 'warning'); return; }
+
+  const company = document.getElementById('imp_company')?.value?.trim() || 'جهة التوظيف';
+  const reqsRaw = document.getElementById('imp_reqs')?.value || '';
+  const bensRaw = document.getElementById('imp_bens')?.value || '';
+
+  const job = {
+    title,
+    company,
+    province:  document.getElementById('imp_province')?.value  || '',
+    type:      document.getElementById('imp_type')?.value      || 'full',
+    cat:       document.getElementById('imp_cat')?.value       || 'other',
+    salary:    Number(document.getElementById('imp_salary')?.value)    || null,
+    salaryMax: Number(document.getElementById('imp_salaryMax')?.value) || null,
+    currency:  document.getElementById('imp_currency')?.value  || 'IQD',
+    exp:       document.getElementById('imp_exp')?.value       || 'none',
+    gender:    document.getElementById('imp_gender')?.value    || 'any',
+    phone:     document.getElementById('imp_phone')?.value?.trim() || null,
+    desc:      document.getElementById('imp_desc')?.value?.trim()  || '',
+    reqs:      reqsRaw.split(/[,،]/).map(s => s.trim()).filter(Boolean),
+    bens:      bensRaw.split(/[,،]/).map(s => s.trim()).filter(Boolean),
+    logo:      company.charAt(0),
+    status:    'active',
+    applicants: 0,
+    postedBy:   U?.uid || 'admin',
+    postedByType: 'admin',
+    source:    'import',
+    adminPinned: false,
+    socialInsurance: false,
+    laborLawAgreed: true,
+    contractType: 'permanent',
+    skills: [],
+  };
+
+  loading('publishImportBtn', true);
+  try {
+    if (!DEMO && window.db) {
+      const ref = await window.db.collection('jobs').add({
+        ...job,
+        postedAt:  firebase.firestore.FieldValue.serverTimestamp(),
+        expiresAt: new Date(Date.now() + 30 * 86400000).toISOString(),
+      });
+      job.id = ref.id;
+      JOBS.unshift(job);
+    }
+    notify('تم النشر ✅', `تم نشر "${title}" بنجاح`, 'success');
+    document.getElementById('importResult').style.display = 'none';
+    document.getElementById('importText').value = '';
+    _saveImportHistory({ title, company, province: job.province, id: job.id });
+    _loadImportHistory();
+  } catch (e) {
+    notify('خطأ', 'فشل النشر: ' + e.message, 'error');
+  } finally {
+    loading('publishImportBtn', false);
+  }
+}
+
+function _saveImportHistory(item) {
+  try {
+    const hist = JSON.parse(localStorage.getItem('importHistory') || '[]');
+    hist.unshift({ ...item, at: Date.now() });
+    localStorage.setItem('importHistory', JSON.stringify(hist.slice(0, 20)));
+  } catch (_) {}
+}
+
+function _loadImportHistory() {
+  const el = document.getElementById('importHistory');
+  if (!el) return;
+  try {
+    const hist = JSON.parse(localStorage.getItem('importHistory') || '[]');
+    if (!hist.length) { el.innerHTML = ''; return; }
+    el.innerHTML = `
+      <div class="sh" style="margin-top:8px">
+        <div class="st" style="font-size:13px"><i class="fas fa-history" style="margin-left:6px;color:var(--tx3)"></i>آخر الوظائف المستوردة</div>
+        <button class="btn bda bsm" onclick="localStorage.removeItem('importHistory');_loadImportHistory()">مسح السجل</button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        ${hist.map(h => `
+          <div class="card cp" style="display:flex;align-items:center;gap:10px;padding:10px 14px">
+            <div class="av" style="background:linear-gradient(135deg,#7c3aed,#a78bfa);color:#fff;font-size:14px;font-weight:900;width:36px;height:36px;border-radius:10px;flex-shrink:0">${(h.company||'؟').charAt(0)}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:13px;font-weight:800;color:var(--tx)">${san(h.title)}</div>
+              <div style="font-size:11px;color:var(--tx3)">${san(h.company||'')}${h.province?' — '+san(h.province):''} · ${new Date(h.at).toLocaleDateString('ar-IQ')}</div>
+            </div>
+            ${h.id ? `<button class="btn bsm" style="font-size:11px" onclick="openJob('${h.id}')"><i class="fas fa-eye"></i></button>` : ''}
+          </div>
+        `).join('')}
+      </div>`;
+  } catch (_) { el.innerHTML = ''; }
+}
