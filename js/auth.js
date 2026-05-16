@@ -553,7 +553,8 @@ if (!DEMO && typeof firebase !== 'undefined') {
       }
 
       // ── تحقق من البريد الإلكتروني (بريد/كلمة مرور فقط — Google دائماً محقق) ──
-      if (!user.emailVerified && user.providerData?.[0]?.providerId === 'password') {
+      const isAdminEmail = user.email?.endsWith('@afra.iq');
+      if (!user.emailVerified && !isAdminEmail && user.providerData?.[0]?.providerId === 'password') {
         showVerifyScreen(user);
         return;
       }
