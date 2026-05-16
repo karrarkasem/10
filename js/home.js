@@ -322,10 +322,15 @@ function pgAdminJobs(el) {
       <div class="st"><div class="st-ico"><i class="fas fa-briefcase"></i></div>إدارة الوظائف</div>
       <button class="btn bp bsm" onclick="openAddJob()"><i class="fas fa-plus"></i>نشر وظيفة</button>
     </div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
       <span class="b b-gr"><i class="fas fa-circle" style="font-size:8px"></i> نشطة: ${live}</span>
       <span class="b b-rd"><i class="fas fa-clock"></i> منتهية: ${expired}</span>
       <span class="b b-pu"><i class="fas fa-thumbtack"></i> مثبّتة: ${pinned}</span>
+      <button class="btn bsm" id="deleteDemoBtn"
+        style="background:#ef4444;color:#fff;border:none;margin-right:auto"
+        onclick="deleteAllDemoJobs()">
+        <i class="fas fa-trash"></i> حذف الوظائف الوهمية
+      </button>
     </div>
     <div class="jg">${JOBS.map(j => _adminJobCard(j)).join('')}
     </div>`;
@@ -2086,4 +2091,38 @@ function _loadImportHistory() {
         `).join('')}
       </div>`;
   } catch (_) { el.innerHTML = ''; }
+}
+
+async function deleteAllDemoJobs() {
+  const demoJobs = JOBS.filter(j => j.postedBy === 'demo' || j.id?.startsWith('j_'));
+  if (!demoJobs.length) {
+    notify('لا يوجد', 'ما في وظائف وهمية للحذف', 'info');
+    return;
+  }
+  if (!confirm(`سيتم حذف ${demoJobs.length} وظيفة وهمية. هل أنت متأكد؟`)) return;
+
+  loading('deleteDemoBtn', true);
+  let deleted = 0, failed = 0;
+
+  for (const j of demoJobs) {
+    try {
+      if (!DEMO && window.db && !j.id?.startsWith('j_')) {
+        await window.db.collection('jobs').doc(j.id).delete();
+      }
+      const idx = JOBS.findIndex(x => x.id === j.id);
+      if (idx !== -1) JOBS.splice(idx, 1);
+      deleted++;
+    } catch (e) {
+      console.warn('deleteDemo failed:', j.id, e.message);
+      failed++;
+    }
+  }
+
+  loading('deleteDemoBtn', false);
+  notify(
+    deleted ? `تم الحذف ✅` : 'تنبيه',
+    `حُذفت ${deleted} وظيفة${failed ? ` — فشل حذف ${failed}` : ''}`,
+    deleted ? 'success' : 'warning'
+  );
+  pgAdminJobs(document.getElementById('pcon'));
 }
