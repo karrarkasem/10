@@ -2106,6 +2106,12 @@ async function approveTgJob(docId) {
     delete data.status;
     await window.db.collection('jobs').add({
       ...data,
+      title:       data.title    || 'وظيفة من تيليجرام',
+      company:     data.company  || 'غير محدد',
+      desc:        data.desc     || 'تم الاستيراد تلقائياً من بوت تيليجرام',
+      province:    data.province || '',
+      postedBy:    U?.uid || 'admin',
+      postedByType:'telegram',
       status:      'active',
       postedAt:    firebase.firestore.FieldValue.serverTimestamp(),
       applicants:  0,
