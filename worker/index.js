@@ -188,10 +188,17 @@ ${text}
       }
     );
 
-    if (!res.ok) return json({ error: 'AI service error' }, res.status);
+    if (!res.ok) {
+      const errBody = await res.text().catch(() => '');
+      return json({ error: `Gemini ${res.status}: ${errBody.substring(0, 300)}` }, res.status);
+    }
 
     const data    = await res.json();
     const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    if (!rawText) {
+      const reason = data?.promptFeedback?.blockReason || '';
+      return json({ error: `Gemini empty response${reason ? ': ' + reason : ''}`, raw: JSON.stringify(data).substring(0,200) }, 502);
+    }
     const cleaned = rawText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
 
     let parsed;
