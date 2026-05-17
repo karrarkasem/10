@@ -84,6 +84,7 @@ function pgJobs(el) {
   const res = fSortJobs(fJobs());
   el.innerHTML = `
     ${guestBanner()}
+    ${renderActiveBanners('jobs')}
     <div class="sh">
       <div class="st"><div class="st-ico"><i class="fas fa-briefcase"></i></div>تصفح الوظائف</div>
       <span class="b b-tl" id="jobsCountBadge">${JOBS.length} وظيفة</span>

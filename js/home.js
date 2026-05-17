@@ -135,6 +135,9 @@ function pgSeekerHome(el) {
       </div>
     </div>
 
+    ${renderHiringCampsSection()}
+    ${renderActiveBanners('home')}
+
     <div class="sh fade-up del3">
       <div class="st"><div class="st-ico"><i class="fas fa-th-large"></i></div>تصفح حسب التخصص</div>
       <button class="btn bg bsm" onclick="goTo('jobs')">الكل <i class="fas fa-arrow-left"></i></button>
