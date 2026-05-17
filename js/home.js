@@ -916,6 +916,10 @@ function renderAdminUsersList() {
           onclick="adminDeleteUser('${u.id}','${san(u.name||'')}')">
           <i class="fas fa-trash"></i>
         </button>
+        <button class="btn bsm" style="background:none;border:1px solid var(--p);color:var(--p);font-size:11px;padding:5px 8px;border-radius:8px"
+          onclick="adminUserPermissions('${u.id}','${san(u.name||'')}')">
+          <i class="fas fa-shield-alt"></i>
+        </button>
       </div>` : `
       <div style="padding-right:50px">
         <span class="b b-am" style="font-size:10px"><i class="fas fa-shield-alt"></i>حساب محمي</span>
@@ -2213,4 +2217,230 @@ async function deleteAllJobs() {
       pgAdminJobs(document.getElementById('pcon'));
     }
   );
+}
+
+// ════════════════════════════════════════════
+// كتالوج الباحثين
+// ════════════════════════════════════════════
+let _catFilter = { q: '', province: '' , available: false };
+
+async function pgSeekersCatalog(el) {
+  el.innerHTML = `<div class="es"><div class="es-ico"><i class="fas fa-circle-notch spin" style="color:var(--p)"></i></div><div class="es-desc">جارٍ تحميل الباحثين...</div></div>`;
+
+  let seekers = [];
+  if (!DEMO && window.db) {
+    try {
+      let q = window.db.collection('users').where('role', '==', 'seeker');
+      if (ROLE !== 'admin') q = q.where('cvPublished', '==', true);
+      const snap = await q.limit(200).get();
+      seekers = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+        .sort((a, b) => {
+          if (!!a.permissions?.featured !== !!b.permissions?.featured) return a.permissions?.featured ? -1 : 1;
+          if (!!a.seekerAvailable !== !!b.seekerAvailable) return a.seekerAvailable ? -1 : 1;
+          return 0;
+        });
+    } catch(e) { console.warn('pgSeekersCatalog:', e.message); }
+  }
+
+  window._catalogSeekers = seekers;
+  _catFilter = { q: '', province: '', available: false };
+
+  const provinces = [...new Set(seekers.map(s => s.province).filter(Boolean))].sort();
+  const total     = seekers.length;
+  const available = seekers.filter(s => s.seekerAvailable).length;
+  const published = seekers.filter(s => s.cvPublished).length;
+  const verified  = seekers.filter(s => s.verified).length;
+
+  el.innerHTML = `
+    <div class="sh fade-up">
+      <div class="st"><div class="st-ico" style="background:linear-gradient(135deg,var(--p),var(--pl))"><i class="fas fa-address-card"></i></div>كتالوج الباحثين</div>
+      <span class="b b-tl">${total} باحث</span>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin-bottom:16px">
+      ${[
+        { l:'إجمالي',       v:total,     c:'var(--p)',       ico:'fa-users'       },
+        { l:'متاح للعمل',   v:available, c:'var(--success)', ico:'fa-check-circle'},
+        { l:'ملف منشور',    v:published, c:'var(--info)',     ico:'fa-eye'         },
+        { l:'موثّق',        v:verified,  c:'var(--purple)',   ico:'fa-shield-alt'  },
+      ].map(x => `
+        <div class="card" style="text-align:center;padding:12px 8px">
+          <div style="width:32px;height:32px;border-radius:9px;background:${x.c}18;color:${x.c};margin:0 auto 6px;font-size:14px;display:flex;align-items:center;justify-content:center">
+            <i class="fas ${x.ico}"></i>
+          </div>
+          <div style="font-size:20px;font-weight:900;color:var(--tx)">${x.v}</div>
+          <div style="font-size:10px;color:var(--tx3)">${x.l}</div>
+        </div>`).join('')}
+    </div>
+
+    <div class="card" style="padding:12px 14px;margin-bottom:14px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <div style="flex:1;min-width:160px;position:relative">
+          <i class="fas fa-search" style="position:absolute;right:11px;top:50%;transform:translateY(-50%);color:var(--tx3);font-size:12px;pointer-events:none"></i>
+          <input type="search" class="fc" placeholder="ابحث بالاسم أو المسمى أو المهارة..." style="padding-right:34px"
+            oninput="_catFilter.q=this.value;renderCatalog()">
+        </div>
+        <select class="fc" style="width:auto;min-width:130px" onchange="_catFilter.province=this.value;renderCatalog()">
+          <option value="">جميع المحافظات</option>
+          ${provinces.map(p => `<option value="${p}">${p}</option>`).join('')}
+        </select>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--tx2);cursor:pointer;white-space:nowrap">
+          <input type="checkbox" onchange="_catFilter.available=this.checked;renderCatalog()"> متاحون فقط
+        </label>
+      </div>
+    </div>
+
+    <div id="catalogGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:12px"></div>`;
+
+  renderCatalog();
+}
+
+function renderCatalog() {
+  const all = window._catalogSeekers || [];
+  const { q, province, available } = _catFilter;
+  const qL = q.toLowerCase();
+  const filtered = all.filter(s => {
+    if (available && !s.seekerAvailable) return false;
+    if (province  && s.province !== province) return false;
+    if (qL && !`${s.name||''} ${s.jobTitle||''} ${s.bio||''} ${(s.skills||[]).join(' ')}`.toLowerCase().includes(qL)) return false;
+    return true;
+  });
+  const el = document.getElementById('catalogGrid');
+  if (!el) return;
+  el.innerHTML = filtered.length
+    ? filtered.map(s => seekerCatalogCard(s)).join('')
+    : emptyState('🔍', 'لا توجد نتائج', 'جرّب تغيير كلمة البحث أو الفلتر');
+}
+
+function seekerCatalogCard(s) {
+  const name       = s.name || 'باحث عن عمل';
+  const isFeatured = s.permissions?.featured;
+  return `<div class="card cp fade-up" style="${isFeatured ? 'border-color:rgba(245,158,11,.4);background:linear-gradient(135deg,var(--bgc),rgba(245,158,11,.03))' : ''}">
+    ${isFeatured ? `<div style="font-size:10px;color:var(--acc);font-weight:800;margin-bottom:8px"><i class="fas fa-star"></i> باحث مميز</div>` : ''}
+    <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:10px">
+      ${s.photoURL
+        ? `<img src="${s.photoURL}" class="av avl" style="object-fit:cover;flex-shrink:0">`
+        : `<div class="av avl" style="background:var(--grad-p);color:#fff;font-size:16px;font-weight:900;flex-shrink:0">${name.charAt(0)}</div>`}
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:900;color:var(--tx);display:flex;align-items:center;gap:5px">
+          ${san(name)}
+          ${s.verified ? '<i class="fas fa-check-circle" style="color:var(--p);font-size:10px"></i>' : ''}
+        </div>
+        ${s.jobTitle ? `<div style="font-size:11px;color:var(--p);font-weight:700;margin-top:1px">${san(s.jobTitle)}</div>` : ''}
+        <div style="font-size:11px;color:var(--tx3);margin-top:2px">
+          ${s.province  ? `<i class="fas fa-map-marker-alt"></i> ${san(s.province)}` : ''}
+          ${s.experience ? ` &nbsp;•&nbsp; ${san(s.experience)}` : ''}
+        </div>
+      </div>
+      <span class="b ${s.seekerAvailable ? 'b-gr' : 'b-rd'}" style="font-size:9px;flex-shrink:0">
+        <i class="fas fa-circle" style="font-size:7px"></i>${s.seekerAvailable ? 'متاح' : 'غير متاح'}
+      </span>
+    </div>
+    ${s.bio ? `<div style="font-size:11px;color:var(--tx2);line-height:1.6;margin-bottom:9px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${san(s.bio)}</div>` : ''}
+    ${s.skills?.length ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px">${s.skills.slice(0,5).map(sk=>`<span class="b skill-chip" style="font-size:9px">${san(sk)}</span>`).join('')}</div>` : ''}
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      ${ROLE === 'admin'
+        ? `<button class="btn bp bsm" style="flex:1" onclick="adminUserPermissions('${s.id}','${san(name)}')">
+             <i class="fas fa-shield-alt"></i>الصلاحيات
+           </button>
+           ${s.phone ? `<a href="tel:${san(s.phone)}" class="btn bo bsm"><i class="fas fa-phone"></i></a>` : ''}`
+        : `<button class="btn bp bsm" style="flex:1" onclick="bookCandidate('${s.id}','${san(name)}','')">
+             <i class="fas fa-lock"></i>حجز الملف
+           </button>
+           ${s.phone ? `<a href="tel:${san(s.phone)}" class="btn bo bsm"><i class="fas fa-phone"></i></a>` : ''}`}
+    </div>
+  </div>`;
+}
+
+// ════════════════════════════════════════════
+// صلاحيات المستخدم — نافذة الأدمن
+// ════════════════════════════════════════════
+function adminUserPermissions(uid, name) {
+  const allUsers = [...(window._adminUsers||[]), ...(window._catalogSeekers||[])];
+  const u    = allUsers.find(x => x.id === uid) || {};
+  const perms = u.permissions || {};
+
+  const permsList = [
+    { key:'canPostJobs',      label:'نشر الوظائف',           icon:'fa-briefcase',    desc:'يسمح بنشر إعلانات الوظائف'           },
+    { key:'canBrowseSeekers', label:'تصفح كتالوج الباحثين',  icon:'fa-address-card', desc:'الوصول إلى قائمة الباحثين'           },
+    { key:'featured',         label:'ملف مميز ⭐',            icon:'fa-star',         desc:'يظهر في صدارة الكتالوج بإطار ذهبي'   },
+    { key:'unlimited',        label:'بدون قيود نشر',         icon:'fa-infinity',     desc:'يتجاوز حدود نشر الوظائف الشهرية'     },
+    { key:'canExportData',    label:'تصدير البيانات',         icon:'fa-download',     desc:'تصدير بيانات المتقدمين والإحصائيات'  },
+    { key:'vip',              label:'عضوية VIP',              icon:'fa-crown',        desc:'جميع المزايا الممتازة مفتوحة'         },
+  ];
+
+  const adminLevels = [
+    { v:'',          l:'مستخدم عادي — لا صلاحيات إدارية'        },
+    { v:'moderator', l:'مشرف — يوثّق ويفعّل الحسابات فقط'       },
+    { v:'province',  l:'أدمن محافظة — يدير بيانات محافظته'      },
+    { v:'super',     l:'أدمن رئيسي — صلاحيات كاملة'             },
+  ];
+
+  const body = `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:12px;background:var(--bgc2);border-radius:10px">
+      <div class="av" style="width:40px;height:40px;border-radius:50%;background:var(--grad-p);color:#fff;font-size:16px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0">${name.charAt(0)}</div>
+      <div>
+        <div style="font-weight:800;color:var(--tx)">${san(name)}</div>
+        <div style="font-size:11px;color:var(--tx3)">${san(u.email||u.role||'')}</div>
+      </div>
+      <span class="b ${u.status==='inactive'?'b-rd':'b-gr'}" style="margin-right:auto;font-size:10px">${u.status==='inactive'?'موقوف':'نشط'}</span>
+    </div>
+
+    <div style="font-size:10px;font-weight:800;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">الصلاحيات المخصصة</div>
+    <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:18px">
+      ${permsList.map(p => `
+        <label style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bgc2);border-radius:10px;cursor:pointer;border:2px solid ${perms[p.key]?'var(--p)':'transparent'};transition:.15s"
+          onmouseenter="this.style.borderColor=this.querySelector('input').checked?'var(--p)':'var(--br)'"
+          onmouseleave="this.style.borderColor=this.querySelector('input').checked?'var(--p)':'transparent'">
+          <i class="fas ${p.icon}" style="width:17px;text-align:center;color:${perms[p.key]?'var(--p)':'var(--tx3)'}"></i>
+          <div style="flex:1">
+            <div style="font-size:12px;font-weight:700;color:var(--tx)">${p.label}</div>
+            <div style="font-size:10px;color:var(--tx3)">${p.desc}</div>
+          </div>
+          <input type="checkbox" id="perm_${p.key}" ${perms[p.key]?'checked':''}
+            style="width:16px;height:16px;accent-color:var(--p);flex-shrink:0"
+            onchange="this.closest('label').style.borderColor=this.checked?'var(--p)':'transparent'">
+        </label>`).join('')}
+    </div>
+
+    <div style="font-size:10px;font-weight:800;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">مستوى الإدارة</div>
+    <select class="fc" id="adminLevelSelect" style="margin-bottom:18px">
+      ${adminLevels.map(l => `<option value="${l.v}" ${(u.adminLevel||'')===l.v?'selected':''}>${l.l}</option>`).join('')}
+    </select>
+
+    <div class="mf" style="border:none;padding:0;margin-top:0">
+      <button class="btn bo" onclick="cmo('_adminModal')">إلغاء</button>
+      <button class="btn bp bfu" id="savePermsBtn" onclick="_doSavePermissions('${uid}','${san(name)}')">
+        <i class="fas fa-save"></i>حفظ الصلاحيات
+      </button>
+    </div>`;
+
+  _showAdminModal(`صلاحيات: ${san(name)}`, body);
+}
+
+async function _doSavePermissions(uid, name) {
+  const permKeys = ['canPostJobs','canBrowseSeekers','featured','unlimited','canExportData','vip'];
+  const permissions = {};
+  permKeys.forEach(k => {
+    const el = document.getElementById(`perm_${k}`);
+    if (el) permissions[k] = el.checked;
+  });
+  const adminLevel = document.getElementById('adminLevelSelect')?.value || '';
+  loading('savePermsBtn', true);
+  try {
+    if (!DEMO && window.db) {
+      const upd = { permissions, adminLevel: adminLevel || null };
+      await window.db.collection('users').doc(uid).update(upd);
+    }
+    const allUsers = [...(window._adminUsers||[]), ...(window._catalogSeekers||[])];
+    const u = allUsers.find(x => x.id === uid);
+    if (u) { u.permissions = permissions; u.adminLevel = adminLevel || null; }
+    cmo('_adminModal');
+    renderAdminUsersList();
+    notify('تم الحفظ ✅', `تم تحديث صلاحيات "${name}"`, 'success');
+  } catch(e) {
+    notify('خطأ', 'فشل حفظ الصلاحيات: ' + e.message, 'error');
+  } finally {
+    loading('savePermsBtn', false);
+  }
 }

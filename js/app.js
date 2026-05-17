@@ -349,11 +349,12 @@ function toggleTheme() {
 // قائمة التنقل
 // ═══════════════════════════════════════════════
 const NAV_EMPLOYER = [
-  { id:'emp_home',    icon:'fa-tachometer-alt', label:'لوحة التحكم',  btm:true  },
-  { id:'emp_jobs',    icon:'fa-briefcase',       label:'وظائفي',        btm:true  },
-  { id:'emp_apps',    icon:'fa-users',           label:'المتقدمون',     btm:true  },
-  { id:'emp_seekers', icon:'fa-address-card',    label:'ملفات الباحثين', btm:false },
-  { id:'emp_profile', icon:'fa-building',        label:'ملف الشركة',   btm:true  },
+  { id:'emp_home',        icon:'fa-tachometer-alt', label:'لوحة التحكم',    btm:true  },
+  { id:'emp_jobs',        icon:'fa-briefcase',       label:'وظائفي',          btm:true  },
+  { id:'emp_apps',        icon:'fa-users',           label:'المتقدمون',       btm:true  },
+  { id:'emp_seekers',     icon:'fa-address-card',    label:'ملفات الباحثين', btm:false },
+  { id:'seekers_catalog', icon:'fa-th-list',         label:'كتالوج الباحثين', btm:false },
+  { id:'emp_profile',     icon:'fa-building',        label:'ملف الشركة',     btm:true  },
 ];
 const NAV_GUEST = [
   { id:'jobs',    icon:'fa-briefcase', label:'الوظائف',         btm:true  },
@@ -373,20 +374,22 @@ const NAV_OFFICE = [
   { id:'myjobs',          icon:'fa-briefcase',      label:'وظائفي',            btm:true  },
   { id:'candidates',      icon:'fa-users',          label:'المتقدمون',         btm:true  },
   { id:'managed_seekers', icon:'fa-id-card',        label:'باحثون مُدارون',    btm:false },
+  { id:'seekers_catalog', icon:'fa-th-list',        label:'كتالوج الباحثين',  btm:false },
   { id:'bookings',        icon:'fa-lock',           label:'الحجوزات',          btm:false },
   { id:'pipeline',        icon:'fa-columns',        label:'خط التوظيف',       btm:false },
   { id:'profile',         icon:'fa-building',       label:'ملف المكتب',       btm:true  },
 ];
 const NAV_ADMIN = [
-  { id:'home',            icon:'fa-tachometer-alt', label:'لوحة التحكم',     btm:true  },
-  { id:'alljobs',         icon:'fa-briefcase',      label:'الوظائف',          btm:false },
-  { id:'alloffices',      icon:'fa-building',       label:'المكاتب',          btm:false },
-  { id:'allusers',        icon:'fa-users',          label:'المستخدمون',       btm:false },
-  { id:'admin_seekers',   icon:'fa-user-tie',       label:'الموظفون المُدارون', btm:false },
-  { id:'payments',        icon:'fa-credit-card',    label:'الاشتراكات',       btm:false },
-  { id:'campaigns',       icon:'fa-bullhorn',       label:'حملات التواصل',    btm:false },
-  { id:'import',          icon:'fa-cloud-download-alt', label:'استيراد وظائف', btm:false },
-  { id:'settings',        icon:'fa-cog',            label:'الإعدادات',        btm:true  },
+  { id:'home',            icon:'fa-tachometer-alt',    label:'لوحة التحكم',       btm:true  },
+  { id:'alljobs',         icon:'fa-briefcase',          label:'الوظائف',            btm:false },
+  { id:'alloffices',      icon:'fa-building',           label:'المكاتب',            btm:false },
+  { id:'allusers',        icon:'fa-users',              label:'المستخدمون',         btm:false },
+  { id:'seekers_catalog', icon:'fa-th-list',            label:'كتالوج الباحثين',   btm:false },
+  { id:'admin_seekers',   icon:'fa-user-tie',           label:'الموظفون المُدارون', btm:false },
+  { id:'payments',        icon:'fa-credit-card',        label:'الاشتراكات',         btm:false },
+  { id:'campaigns',       icon:'fa-bullhorn',           label:'حملات التواصل',     btm:false },
+  { id:'import',          icon:'fa-cloud-download-alt', label:'استيراد وظائف',     btm:false },
+  { id:'settings',        icon:'fa-cog',                label:'الإعدادات',          btm:true  },
 ];
 
 function getNav() {
@@ -465,11 +468,12 @@ function renderPage(pg) {
     return pgJobs(el);
   }
   if (ROLE === 'employer') {
-    if (pg === 'emp_home')    return pgEmployerHome(el);
-    if (pg === 'emp_jobs')    return pgEmployerJobs(el);
-    if (pg === 'emp_apps')    return pgEmployerApps(el);
-    if (pg === 'emp_seekers') return pgEmployerSeekers(el);
-    if (pg === 'emp_profile') return pgEmployerProfile(el);
+    if (pg === 'emp_home')        return pgEmployerHome(el);
+    if (pg === 'emp_jobs')        return pgEmployerJobs(el);
+    if (pg === 'emp_apps')        return pgEmployerApps(el);
+    if (pg === 'emp_seekers')     return pgEmployerSeekers(el);
+    if (pg === 'emp_profile')     return pgEmployerProfile(el);
+    if (pg === 'seekers_catalog') return pgSeekersCatalog(el);
     return pgEmployerHome(el);
   }
   if (ROLE === 'office') {
@@ -480,19 +484,21 @@ function renderPage(pg) {
     if (pg === 'bookings')        return pgBookings(el);
     if (pg === 'pipeline')        return pgPipeline(el);
     if (pg === 'profile')         return pgOfficeProfile(el);
-    return pgOfficeHome(el); // catch-all — لا يسقط لصفحات الباحث
+    if (pg === 'seekers_catalog') return pgSeekersCatalog(el);
+    return pgOfficeHome(el);
   }
   if (ROLE === 'admin') {
-    if (pg === 'home')        return pgAdminHome(el);
-    if (pg === 'alljobs')     return pgAdminJobs(el);
-    if (pg === 'alloffices')  return pgAdminOffices(el);
-    if (pg === 'allusers')      return pgAdminUsers(el);
-    if (pg === 'admin_seekers') return pgAdminManagedSeekers(el);
-    if (pg === 'settings')      return pgAdminSettings(el);
-    if (pg === 'campaigns')     return pgAdminCampaigns(el);
-    if (pg === 'payments')      return pgAdminPayments(el);
-    if (pg === 'import')        return pgAdminImport(el);
-    return pgAdminHome(el); // catch-all
+    if (pg === 'home')            return pgAdminHome(el);
+    if (pg === 'alljobs')         return pgAdminJobs(el);
+    if (pg === 'alloffices')      return pgAdminOffices(el);
+    if (pg === 'allusers')        return pgAdminUsers(el);
+    if (pg === 'admin_seekers')   return pgAdminManagedSeekers(el);
+    if (pg === 'settings')        return pgAdminSettings(el);
+    if (pg === 'campaigns')       return pgAdminCampaigns(el);
+    if (pg === 'payments')        return pgAdminPayments(el);
+    if (pg === 'import')          return pgAdminImport(el);
+    if (pg === 'seekers_catalog') return pgSeekersCatalog(el);
+    return pgAdminHome(el);
   }
   // seeker (default)
   if (pg === 'home')      return pgSeekerHome(el);
