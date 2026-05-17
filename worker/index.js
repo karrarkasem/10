@@ -273,7 +273,10 @@ async function handleTelegram(request, env) {
 }
 
 async function processTgJob(text, token, adminChat, env) {
-  if (!env.GEMINI_KEY) return;
+  if (!env.GEMINI_KEY) {
+    await tgSend(token, adminChat, '⚠️ GEMINI\\_KEY غير مُعيَّن في Cloudflare');
+    return;
+  }
 
   const prompt = `أنت مساعد ذكي متخصص في تحليل إعلانات الوظائف العراقية. إذا لم يكن النص إعلان وظيفة أرجع {"notJob":true}. وإذا كان إعلان وظيفة استخرج المعلومات وأرجع JSON فقط بدون أي نص إضافي:
 
@@ -312,13 +315,36 @@ ${text.substring(0, 3000)}
         }),
       }
     );
-    if (!res.ok) return;
+
+    if (!res.ok) {
+      const errBody = await res.text().catch(() => '');
+      await tgSend(token, adminChat, `❌ Gemini خطأ ${res.status}\n${errBody.substring(0, 200)}`);
+      return;
+    }
 
     const data    = await res.json();
     const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+    if (!rawText) {
+      const reason = data?.promptFeedback?.blockReason || JSON.stringify(data).substring(0, 150);
+      await tgSend(token, adminChat, `❌ Gemini رجع فارغ\n${reason}`);
+      return;
+    }
+
     const cleaned = rawText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-    const job     = JSON.parse(cleaned);
-    if (job.notJob || !job.title) return;
+
+    let job;
+    try {
+      job = JSON.parse(cleaned);
+    } catch (pe) {
+      await tgSend(token, adminChat, `❌ فشل تحليل JSON:\n${cleaned.substring(0, 200)}`);
+      return;
+    }
+
+    if (job.notJob || !job.title) {
+      await tgSend(token, adminChat, `ℹ️ الذكاء الاصطناعي: ليس إعلان وظيفة واضح\nحاول أرسل نص أوضح يحتوي مسمى وظيفي`);
+      return;
+    }
 
     const docId = await saveTgJob(job);
 
@@ -347,6 +373,7 @@ ${text.substring(0, 3000)}
 
     await tgSend(token, adminChat, preview, keyboard);
   } catch (e) {
+    await tgSend(token, adminChat, `❌ خطأ غير متوقع: ${e.message}`);
     console.error('processTgJob:', e);
   }
 }
