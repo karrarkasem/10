@@ -326,10 +326,10 @@ function pgAdminJobs(el) {
       <span class="b b-gr"><i class="fas fa-circle" style="font-size:8px"></i> نشطة: ${live}</span>
       <span class="b b-rd"><i class="fas fa-clock"></i> منتهية: ${expired}</span>
       <span class="b b-pu"><i class="fas fa-thumbtack"></i> مثبّتة: ${pinned}</span>
-      <button class="btn bsm" id="deleteDemoBtn"
+      <button class="btn bsm" id="deleteAllJobsBtn"
         style="background:#ef4444;color:#fff;border:none;margin-right:auto"
-        onclick="deleteAllDemoJobs()">
-        <i class="fas fa-trash"></i> حذف الوظائف الوهمية
+        onclick="deleteAllJobs()">
+        <i class="fas fa-trash-alt"></i> حذف جميع الوظائف
       </button>
     </div>
     <div class="jg">${JOBS.map(j => _adminJobCard(j)).join('')}
@@ -545,6 +545,10 @@ async function pgAdminOffices(el) {
               ? `<button class="btn bda bsm" onclick="adminToggleOffice('${o.id}','inactive','${san(o.officeName||o.name)}')"><i class="fas fa-ban"></i></button>`
               : `<button class="btn bsm" style="background:var(--info);color:#fff" onclick="adminToggleOffice('${o.id}','active','${san(o.officeName||o.name)}')"><i class="fas fa-check"></i></button>`
             }
+            <button class="btn bsm" style="background:none;border:1px solid var(--br);color:#ef4444"
+              onclick="adminDeleteOffice('${o.id}','${san(o.officeName||o.name)}')">
+              <i class="fas fa-trash"></i>
+            </button>
           </div>
         </div>`;
       }).join('')}
@@ -554,7 +558,10 @@ async function pgAdminOffices(el) {
   el.innerHTML = `
     <div class="sh">
       <div class="st"><div class="st-ico"><i class="fas fa-building"></i></div>مكاتب التوظيف</div>
-      <span class="b b-tl">${offices.length} مكتب</span>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="b b-tl">${offices.length} مكتب</span>
+        <button class="btn bp bsm" onclick="openAddOfficeDirect()"><i class="fas fa-plus"></i>إضافة مكتب</button>
+      </div>
     </div>
     <div id="officesGrid">${render(offices)}</div>`;
 }
@@ -610,6 +617,90 @@ async function adminVerifyOffice(uid, name) {
       notify('تم التوثيق ✅', `تم توثيق مكتب "${name}" بنجاح`, 'success');
       pgAdminOffices(document.getElementById('pcon'));
     } catch(e) { notify('خطأ', 'فشل التوثيق: ' + e.message, 'error'); }
+  });
+}
+
+function openAddOfficeDirect() {
+  const body = `
+    <div class="fr">
+      <div class="fg">
+        <label class="fl req">اسم المكتب</label>
+        <input type="text" class="fc" id="aoName" placeholder="مكتب التوظيف الذهبي">
+      </div>
+      <div class="fg">
+        <label class="fl req">رقم الهاتف</label>
+        <input type="tel" class="fc" id="aoPhone" placeholder="07801234567">
+      </div>
+    </div>
+    <div class="fr">
+      <div class="fg">
+        <label class="fl req">البريد الإلكتروني</label>
+        <input type="email" class="fc" id="aoEmail" placeholder="office@example.com">
+      </div>
+      <div class="fg">
+        <label class="fl req">كلمة المرور (6+ أحرف)</label>
+        <input type="password" class="fc" id="aoPass" placeholder="••••••••" minlength="6">
+      </div>
+    </div>
+    <div class="fg">
+      <label class="fl req">المحافظة</label>
+      <select class="fc" id="aoProvince">
+        ${Object.keys(PROV_COORDS).map(p => `<option value="${p}">${p}</option>`).join('')}
+      </select>
+    </div>
+    <div class="mf" style="border:none;padding:0;margin-top:14px">
+      <button class="btn bo" onclick="cmo('_adminModal')">إلغاء</button>
+      <button class="btn bp bfu" id="aoSubmitBtn" onclick="adminDoAddOffice()">
+        <i class="fas fa-building"></i>إنشاء حساب المكتب
+      </button>
+    </div>`;
+  _showAdminModal('إضافة مكتب توظيف', body);
+}
+
+async function adminDoAddOffice() {
+  const name     = document.getElementById('aoName')?.value.trim();
+  const email    = document.getElementById('aoEmail')?.value.trim().toLowerCase();
+  const pass     = document.getElementById('aoPass')?.value;
+  const phone    = document.getElementById('aoPhone')?.value.trim();
+  const province = document.getElementById('aoProvince')?.value;
+
+  if (!name || name.length < 2) { notify('خطأ', 'أدخل اسم المكتب', 'error'); return; }
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { notify('خطأ', 'البريد غير صحيح', 'error'); return; }
+  if (!pass || pass.length < 6) { notify('خطأ', 'كلمة المرور 6 أحرف على الأقل', 'error'); return; }
+
+  loading('aoSubmitBtn', true);
+  let secondaryApp = null;
+  try {
+    secondaryApp = firebase.initializeApp(firebase.app().options, 'officeCreate_' + Date.now());
+    const cred = await secondaryApp.auth().createUserWithEmailAndPassword(email, pass);
+    const uid  = cred.user.uid;
+    await window.db.collection('users').doc(uid).set({
+      officeName: name, name, email, phone: phone || '', province: province || '',
+      role: 'office', status: 'active', verified: false,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      createdBy: U?.uid,
+    });
+    await secondaryApp.auth().signOut();
+    cmo('_adminModal');
+    notify('تم الإنشاء ✅', `تم إنشاء حساب مكتب "${name}" بنجاح`, 'success');
+    pgAdminOffices(document.getElementById('pcon'));
+  } catch(e) {
+    const msgs = { 'auth/email-already-in-use': 'البريد مستخدم بالفعل', 'auth/weak-password': 'كلمة المرور ضعيفة', 'auth/invalid-email': 'البريد غير صالح' };
+    notify('خطأ', msgs[e.code] || 'فشل الإنشاء: ' + e.message, 'error');
+  } finally {
+    loading('aoSubmitBtn', false);
+    try { if (secondaryApp) await secondaryApp.delete(); } catch(_) {}
+  }
+}
+
+async function adminDeleteOffice(uid, name) {
+  confirm2('حذف المكتب', `سيُحذف حساب مكتب "${name}" من قاعدة البيانات نهائياً.\n\nملاحظة: يبقى حساب المصادقة قائماً — احذفه من Firebase Console إن لزم.`, async () => {
+    if (DEMO || !window.db) { notify('تنبيه', 'يتطلب Firebase', 'info'); return; }
+    try {
+      await window.db.collection('users').doc(uid).delete();
+      notify('تم الحذف', `تم حذف مكتب "${name}"`, 'info');
+      pgAdminOffices(document.getElementById('pcon'));
+    } catch(e) { notify('خطأ', 'فشل الحذف: ' + e.message, 'error'); }
   });
 }
 
@@ -2094,36 +2185,32 @@ function _loadImportHistory() {
   } catch (_) { el.innerHTML = ''; }
 }
 
-async function deleteAllDemoJobs() {
-  const demoJobs = JOBS.filter(j => j.postedBy === 'demo' || j.id?.startsWith('j_'));
-  if (!demoJobs.length) {
-    notify('لا يوجد', 'ما في وظائف وهمية للحذف', 'info');
-    return;
-  }
-  if (!confirm(`سيتم حذف ${demoJobs.length} وظيفة وهمية. هل أنت متأكد؟`)) return;
-
-  loading('deleteDemoBtn', true);
-  let deleted = 0, failed = 0;
-
-  for (const j of demoJobs) {
-    try {
-      if (!DEMO && window.db && !j.id?.startsWith('j_')) {
-        await window.db.collection('jobs').doc(j.id).delete();
+async function deleteAllJobs() {
+  if (!JOBS.length) { notify('لا يوجد', 'لا توجد وظائف لحذفها', 'info'); return; }
+  confirm2(
+    'حذف جميع الوظائف',
+    `سيتم حذف ${JOBS.length} وظيفة نهائياً من قاعدة البيانات.\n\nهذه العملية لا يمكن التراجع عنها!`,
+    async () => {
+      loading('deleteAllJobsBtn', true);
+      let deleted = 0, failed = 0;
+      for (const j of [...JOBS]) {
+        try {
+          if (!DEMO && window.db) await window.db.collection('jobs').doc(j.id).delete();
+          const idx = JOBS.findIndex(x => x.id === j.id);
+          if (idx !== -1) JOBS.splice(idx, 1);
+          deleted++;
+        } catch (e) {
+          console.warn('deleteAllJobs failed:', j.id, e.message);
+          failed++;
+        }
       }
-      const idx = JOBS.findIndex(x => x.id === j.id);
-      if (idx !== -1) JOBS.splice(idx, 1);
-      deleted++;
-    } catch (e) {
-      console.warn('deleteDemo failed:', j.id, e.message);
-      failed++;
+      loading('deleteAllJobsBtn', false);
+      notify(
+        deleted ? 'تم الحذف ✅' : 'تنبيه',
+        `حُذفت ${deleted} وظيفة${failed ? ` — فشل حذف ${failed}` : ''}`,
+        deleted ? 'success' : 'warning'
+      );
+      pgAdminJobs(document.getElementById('pcon'));
     }
-  }
-
-  loading('deleteDemoBtn', false);
-  notify(
-    deleted ? `تم الحذف ✅` : 'تنبيه',
-    `حُذفت ${deleted} وظيفة${failed ? ` — فشل حذف ${failed}` : ''}`,
-    deleted ? 'success' : 'warning'
   );
-  pgAdminJobs(document.getElementById('pcon'));
 }
