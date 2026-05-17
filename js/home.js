@@ -2015,24 +2015,12 @@ function pgAdminImport(el) {
 
     <!-- ══ بوت تلغرام ══ -->
     <div id="importTabTelegram" style="display:none">
-      <div class="card cp fade-up" style="border:2px dashed var(--br)">
-        <div style="text-align:center;padding:30px 20px">
-          <div style="font-size:48px;margin-bottom:12px">🤖</div>
-          <div style="font-size:16px;font-weight:900;color:var(--tx);margin-bottom:8px">بوت تلغرام التلقائي</div>
-          <div style="font-size:13px;color:var(--tx2);line-height:1.8;max-width:400px;margin:0 auto 20px">
-            أضف البوت لقنوات الوظائف العراقية وسيحلّل كل منشور تلقائياً وينشره للمنصة بعد موافقتك
-          </div>
-          <div class="al al-i" style="max-width:420px;margin:0 auto 20px;text-align:right">
-            <i class="fas fa-info-circle"></i>
-            <div>
-              لتفعيل البوت تحتاج إضافة <strong>Telegram Bot Token</strong> في
-              <span class="b b-tl" onclick="goTo('settings')" style="cursor:pointer">الإعدادات ← تلغرام</span>
-            </div>
-          </div>
-          <button class="btn bp" onclick="goTo('settings')">
-            <i class="fas fa-cog"></i> إعداد البوت الآن
-          </button>
-        </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+        <div style="font-size:12px;color:var(--tx3)">الوظائف التي حللها البوت وتنتظر موافقتك — وافق عليها لتظهر في المنصة</div>
+        <button class="btn bg bsm" onclick="loadTelegramQueue()"><i class="fas fa-sync"></i>تحديث</button>
+      </div>
+      <div id="tgQueueList">
+        <div class="es"><div class="es-ico"><i class="fas fa-circle-notch spin" style="color:var(--p)"></i></div><div class="es-desc">جارٍ التحميل...</div></div>
       </div>
     </div>
   `;
@@ -2045,6 +2033,114 @@ function swImportTab(tab, btn) {
   btn.classList.add('on');
   document.getElementById('importTabManual').style.display   = tab === 'manual'   ? '' : 'none';
   document.getElementById('importTabTelegram').style.display = tab === 'telegram' ? '' : 'none';
+  if (tab === 'telegram') loadTelegramQueue();
+}
+
+async function loadTelegramQueue() {
+  const el = document.getElementById('tgQueueList');
+  if (!el) return;
+  el.innerHTML = `<div class="es"><div class="es-ico"><i class="fas fa-circle-notch spin" style="color:var(--p)"></i></div><div class="es-desc">جارٍ التحميل...</div></div>`;
+
+  if (DEMO || !window.db) {
+    el.innerHTML = emptyState('🤖', 'لا توجد وظائف معلقة', 'وظائف البوت ستظهر هنا بعد تحليلها');
+    return;
+  }
+
+  try {
+    const snap = await window.db.collection('telegram_queue').orderBy('postedAt', 'desc').get();
+    const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    if (!list.length) {
+      el.innerHTML = emptyState('🤖', 'لا توجد وظائف معلقة', 'عندما يحلل البوت وظيفة ستظهر هنا للمراجعة');
+      return;
+    }
+
+    el.innerHTML = list.map(j => _tgQueueCard(j)).join('');
+  } catch (e) {
+    el.innerHTML = `<div class="al al-e"><i class="fas fa-exclamation-circle"></i> فشل التحميل: ${e.message}</div>`;
+  }
+}
+
+function _tgQueueCard(j) {
+  const TYPE_AR = { full:'دوام كامل', part:'دوام جزئي', remote:'عن بُعد', gig:'مهمة' };
+  const sal = j.salary ? `${Number(j.salary).toLocaleString()} ${j.currency || 'IQD'}` : 'قابل للتفاوض';
+  const init = (j.company || j.title || 'و').charAt(0);
+
+  return `<div class="card" style="margin-bottom:12px;border-right:4px solid #229ed9" id="tgcard_${j.id}">
+    <div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap">
+      <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#229ed9,#0088cc);color:#fff;font-size:18px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        ${init}
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:14px;font-weight:900;color:var(--tx);margin-bottom:4px">${san(j.title || '—')}</div>
+        <div style="font-size:11px;color:var(--tx3);display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px">
+          ${j.company  ? `<span><i class="fas fa-building" style="color:var(--p)"></i> ${san(j.company)}</span>`  : ''}
+          ${j.province ? `<span><i class="fas fa-map-marker-alt" style="color:var(--danger)"></i> ${san(j.province)}</span>` : ''}
+          <span><i class="fas fa-briefcase" style="color:var(--acc)"></i> ${TYPE_AR[j.type] || j.type || '—'}</span>
+          <span><i class="fas fa-money-bill-wave" style="color:var(--success)"></i> ${sal}</span>
+          ${j.phone ? `<span><i class="fas fa-phone"></i> ${san(j.phone)}</span>` : ''}
+        </div>
+        ${j.desc ? `<div style="font-size:11px;color:var(--tx2);line-height:1.6;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${san(j.desc)}</div>` : ''}
+      </div>
+      <div style="display:flex;gap:6px;flex-shrink:0;flex-direction:column">
+        <button class="btn bsm bfu" style="background:#22c55e;color:#fff;border:none"
+          id="tgpub_${j.id}" onclick="approveTgJob('${j.id}')">
+          <i class="fas fa-check"></i> نشر
+        </button>
+        <button class="btn bda bsm" onclick="rejectTgJob('${j.id}','${san(j.title||'')}')">
+          <i class="fas fa-times"></i> رفض
+        </button>
+      </div>
+    </div>
+  </div>`;
+}
+
+async function approveTgJob(docId) {
+  if (DEMO || !window.db) return;
+  loading(`tgpub_${docId}`, true);
+  try {
+    const snap = await window.db.collection('telegram_queue').doc(docId).get();
+    if (!snap.exists) { notify('خطأ', 'الوظيفة غير موجودة', 'error'); return; }
+
+    const data = snap.data();
+    delete data.status;
+    await window.db.collection('jobs').add({
+      ...data,
+      status:      'active',
+      postedAt:    firebase.firestore.FieldValue.serverTimestamp(),
+      applicants:  0,
+      source:      'telegram',
+    });
+    await window.db.collection('telegram_queue').doc(docId).delete();
+
+    document.getElementById(`tgcard_${docId}`)?.remove();
+    notify('تم ✅', 'نُشرت الوظيفة في المنصة', 'success');
+
+    const el = document.getElementById('tgQueueList');
+    if (el && !el.querySelector('[id^=tgcard_]')) {
+      el.innerHTML = emptyState('🤖', 'لا توجد وظائف معلقة', 'تم مراجعة جميع الوظائف');
+    }
+  } catch (e) {
+    notify('خطأ', 'فشل النشر: ' + e.message, 'error');
+  } finally {
+    loading(`tgpub_${docId}`, false);
+  }
+}
+
+async function rejectTgJob(docId, name) {
+  confirm2('رفض الوظيفة', `حذف وظيفة "${name}" نهائياً؟`, async () => {
+    if (DEMO || !window.db) return;
+    try {
+      await window.db.collection('telegram_queue').doc(docId).delete();
+      document.getElementById(`tgcard_${docId}`)?.remove();
+      notify('تم', 'تم رفض الوظيفة', 'success');
+
+      const el = document.getElementById('tgQueueList');
+      if (el && !el.querySelector('[id^=tgcard_]')) {
+        el.innerHTML = emptyState('🤖', 'لا توجد وظائف معلقة', 'تم مراجعة جميع الوظائف');
+      }
+    } catch (e) { notify('خطأ', 'فشل الحذف: ' + e.message, 'error'); }
+  });
 }
 
 async function aiParseJob() {
