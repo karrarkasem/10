@@ -2339,6 +2339,9 @@ function seekerCatalogCard(s) {
     ${s.bio ? `<div style="font-size:11px;color:var(--tx2);line-height:1.6;margin-bottom:9px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${san(s.bio)}</div>` : ''}
     ${s.skills?.length ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px">${s.skills.slice(0,5).map(sk=>`<span class="b skill-chip" style="font-size:9px">${san(sk)}</span>`).join('')}</div>` : ''}
     <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <button class="btn bg bsm" onclick="viewSeekerProfile('${s.id}')">
+        <i class="fas fa-eye"></i>عرض
+      </button>
       ${ROLE === 'admin'
         ? `<button class="btn bp bsm" style="flex:1" onclick="adminUserPermissions('${s.id}','${san(name)}')">
              <i class="fas fa-shield-alt"></i>الصلاحيات
@@ -2443,4 +2446,268 @@ async function _doSavePermissions(uid, name) {
   } finally {
     loading('savePermsBtn', false);
   }
+}
+
+// ════════════════════════════════════════════
+// ملف الباحث العام — مودال
+// ════════════════════════════════════════════
+async function viewSeekerProfile(uid) {
+  let mo = document.getElementById('_seekerProfMo');
+  if (!mo) {
+    mo = document.createElement('div');
+    mo.id = '_seekerProfMo';
+    mo.className = 'mo';
+    mo.innerHTML = `<div class="moc" style="max-width:520px;width:100%;padding:0;overflow:hidden;border-radius:18px">
+      <div id="_seekerProfBody"></div>
+    </div>`;
+    mo.addEventListener('click', e => { if (e.target === mo) cmo('_seekerProfMo'); });
+    document.body.appendChild(mo);
+  }
+  document.getElementById('_seekerProfBody').innerHTML =
+    `<div style="padding:50px;text-align:center"><i class="fas fa-circle-notch spin" style="font-size:28px;color:var(--p)"></i></div>`;
+  oMo('_seekerProfMo');
+
+  const cache = [...(window._catalogSeekers||[]), ...(window._adminUsers||[])];
+  let s = cache.find(x => x.id === uid);
+  if (!s && !DEMO && window.db) {
+    try { const d = await window.db.collection('users').doc(uid).get(); if (d.exists) s = { id: d.id, ...d.data() }; }
+    catch(e) {}
+  }
+  if (!s) { cmo('_seekerProfMo'); return; }
+
+  const name  = s.name || 'باحث عن عمل';
+  const title = s.jobTitle || s.title || '';
+  const SC    = ['b-tl','b-pu','b-bl','b-gr','b-am'];
+  const TYPE_AR = { full:'دوام كامل', part:'دوام جزئي', remote:'عن بُعد', gig:'مهمة' };
+  const details = [
+    { ico:'fa-graduation-cap', c:'var(--purple)', l:'التعليم',      v: s.education },
+    { ico:'fa-language',       c:'var(--info)',   l:'اللغات',       v: (s.languages||[]).join('، ') || null },
+    { ico:'fa-briefcase',      c:'var(--p)',      l:'نوع الدوام',    v: TYPE_AR[s.preferredType] },
+    { ico:'fa-money-bill-wave',c:'var(--success)',l:'الراتب المتوقع',v: s.expectedSalary ? Number(s.expectedSalary).toLocaleString('ar-IQ') + ' IQD' : null },
+  ].filter(x => x.v);
+
+  document.getElementById('_seekerProfBody').innerHTML = `
+    <div class="prof-banner" style="border-radius:18px 18px 0 0;height:88px"></div>
+    <div style="position:relative;padding:0 20px">
+      <div style="position:absolute;top:-38px">
+        ${s.photoURL
+          ? `<img src="${s.photoURL}" style="width:70px;height:70px;border-radius:50%;object-fit:cover;border:3px solid var(--bgc);box-shadow:var(--shxl)">`
+          : `<div style="width:70px;height:70px;border-radius:50%;background:var(--grad-p);color:#fff;font-size:25px;font-weight:900;display:flex;align-items:center;justify-content:center;border:3px solid var(--bgc);box-shadow:var(--shxl)">${name.charAt(0)}</div>`}
+      </div>
+    </div>
+    <div style="padding:42px 22px 20px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+        <div>
+          <div style="font-size:18px;font-weight:900;color:var(--tx);display:flex;align-items:center;gap:6px">
+            ${san(name)}
+            ${s.verified ? '<i class="fas fa-check-circle" style="color:var(--p);font-size:13px"></i>' : ''}
+            ${s.permissions?.featured ? '<i class="fas fa-star" style="color:var(--acc);font-size:12px"></i>' : ''}
+          </div>
+          ${title ? `<div style="font-size:12px;color:var(--p);font-weight:700;margin-top:2px">${san(title)}</div>` : ''}
+          <div style="font-size:11px;color:var(--tx3);margin-top:4px;display:flex;gap:10px;flex-wrap:wrap">
+            ${s.province   ? `<span><i class="fas fa-map-marker-alt" style="color:var(--danger)"></i> ${san(s.province)}</span>` : ''}
+            ${s.experience ? `<span><i class="fas fa-clock" style="color:var(--info)"></i> ${san(s.experience)}</span>` : ''}
+            ${s.gender === 'male' ? '<span><i class="fas fa-mars" style="color:#3b82f6"></i> ذكر</span>' : s.gender === 'female' ? '<span><i class="fas fa-venus" style="color:#ec4899"></i> أنثى</span>' : ''}
+          </div>
+        </div>
+        <span class="b ${s.seekerAvailable ? 'b-gr' : 'b-rd'}" style="flex-shrink:0">
+          <i class="fas fa-circle" style="font-size:8px"></i>${s.seekerAvailable ? 'متاح للعمل' : 'غير متاح'}
+        </span>
+      </div>
+
+      ${s.bio ? `<div style="padding:12px;background:var(--bgc2);border-radius:10px;font-size:12px;color:var(--tx2);line-height:1.7;margin-bottom:14px">${san(s.bio)}</div>` : ''}
+
+      ${s.skills?.length ? `
+        <div style="margin-bottom:14px">
+          <div style="font-size:10px;font-weight:800;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px">المهارات</div>
+          <div style="display:flex;flex-wrap:wrap;gap:5px">
+            ${s.skills.map((sk,i) => `<span class="b ${SC[i%SC.length]}" style="font-size:11px">${san(sk)}</span>`).join('')}
+          </div>
+        </div>` : ''}
+
+      ${details.length ? `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:16px">
+          ${details.map(x => `
+            <div style="background:var(--bgc2);border-radius:10px;padding:9px 12px">
+              <div style="font-size:10px;color:var(--tx3);margin-bottom:3px"><i class="fas ${x.ico}" style="color:${x.c}"></i> ${x.l}</div>
+              <div style="font-size:12px;font-weight:700;color:var(--tx)">${san(x.v)}</div>
+            </div>`).join('')}
+        </div>` : ''}
+
+      <div style="display:flex;gap:7px;flex-wrap:wrap">
+        ${ROLE === 'admin' && s.phone
+          ? `<a href="tel:${san(s.phone)}" class="btn bp bsm" style="flex:1"><i class="fas fa-phone"></i> ${san(s.phone)}</a>`
+          : `<button class="btn bp bsm" style="flex:1" onclick="cmo('_seekerProfMo');bookCandidate('${s.id}','${san(name)}','')">
+               <i class="fas fa-lock"></i>حجز الملف
+             </button>`}
+        ${ROLE === 'admin'
+          ? `<button class="btn bo bsm" onclick="cmo('_seekerProfMo');adminUserPermissions('${s.id}','${san(name)}')">
+               <i class="fas fa-shield-alt"></i>الصلاحيات
+             </button>` : ''}
+        ${s.cvUrl
+          ? `<a href="${s.cvUrl}" target="_blank" class="btn bg bsm"><i class="fas fa-file-pdf"></i>CV</a>` : ''}
+        <button class="btn bg bsm" onclick="cmo('_seekerProfMo')"><i class="fas fa-times"></i></button>
+      </div>
+    </div>`;
+}
+
+// ════════════════════════════════════════════
+// كتالوج الشركات وأصحاب العمل
+// ════════════════════════════════════════════
+let _compQ = '', _compProv = '', _compType = 'all';
+
+async function pgEmployersCatalog(el) {
+  el.innerHTML = `<div class="es"><div class="es-ico"><i class="fas fa-circle-notch spin" style="color:var(--p)"></i></div><div class="es-desc">جارٍ تحميل الشركات...</div></div>`;
+
+  let companies = [];
+  if (!DEMO && window.db) {
+    try {
+      const [empSnap, offSnap] = await Promise.all([
+        window.db.collection('users').where('role','==','employer').where('status','==','active').limit(100).get(),
+        window.db.collection('users').where('role','==','office').where('status','==','active').limit(100).get(),
+      ]);
+      companies = [
+        ...empSnap.docs.map(d => ({ id: d.id, _type:'employer', ...d.data() })),
+        ...offSnap.docs.map(d => ({ id: d.id, _type:'office',   ...d.data() })),
+      ].sort((a,b) => (a.companyName||a.officeName||a.name||'').localeCompare(b.companyName||b.officeName||b.name||''));
+    } catch(e) { console.warn('pgEmployersCatalog:', e.message); }
+  }
+
+  window._companiesList = companies;
+  _compQ = ''; _compProv = ''; _compType = 'all';
+  const provinces = [...new Set(companies.map(c => c.province).filter(Boolean))].sort();
+
+  el.innerHTML = `
+    <div class="sh fade-up">
+      <div class="st"><div class="st-ico" style="background:linear-gradient(135deg,var(--acc),#d97706)"><i class="fas fa-building"></i></div>الشركات والمكاتب</div>
+      <span class="b b-tl">${companies.length} جهة</span>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin-bottom:16px">
+      ${[
+        { l:'إجمالي',       v:companies.length,                              c:'var(--acc)',    ico:'fa-building'   },
+        { l:'شركات',        v:companies.filter(c=>c._type==='employer').length, c:'var(--info)',   ico:'fa-briefcase'  },
+        { l:'مكاتب توظيف', v:companies.filter(c=>c._type==='office').length,   c:'var(--purple)', ico:'fa-id-badge'   },
+        { l:'موثّقة',       v:companies.filter(c=>c.verified).length,          c:'var(--success)',ico:'fa-check-circle'},
+      ].map(x => `
+        <div class="card" style="text-align:center;padding:12px 8px">
+          <div style="width:32px;height:32px;border-radius:9px;background:${x.c}18;color:${x.c};margin:0 auto 6px;font-size:14px;display:flex;align-items:center;justify-content:center">
+            <i class="fas ${x.ico}"></i>
+          </div>
+          <div style="font-size:20px;font-weight:900;color:var(--tx)">${x.v}</div>
+          <div style="font-size:10px;color:var(--tx3)">${x.l}</div>
+        </div>`).join('')}
+    </div>
+
+    <div class="card" style="padding:12px 14px;margin-bottom:14px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <div style="flex:1;min-width:160px;position:relative">
+          <i class="fas fa-search" style="position:absolute;right:11px;top:50%;transform:translateY(-50%);color:var(--tx3);font-size:12px;pointer-events:none"></i>
+          <input type="search" class="fc" placeholder="ابحث باسم الشركة أو المكتب..." style="padding-right:34px"
+            oninput="_compQ=this.value;_renderCompanies()">
+        </div>
+        <select class="fc" style="width:auto;min-width:130px" onchange="_compProv=this.value;_renderCompanies()">
+          <option value="">جميع المحافظات</option>
+          ${provinces.map(p => `<option value="${p}">${p}</option>`).join('')}
+        </select>
+        <div style="display:flex;gap:4px">
+          <button class="btn bsm" id="cbt_all" style="background:var(--p);color:#fff" onclick="_compType='all';_renderCompanies();_setCompBtn('all')">الكل</button>
+          <button class="btn bg bsm" id="cbt_employer" onclick="_compType='employer';_renderCompanies();_setCompBtn('employer')">شركات</button>
+          <button class="btn bg bsm" id="cbt_office"   onclick="_compType='office';_renderCompanies();_setCompBtn('office')">مكاتب</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="companiesGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:12px"></div>`;
+
+  _renderCompanies();
+}
+
+function _setCompBtn(active) {
+  ['all','employer','office'].forEach(k => {
+    const b = document.getElementById('cbt_' + k);
+    if (!b) return;
+    if (k === active) { b.style.background='var(--p)'; b.style.color='#fff'; }
+    else              { b.style.background=''; b.style.color=''; b.className='btn bg bsm'; }
+  });
+}
+
+function _renderCompanies() {
+  const qL  = _compQ.toLowerCase();
+  const list = (window._companiesList || []).filter(c => {
+    const nm = (c.companyName||c.officeName||c.name||'').toLowerCase();
+    if (_compType !== 'all' && c._type !== _compType) return false;
+    if (_compProv && c.province !== _compProv) return false;
+    if (qL && !nm.includes(qL) && !(c.province||'').includes(_compQ)) return false;
+    return true;
+  });
+  const el = document.getElementById('companiesGrid');
+  if (!el) return;
+  el.innerHTML = list.length ? list.map(c => companyCard(c)).join('') : emptyState('🔍', 'لا توجد نتائج', '');
+}
+
+function companyCard(c) {
+  const name     = c.companyName || c.officeName || c.name || 'جهة عمل';
+  const isOffice = c._type === 'office';
+  const color    = isOffice ? 'var(--purple)' : 'var(--acc)';
+  const bg       = isOffice ? 'linear-gradient(135deg,var(--purple),#a78bfa)' : 'linear-gradient(135deg,var(--acc),#d97706)';
+  const jobCount = JOBS.filter(j => j.postedBy === c.id).length;
+
+  return `<div class="card cp fade-up">
+    <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px">
+      <div style="width:48px;height:48px;border-radius:12px;background:${bg};color:#fff;font-size:20px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        ${name.charAt(0)}
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:900;color:var(--tx);display:flex;align-items:center;gap:5px">
+          ${san(name)}
+          ${c.verified ? `<i class="fas fa-check-circle" style="color:var(--p);font-size:10px"></i>` : ''}
+        </div>
+        <span class="b" style="font-size:9px;background:${color}18;color:${color};border:1px solid ${color}30;margin-top:3px">
+          <i class="fas ${isOffice ? 'fa-id-badge' : 'fa-briefcase'}"></i>${isOffice ? 'مكتب توظيف' : 'شركة'}
+        </span>
+        ${c.province ? `<div style="font-size:11px;color:var(--tx3);margin-top:4px"><i class="fas fa-map-marker-alt" style="color:var(--danger)"></i> ${san(c.province)}</div>` : ''}
+      </div>
+    </div>
+
+    ${c.bio||c.about ? `<div style="font-size:11px;color:var(--tx2);line-height:1.6;margin-bottom:10px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${san(c.bio||c.about)}</div>` : ''}
+
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <div style="flex:1;background:var(--bgc2);border-radius:9px;padding:8px;text-align:center">
+        <div style="font-size:18px;font-weight:900;color:${color}">${jobCount}</div>
+        <div style="font-size:10px;color:var(--tx3)">وظيفة</div>
+      </div>
+      ${c.phone ? `<div style="flex:1;background:var(--bgc2);border-radius:9px;padding:8px;text-align:center">
+        <div style="font-size:11px;font-weight:700;color:var(--tx);direction:ltr">${san(c.phone)}</div>
+        <div style="font-size:10px;color:var(--tx3)">الهاتف</div>
+      </div>` : ''}
+    </div>
+
+    <div style="display:flex;gap:7px">
+      <button class="btn ${jobCount?'bp':'bg'} bsm bfu" style="flex:1" ${!jobCount?'disabled':''} onclick="viewCompanyJobs('${c.id}','${san(name)}')">
+        <i class="fas fa-briefcase"></i>${jobCount ? 'وظائفه' : 'لا وظائف'}
+      </button>
+      ${c.phone ? `<a href="tel:${san(c.phone)}" class="btn bo bsm"><i class="fas fa-phone"></i></a>` : ''}
+    </div>
+  </div>`;
+}
+
+function viewCompanyJobs(companyId, companyName) {
+  const jobs = JOBS.filter(j => j.postedBy === companyId);
+  if (!jobs.length) { notify('تنبيه', 'لا توجد وظائف نشطة لهذه الجهة', 'info'); return; }
+  let mo = document.getElementById('_compJobsMo');
+  if (!mo) {
+    mo = document.createElement('div');
+    mo.id = '_compJobsMo';
+    mo.className = 'mo';
+    mo.innerHTML = `<div class="moc" style="max-width:540px;width:100%">
+      <div class="mh"><div class="mt" id="_compJobsTitle"></div><button class="mcl" onclick="cmo('_compJobsMo')"><i class="fas fa-times"></i></button></div>
+      <div id="_compJobsBody" class="mb"></div>
+    </div>`;
+    mo.addEventListener('click', e => { if (e.target === mo) cmo('_compJobsMo'); });
+    document.body.appendChild(mo);
+  }
+  document.getElementById('_compJobsTitle').innerHTML = `<i class="fas fa-briefcase" style="color:var(--p)"></i> وظائف ${san(companyName)}`;
+  document.getElementById('_compJobsBody').innerHTML = `<div class="jg">${jobs.map(j => jCard(j)).join('')}</div>`;
+  oMo('_compJobsMo');
 }
