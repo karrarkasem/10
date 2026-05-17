@@ -6,7 +6,7 @@
 // ║  4. Telegram Bot Webhook (POST /telegram)           ║
 // ╚══════════════════════════════════════════════════════╝
 
-const GEMINI_MODEL   = 'gemini-2.0-flash';
+const GEMINI_MODEL   = 'gemini-2.5-flash';
 const MAX_PROMPT_LEN = 8000;
 const FIREBASE_KEY   = 'AIzaSyBKlAEuk3QQJBqWqR1zmBdHGwasIW86Y-I';
 const PROJECT_ID     = 'karbala-b4884';
