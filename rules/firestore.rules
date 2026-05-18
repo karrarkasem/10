@@ -80,6 +80,11 @@ service cloud.firestore {
         || (isLoggedIn() && resource.data.postedBy == request.auth.uid);
 
       allow create: if isAdmin()
+        // الـ Worker ينشر وظائف تيليجرام باستخدام anonymous auth
+        || (request.auth != null
+            && request.resource.data.source == 'telegram'
+            && request.resource.data.postedByType == 'telegram'
+            && request.resource.data.status == 'active')
         || (isJobPoster() && isActive()
             && request.resource.data.postedBy == request.auth.uid
             && validSize(request.resource.data)
@@ -319,9 +324,10 @@ service cloud.firestore {
     // TELEGRAM QUEUE — وظائف بوت تيليجرام المعلقة
     // ══════════════════════════════════════
     match /telegram_queue/{jobId} {
-      // الـ Worker يستخدم anonymous Firebase auth للكتابة
+      // الـ Worker يستخدم anonymous Firebase auth
       allow create: if request.auth != null;
-      allow read, update, delete: if isAdmin();
+      allow read, delete: if request.auth != null; // Worker يقرأ ويحذف عند النشر
+      allow update: if isAdmin();
     }
 
 
