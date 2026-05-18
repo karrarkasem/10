@@ -4,6 +4,8 @@
 // ║  2. WhatsApp OG Preview (GET /job/:id)              ║
 // ║  3. AI Job Parser (POST /parse-job)                 ║
 // ║  4. Telegram Bot Webhook (POST /telegram)           ║
+// ║  5. Social Media Publish (POST /social-publish)     ║
+// ║  6. Cron: process scheduled social posts            ║
 // ╚══════════════════════════════════════════════════════╝
 
 const GEMINI_MODEL        = 'gemini-2.5-flash';
@@ -169,12 +171,21 @@ export default {
       return handleParseJob(request, env);
     }
 
+    // ── POST /social-publish → Social Media Publisher ──
+    if (request.method === 'POST' && url.pathname === '/social-publish') {
+      return handleSocialPublish(request, env);
+    }
+
     // ── POST / → Gemini Proxy ──
     if (request.method === 'POST') {
       return handleGemini(request, env);
     }
 
     return json({ error: 'Not found' }, 404);
+  },
+
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(processScheduledPosts(env));
   },
 };
 
@@ -557,6 +568,269 @@ async function tgAnswer(token, callbackQueryId, text) {
     headers: { 'Content-Type': 'application/json' },
     body:    JSON.stringify({ callback_query_id: callbackQueryId, text }),
   });
+}
+
+// ═══════════════════════════════════════════════
+// Social Media Publishing
+// ═══════════════════════════════════════════════
+const TYP_AR = { full: 'دوام كامل', part: 'دوام جزئي', remote: 'عن بُعد', gig: 'مهمة حرة' };
+const EXP_AR = { none: 'بدون خبرة', no: 'بدون خبرة', '1-2': '1-2 سنة', '3-5': '3-5 سنوات', '5+': 'أكثر من 5 سنوات' };
+
+function buildSocialText(job, style) {
+  const salTxt = job.salary ? `${Number(job.salary).toLocaleString()} ${job.currency || 'IQD'}` : 'قابل للتفاوض';
+  const expTxt = EXP_AR[job.exp] || (job.exp && job.exp !== 'none' ? job.exp : null);
+  const jobUrl = `${SITE_URL}/#job/${job.id}`;
+
+  if (style === 'tg') {
+    return [
+      `🔔 *وظيفة جديدة — عفراء للتوظيف*`,
+      ``,
+      `*${job.title}*`,
+      job.company  ? `🏢 ${job.company}`   : '',
+      job.province ? `📍 ${job.province}`  : '',
+      `💼 ${TYP_AR[job.type] || job.type || 'دوام كامل'}`,
+      `💰 ${salTxt}`,
+      expTxt       ? `⏱ خبرة: ${expTxt}` : '',
+      ``,
+      job.desc ? job.desc.substring(0, 280) + (job.desc.length > 280 ? '...' : '') : '',
+      ``,
+      `🔗 [قدّم الآن](${jobUrl})`,
+    ].filter(Boolean).join('\n');
+  }
+
+  const tags = ['#وظائف_عراق', '#توظيف', '#عفراء_للتوظيف'];
+  if (job.province) tags.push(`#وظائف_${job.province.replace(/\s/g, '')}`);
+  return [
+    `🔔 وظيفة جديدة — عفراء للتوظيف`,
+    ``,
+    `📌 ${job.title}`,
+    job.company  ? `🏢 ${job.company}`     : '',
+    job.province ? `📍 ${job.province}`    : '',
+    `💼 ${TYP_AR[job.type] || job.type || 'دوام كامل'}`,
+    `💰 الراتب: ${salTxt}`,
+    expTxt       ? `⏱ الخبرة: ${expTxt}` : '',
+    ``,
+    job.desc ? job.desc.substring(0, 400) + (job.desc.length > 400 ? '...' : '') : '',
+    ``,
+    `للتقديم: ${jobUrl}`,
+    ``,
+    tags.join(' '),
+  ].filter(Boolean).join('\n');
+}
+
+function fsJobFromDoc(jobId, doc) {
+  const f = doc.fields || {};
+  return {
+    id:       jobId,
+    title:    f.title?.stringValue    || '',
+    company:  f.company?.stringValue  || '',
+    province: f.province?.stringValue || '',
+    type:     f.type?.stringValue     || '',
+    salary:   parseFloat(f.salary?.doubleValue || f.salary?.integerValue || 0) || 0,
+    currency: f.currency?.stringValue || 'IQD',
+    exp:      f.exp?.stringValue      || '',
+    desc:     f.desc?.stringValue     || '',
+  };
+}
+
+async function postToTelegram(job, token, channelId) {
+  if (!token) return { ok: false, error: 'Token not configured' };
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id:      channelId,
+        text:         buildSocialText(job, 'tg'),
+        parse_mode:   'Markdown',
+        reply_markup: { inline_keyboard: [[{ text: '📝 قدّم الآن', url: `${SITE_URL}/#job/${job.id}` }]] },
+      }),
+    });
+    const d = await res.json();
+    return { ok: d.ok, messageId: d.result?.message_id, error: d.description };
+  } catch (e) { return { ok: false, error: e.message }; }
+}
+
+async function postToFacebook(job, token, pageId) {
+  try {
+    const res = await fetch(`https://graph.facebook.com/v19.0/${pageId}/feed`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message:      buildSocialText(job, 'fb'),
+        link:         `${SITE_URL}/#job/${job.id}`,
+        access_token: token,
+      }),
+    });
+    const d = await res.json();
+    return { ok: !d.error, postId: d.id, error: d.error?.message };
+  } catch (e) { return { ok: false, error: e.message }; }
+}
+
+async function postToInstagram(job, token, igId) {
+  try {
+    const createRes = await fetch(`https://graph.facebook.com/v19.0/${igId}/media`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image_url: OG_IMAGE, caption: buildSocialText(job, 'ig'), access_token: token }),
+    });
+    const created = await createRes.json();
+    if (!created.id) return { ok: false, error: created.error?.message || 'Container creation failed' };
+
+    const pubRes = await fetch(`https://graph.facebook.com/v19.0/${igId}/media_publish`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ creation_id: created.id, access_token: token }),
+    });
+    const pub = await pubRes.json();
+    return { ok: !pub.error, postId: pub.id, error: pub.error?.message };
+  } catch (e) { return { ok: false, error: e.message }; }
+}
+
+async function handleSocialPublish(request, env) {
+  let body;
+  try { body = await request.json(); }
+  catch { return json({ error: 'Invalid JSON' }, 400); }
+
+  const { jobId, platforms, scheduledAt } = body;
+  if (!jobId) return json({ error: 'jobId required' }, 400);
+  if (!Array.isArray(platforms) || !platforms.length) return json({ error: 'platforms required' }, 400);
+
+  const jobRes = await fetch(
+    `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/jobs/${jobId}?key=${FIREBASE_KEY}`
+  );
+  if (!jobRes.ok) return json({ error: 'Job not found' }, 404);
+  const jobDoc = await jobRes.json();
+  if (!jobDoc.fields) return json({ error: 'Job not found' }, 404);
+  const job = fsJobFromDoc(jobId, jobDoc);
+
+  if (scheduledAt) {
+    const saved = await saveScheduledPost(jobId, platforms, scheduledAt);
+    return saved
+      ? json({ scheduled: true, scheduledAt })
+      : json({ error: 'Failed to save schedule' }, 500);
+  }
+
+  const tgChan = env.TG_CHANNEL_ID || '@afraiq_jobs';
+  const results = {};
+  if (platforms.includes('tg'))                                               results.tg = await postToTelegram(job, env.TELEGRAM_TOKEN, tgChan);
+  if (platforms.includes('fb') && env.FB_PAGE_TOKEN && env.FB_PAGE_ID)       results.fb = await postToFacebook(job, env.FB_PAGE_TOKEN, env.FB_PAGE_ID);
+  if (platforms.includes('ig') && env.FB_PAGE_TOKEN && env.IG_ACCOUNT_ID)    results.ig = await postToInstagram(job, env.FB_PAGE_TOKEN, env.IG_ACCOUNT_ID);
+
+  await logSocialPost(jobId, platforms, results);
+  return json({ results });
+}
+
+async function saveScheduledPost(jobId, platforms, scheduledAt) {
+  try {
+    const authRes = await fetch(
+      `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${FIREBASE_KEY}`,
+      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ returnSecureToken: true }) }
+    );
+    const { idToken } = await authRes.json();
+    if (!idToken) return false;
+
+    const res = await fetch(
+      `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/social_schedule`,
+      {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+        body:    JSON.stringify({
+          fields: buildFsFields({ jobId, platforms, scheduledAt, status: 'pending', createdAt: new Date().toISOString() }),
+        }),
+      }
+    );
+    return res.ok;
+  } catch { return false; }
+}
+
+async function logSocialPost(jobId, platforms, results) {
+  try {
+    const authRes = await fetch(
+      `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${FIREBASE_KEY}`,
+      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ returnSecureToken: true }) }
+    );
+    const { idToken } = await authRes.json();
+    if (!idToken) return;
+    const summary = Object.entries(results).map(([p, r]) => `${p}:${r.ok ? '✓' : '✗'}`).join(', ');
+    await fetch(
+      `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/social_posts_log`,
+      {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+        body:    JSON.stringify({ fields: buildFsFields({ jobId, platforms, summary, postedAt: new Date().toISOString() }) }),
+      }
+    );
+  } catch { /* silent */ }
+}
+
+async function processScheduledPosts(env) {
+  try {
+    const authRes = await fetch(
+      `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${FIREBASE_KEY}`,
+      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ returnSecureToken: true }) }
+    );
+    const { idToken } = await authRes.json();
+    if (!idToken) return;
+
+    const now = new Date().toISOString();
+    const qRes = await fetch(
+      `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents:runQuery`,
+      {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+        body: JSON.stringify({
+          structuredQuery: {
+            from: [{ collectionId: 'social_schedule' }],
+            where: {
+              compositeFilter: {
+                op: 'AND',
+                filters: [
+                  { fieldFilter: { field: { fieldPath: 'status' },      op: 'EQUAL',              value: { stringValue: 'pending' } } },
+                  { fieldFilter: { field: { fieldPath: 'scheduledAt' }, op: 'LESS_THAN_OR_EQUAL', value: { stringValue: now }       } },
+                ],
+              },
+            },
+            limit: 10,
+          },
+        }),
+      }
+    );
+
+    const docs = await qRes.json();
+    if (!Array.isArray(docs)) return;
+
+    for (const item of docs) {
+      if (!item.document) continue;
+      const docName  = item.document.name;
+      const f        = item.document.fields || {};
+      const jobId    = f.jobId?.stringValue;
+      const platforms = f.platforms?.arrayValue?.values?.map(v => v.stringValue) || [];
+      if (!jobId || !platforms.length) continue;
+
+      let status = 'failed';
+      const jobRes = await fetch(
+        `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/jobs/${jobId}?key=${FIREBASE_KEY}`
+      );
+      if (jobRes.ok) {
+        const job = fsJobFromDoc(jobId, await jobRes.json());
+        const tgChan = env.TG_CHANNEL_ID || '@afraiq_jobs';
+        if (platforms.includes('tg'))                                             await postToTelegram(job, env.TELEGRAM_TOKEN, tgChan);
+        if (platforms.includes('fb') && env.FB_PAGE_TOKEN && env.FB_PAGE_ID)     await postToFacebook(job, env.FB_PAGE_TOKEN, env.FB_PAGE_ID);
+        if (platforms.includes('ig') && env.FB_PAGE_TOKEN && env.IG_ACCOUNT_ID)  await postToInstagram(job, env.FB_PAGE_TOKEN, env.IG_ACCOUNT_ID);
+        status = 'done';
+      }
+
+      await fetch(
+        `https://firestore.googleapis.com/v1/${docName}?updateMask.fieldPaths=status&updateMask.fieldPaths=processedAt`,
+        {
+          method:  'PATCH',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+          body: JSON.stringify({ fields: buildFsFields({ status, processedAt: new Date().toISOString() }) }),
+        }
+      );
+    }
+  } catch (e) { console.error('processScheduledPosts:', e); }
 }
 
 function buildFsFields(obj) {

@@ -210,6 +210,8 @@ function pgSeekerHome(el) {
 async function pgAdminHome(el) {
   el.innerHTML = `<div class="es"><div class="es-ico"><i class="fas fa-circle-notch spin" style="color:var(--p)"></i></div><div class="es-desc">جارٍ تحميل البيانات...</div></div>`;
 
+  loadSocialAutoSetting(); // تحميل إعداد النشر التلقائي في الخلفية
+
   let totalUsers = 0, totalOffices = 0, totalApps = 0, newThisWeek = 0;
   let recentJobs = JOBS.slice(0, 4);
 
@@ -379,6 +381,9 @@ function _adminJobCard(j) {
         : `<button class="btn bsm" style="background:var(--success);color:#fff" onclick="adminPinJob('${j.id}',true,'${san(j.title)}')">
              <i class="fas fa-thumbtack"></i> تثبيت دائم
            </button>`}
+      <button class="btn bsm" style="background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff" onclick="openSocialPublish('${j.id}')">
+        <i class="fas fa-share-alt"></i> نشر اجتماعي
+      </button>
       <button class="btn bda bsm" onclick="confirm2('حذف الوظيفة','سيتم حذف الوظيفة نهائياً.',()=>adminDeleteJob('${j.id}','${san(j.title)}'))">
         <i class="fas fa-trash"></i> حذف
       </button>
@@ -425,6 +430,172 @@ async function adminDeleteJob(jobId, title) {
     notify('تم الحذف', `وظيفة "${title}" حُذفت`, 'info');
     pgAdminJobs(document.getElementById('pcon'));
   } catch(e) { notify('خطأ', 'فشل الحذف', 'error'); }
+}
+
+// ═══════════════════════════════════════════════════════════
+// النشر على وسائل التواصل الاجتماعي
+// ═══════════════════════════════════════════════════════════
+
+let _spJob = null; // الوظيفة المراد نشرها حالياً
+window.SOCIAL_AUTO = null; // إعداد النشر التلقائي
+
+async function loadSocialAutoSetting() {
+  try {
+    if (!window.db) return;
+    const snap = await window.db.collection('settings').doc('social_auto').get();
+    if (snap.exists) window.SOCIAL_AUTO = snap.data();
+  } catch (_) {}
+}
+
+function openSocialPublish(jobId) {
+  const job = JOBS.find(j => j.id === jobId);
+  if (!job) return;
+  _spJob = job;
+
+  const b = document.getElementById('moSocialPublishB');
+  if (!b) return;
+
+  const TYPE_AR = { full: 'دوام كامل', part: 'دوام جزئي', remote: 'عن بُعد', gig: 'مهمة حرة' };
+  const EXP_AR  = { none: 'بدون خبرة', no: 'بدون خبرة', '1-2': '1-2 سنة', '3-5': '3-5 سنوات', '5+': 'أكثر من 5 سنوات' };
+  const salTxt  = job.salary ? `${Number(job.salary).toLocaleString()} ${job.currency || 'IQD'}` : 'قابل للتفاوض';
+  const expTxt  = EXP_AR[job.exp] || (job.exp && job.exp !== 'none' ? job.exp : '');
+  const prev = [
+    `🔔 وظيفة جديدة — عفراء للتوظيف`,
+    ``,
+    `📌 ${job.title}`,
+    job.company  ? `🏢 ${job.company}`   : '',
+    job.province ? `📍 ${job.province}`  : '',
+    `💼 ${TYPE_AR[job.type] || job.type}`,
+    `💰 ${salTxt}`,
+    expTxt       ? `⏱ خبرة: ${expTxt}` : '',
+    ``,
+    job.desc     ? job.desc.substring(0, 200) + (job.desc.length > 200 ? '...' : '') : '',
+    ``,
+    `🔗 afra-iq.com/#job/${job.id}`,
+  ].filter(Boolean).join('\n');
+
+  const autoPlats = window.SOCIAL_AUTO?.platforms || [];
+  b.innerHTML = `
+    <div style="margin-bottom:18px">
+      <div style="font-weight:700;margin-bottom:10px;color:var(--tx1)">المنصات:</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        <label style="display:flex;align-items:center;gap:7px;padding:8px 14px;border:2px solid var(--br);border-radius:10px;cursor:pointer;transition:.15s;font-size:14px">
+          <input type="checkbox" id="spTg" ${autoPlats.includes('tg') ? 'checked' : 'checked'} style="accent-color:#229ed9;width:15px;height:15px">
+          <i class="fab fa-telegram" style="color:#229ed9;font-size:16px"></i> تلغرام
+        </label>
+        <label style="display:flex;align-items:center;gap:7px;padding:8px 14px;border:2px solid var(--br);border-radius:10px;cursor:pointer;transition:.15s;font-size:14px">
+          <input type="checkbox" id="spFb" ${autoPlats.includes('fb') ? 'checked' : ''} style="accent-color:#1877f2;width:15px;height:15px">
+          <i class="fab fa-facebook" style="color:#1877f2;font-size:16px"></i> فيسبوك
+        </label>
+        <label style="display:flex;align-items:center;gap:7px;padding:8px 14px;border:2px solid var(--br);border-radius:10px;cursor:pointer;transition:.15s;font-size:14px">
+          <input type="checkbox" id="spIg" ${autoPlats.includes('ig') ? 'checked' : ''} style="accent-color:#e1306c;width:15px;height:15px">
+          <i class="fab fa-instagram" style="color:#e1306c;font-size:16px"></i> انستغرام
+        </label>
+      </div>
+    </div>
+    <div style="margin-bottom:18px">
+      <div style="font-weight:700;margin-bottom:10px;color:var(--tx1)">توقيت النشر:</div>
+      <div style="display:flex;gap:14px;flex-wrap:wrap">
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:14px">
+          <input type="radio" name="spTiming" value="now" checked onchange="spToggleTiming()"> فوري
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:14px">
+          <input type="radio" name="spTiming" value="scheduled" onchange="spToggleTiming()"> مجدول
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:14px">
+          <input type="radio" name="spTiming" value="auto" onchange="spToggleTiming()"> تلقائي (كل وظيفة)
+        </label>
+      </div>
+      <div id="spScheduleRow" style="display:none;margin-top:10px">
+        <input type="datetime-local" id="spScheduleAt" class="inp" style="width:100%">
+      </div>
+      <div id="spAutoNote" style="display:none;margin-top:10px;padding:10px 14px;background:#fff7ed;border-right:3px solid var(--acc);border-radius:8px;font-size:13px;color:var(--tx2)">
+        <i class="fas fa-info-circle" style="color:var(--acc)"></i>
+        سيتم حفظ المنصات المحددة — كل وظيفة جديدة ستُنشر عليها تلقائياً
+      </div>
+    </div>
+    <div>
+      <div style="font-weight:700;margin-bottom:8px;color:var(--tx1);font-size:14px">معاينة المنشور:</div>
+      <div style="background:var(--bg2);border:1px solid var(--br);border-radius:10px;padding:12px;font-size:12px;white-space:pre-wrap;direction:rtl;font-family:monospace;max-height:200px;overflow:auto;line-height:1.6">${san(prev)}</div>
+    </div>`;
+
+  // تغيير زر النشر حسب الوضع
+  document.getElementById('spSubmitBtn').textContent = '';
+  document.getElementById('spSubmitBtn').innerHTML = '<i class="fas fa-paper-plane"></i> نشر الآن';
+  oMo('moSocialPublish');
+}
+
+function spToggleTiming() {
+  const val = document.querySelector('input[name="spTiming"]:checked')?.value || 'now';
+  document.getElementById('spScheduleRow').style.display = val === 'scheduled' ? 'block' : 'none';
+  document.getElementById('spAutoNote').style.display    = val === 'auto'      ? 'block' : 'none';
+  const btn = document.getElementById('spSubmitBtn');
+  if (val === 'auto')      btn.innerHTML = '<i class="fas fa-save"></i> حفظ الإعداد';
+  else if (val === 'scheduled') btn.innerHTML = '<i class="fas fa-clock"></i> جدولة';
+  else                          btn.innerHTML = '<i class="fas fa-paper-plane"></i> نشر الآن';
+}
+
+async function submitSocialPublish() {
+  if (!_spJob) return;
+  const platforms = ['tg','fb','ig'].filter(id => document.getElementById(`sp${id.charAt(0).toUpperCase()+id.slice(1)}`)?.checked);
+  if (!platforms.length) return notify('تنبيه', 'اختر منصة واحدة على الأقل', 'warning');
+
+  const timing  = document.querySelector('input[name="spTiming"]:checked')?.value || 'now';
+  const schedAt = document.getElementById('spScheduleAt')?.value;
+  if (timing === 'scheduled' && !schedAt) return notify('تنبيه', 'اختر وقت النشر', 'warning');
+
+  loading('spSubmitBtn', true);
+  try {
+    if (timing === 'auto') {
+      if (window.db) await window.db.collection('settings').doc('social_auto').set(
+        { enabled: true, platforms, updatedAt: firebase.firestore.FieldValue.serverTimestamp() },
+        { merge: true }
+      );
+      window.SOCIAL_AUTO = { enabled: true, platforms };
+      notify('تم الحفظ ✅', 'سيتم النشر التلقائي على: ' + platforms.join(', '), 'success');
+      cmo('moSocialPublish');
+      return;
+    }
+
+    const body = { jobId: _spJob.id, platforms };
+    if (timing === 'scheduled') body.scheduledAt = new Date(schedAt).toISOString();
+
+    const res  = await fetch('https://api.afra-iq.com/social-publish', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'فشل النشر');
+
+    if (timing === 'scheduled') {
+      notify('تم الجدولة ✅', `سيتم النشر على ${platforms.length} منصة في الوقت المحدد`, 'success');
+    } else {
+      const results   = data.results || {};
+      const successes = Object.values(results).filter(r => r.ok).length;
+      const fails     = Object.values(results).filter(r => !r.ok);
+      let msg = `تم النشر على ${successes} منصة`;
+      if (fails.length) msg += ` (فشل ${fails.length}: ${fails.map(f => f.error || '؟').join(', ')})`;
+      notify(successes > 0 ? 'تم النشر ✅' : '❌ فشل النشر', msg, successes > 0 ? 'success' : 'error');
+    }
+    cmo('moSocialPublish');
+  } catch (e) {
+    notify('خطأ', e.message || 'فشل النشر', 'error');
+  } finally {
+    loading('spSubmitBtn', false);
+  }
+}
+
+async function autoPostJob(job) {
+  if (!window.SOCIAL_AUTO?.enabled || !window.SOCIAL_AUTO?.platforms?.length) return;
+  if (!job?.id) return;
+  try {
+    await fetch('https://api.afra-iq.com/social-publish', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ jobId: job.id, platforms: window.SOCIAL_AUTO.platforms }),
+    });
+  } catch (_) {}
 }
 
 async function adminJobApps(jobId, title) {
@@ -2104,7 +2275,7 @@ async function approveTgJob(docId) {
 
     const data = snap.data();
     delete data.status;
-    await window.db.collection('jobs').add({
+    const ref = await window.db.collection('jobs').add({
       ...data,
       title:       data.title    || 'وظيفة من تيليجرام',
       company:     data.company  || 'غير محدد',
@@ -2121,6 +2292,7 @@ async function approveTgJob(docId) {
 
     document.getElementById(`tgcard_${docId}`)?.remove();
     notify('تم ✅', 'نُشرت الوظيفة في المنصة', 'success');
+    autoPostJob({ ...data, id: ref.id });
 
     const el = document.getElementById('tgQueueList');
     if (el && !el.querySelector('[id^=tgcard_]')) {

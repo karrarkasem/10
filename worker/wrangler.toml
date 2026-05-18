@@ -2,5 +2,14 @@ name = "fanoos-ai"
 main = "index.js"
 compatibility_date = "2024-01-01"
 
+[triggers]
+crons = ["*/5 * * * *"]
+
 [vars]
 # المتغيرات العامة (غير السرية) — السرية تُضاف من لوحة Cloudflare أو GitHub Secrets
+# Secrets (set via Cloudflare dashboard or wrangler secret put):
+#   GEMINI_KEY, TELEGRAM_TOKEN, TELEGRAM_ADMIN_CHAT
+#   TG_CHANNEL_ID    — numeric channel ID or @afraiq_jobs
+#   FB_PAGE_TOKEN    — Facebook Page Access Token (long-lived)
+#   FB_PAGE_ID       — Facebook Page ID
+#   IG_ACCOUNT_ID    — Instagram Business Account ID
