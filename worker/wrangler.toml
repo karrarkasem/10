@@ -5,6 +5,9 @@ compatibility_date = "2024-01-01"
 [triggers]
 crons = ["*/5 * * * *"]
 
+[ai]
+binding = "AI"
+
 [vars]
 # المتغيرات العامة (غير السرية) — السرية تُضاف من لوحة Cloudflare أو GitHub Secrets
 # Secrets (set via Cloudflare dashboard or wrangler secret put):

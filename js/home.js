@@ -515,8 +515,12 @@ function openSocialPublish(jobId) {
       </div>
     </div>
     <div>
-      <div style="font-weight:700;margin-bottom:8px;color:var(--tx1);font-size:14px">معاينة المنشور:</div>
-      <div style="background:var(--bg2);border:1px solid var(--br);border-radius:10px;padding:12px;font-size:12px;white-space:pre-wrap;direction:rtl;font-family:monospace;max-height:200px;overflow:auto;line-height:1.6">${san(prev)}</div>
+      <div style="font-weight:700;margin-bottom:8px;color:var(--tx1);font-size:14px">معاينة النص:</div>
+      <div style="background:var(--bg2);border:1px solid var(--br);border-radius:10px;padding:12px;font-size:12px;white-space:pre-wrap;direction:rtl;font-family:monospace;max-height:160px;overflow:auto;line-height:1.6">${san(prev)}</div>
+      <div style="margin-top:10px;padding:9px 12px;background:linear-gradient(135deg,#eef2ff,#f0fdf4);border-radius:8px;font-size:12px;color:#4338ca;display:flex;align-items:center;gap:7px">
+        <i class="fas fa-magic" style="color:#7c3aed"></i>
+        <span>سيتم توليد صورة احترافية بالذكاء الاصطناعي تلقائياً لكل منشور فيسبوك وانستغرام حسب تصنيف الوظيفة</span>
+      </div>
     </div>`;
 
   // تغيير زر النشر حسب الوضع

@@ -584,10 +584,85 @@ async function tgAnswer(token, callbackQueryId, text) {
 }
 
 // ═══════════════════════════════════════════════
-// Social Media Publishing
+// Social Media Publishing + AI Image Generation
 // ═══════════════════════════════════════════════
 const TYP_AR = { full: 'دوام كامل', part: 'دوام جزئي', remote: 'عن بُعد', gig: 'مهمة حرة' };
 const EXP_AR = { none: 'بدون خبرة', no: 'بدون خبرة', '1-2': '1-2 سنة', '3-5': '3-5 سنوات', '5+': 'أكثر من 5 سنوات' };
+
+// Category-specific AI image prompts
+const CAT_IMG = {
+  tech:  'technology software digital workspace, dark background with glowing teal circuit patterns, futuristic modern',
+  biz:   'business finance corporate professional background, abstract city skyline teal navy blue glow, modern',
+  med:   'healthcare medical professional background, subtle caduceus symbols, clean white teal blue gradient',
+  edu:   'education knowledge academic background, books library golden teal gradient, achievement growth',
+  eng:   'engineering industrial precision background, geometric blueprint technical teal dark navy',
+  other: 'career opportunity professional abstract background, rising path success colorful teal navy modern',
+};
+
+function ab2b64(buffer) {
+  let bin = '';
+  const bytes = new Uint8Array(buffer);
+  for (let i = 0; i < bytes.byteLength; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin);
+}
+
+async function getImgbbKey() {
+  try {
+    // جلب مفتاح imgbb من config/settings في Firestore
+    const authRes = await fetch(
+      `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${FIREBASE_KEY}`,
+      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ returnSecureToken: true }) }
+    );
+    const { idToken } = await authRes.json();
+    if (!idToken) return null;
+
+    const cfgRes = await fetch(
+      `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/config/settings`,
+      { headers: { 'Authorization': `Bearer ${idToken}` } }
+    );
+    if (!cfgRes.ok) return null;
+    const doc = await cfgRes.json();
+    return doc.fields?.imgbb?.mapValue?.fields?.key?.stringValue || null;
+  } catch { return null; }
+}
+
+async function generateAndUploadImage(job, env) {
+  if (!env.AI) return null;
+  try {
+    const catHint = CAT_IMG[job.cat] || CAT_IMG.other;
+    const prompt  = [
+      `Professional social media job recruitment post background image for Arabic employment platform.`,
+      catHint,
+      `Primary teal color #0d9488, dark navy #0f172a accent. Minimalist modern flat design.`,
+      `Abstract shapes suggesting career growth and opportunity. No text, no faces, no people.`,
+      `High quality, clean, suitable for Instagram and Facebook post. Square format.`,
+    ].join(' ');
+
+    // توليد الصورة بـ Cloudflare Workers AI
+    const imgBuffer = await Promise.race([
+      env.AI.run('@cf/bytedance/stable-diffusion-xl-lightning', { prompt }),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('AI timeout')), 20000)),
+    ]);
+
+    const base64 = ab2b64(imgBuffer);
+
+    // جلب مفتاح imgbb من Firestore
+    const imgbbKey = await getImgbbKey();
+    if (!imgbbKey) return null;
+
+    // رفع الصورة على imgbb
+    const uploadRes = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbKey}`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body:    `image=${encodeURIComponent(base64)}&name=afra-job-${job.id}-${Date.now()}`,
+    });
+    const uploadData = await uploadRes.json();
+    return uploadData.data?.url || null;
+  } catch (e) {
+    console.error('generateAndUploadImage:', e.message);
+    return null;
+  }
+}
 
 function buildSocialText(job, style) {
   const salTxt = job.salary
@@ -668,8 +743,23 @@ async function postToTelegram(job, token, channelId) {
   } catch (e) { return { ok: false, error: e.message }; }
 }
 
-async function postToFacebook(job, token, pageId) {
+async function postToFacebook(job, token, pageId, imageUrl) {
   try {
+    if (imageUrl && imageUrl !== OG_IMAGE) {
+      // نشر صورة مع نص (أفضل engagement)
+      const res = await fetch(`https://graph.facebook.com/v19.0/${pageId}/photos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url:          imageUrl,
+          caption:      buildSocialText(job, 'fb'),
+          access_token: token,
+        }),
+      });
+      const d = await res.json();
+      return { ok: !d.error, postId: d.id, error: d.error?.message, imageUrl };
+    }
+    // fallback: نشر نصي مع رابط
     const res = await fetch(`https://graph.facebook.com/v19.0/${pageId}/feed`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -684,12 +774,13 @@ async function postToFacebook(job, token, pageId) {
   } catch (e) { return { ok: false, error: e.message }; }
 }
 
-async function postToInstagram(job, token, igId) {
+async function postToInstagram(job, token, igId, imageUrl) {
   try {
+    const imgSrc = imageUrl || OG_IMAGE;
     const createRes = await fetch(`https://graph.facebook.com/v19.0/${igId}/media`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ image_url: OG_IMAGE, caption: buildSocialText(job, 'ig'), access_token: token }),
+      body: JSON.stringify({ image_url: imgSrc, caption: buildSocialText(job, 'ig'), access_token: token }),
     });
     const created = await createRes.json();
     if (!created.id) return { ok: false, error: created.error?.message || 'Container creation failed' };
@@ -700,7 +791,7 @@ async function postToInstagram(job, token, igId) {
       body: JSON.stringify({ creation_id: created.id, access_token: token }),
     });
     const pub = await pubRes.json();
-    return { ok: !pub.error, postId: pub.id, error: pub.error?.message };
+    return { ok: !pub.error, postId: pub.id, error: pub.error?.message, imageUrl: imgSrc };
   } catch (e) { return { ok: false, error: e.message }; }
 }
 
@@ -729,13 +820,22 @@ async function handleSocialPublish(request, env) {
   }
 
   const tgChan = env.TG_CHANNEL_ID || '@afraiq_jobs';
+  const needsImage = platforms.includes('fb') || platforms.includes('ig');
+
+  // توليد صورة بالذكاء الاصطناعي لمنشورات فيسبوك وانستغرام
+  let imageUrl = OG_IMAGE;
+  if (needsImage) {
+    const generated = await generateAndUploadImage(job, env);
+    if (generated) imageUrl = generated;
+  }
+
   const results = {};
   if (platforms.includes('tg'))                                               results.tg = await postToTelegram(job, env.TELEGRAM_TOKEN, tgChan);
-  if (platforms.includes('fb') && env.FB_PAGE_TOKEN && env.FB_PAGE_ID)       results.fb = await postToFacebook(job, env.FB_PAGE_TOKEN, env.FB_PAGE_ID);
-  if (platforms.includes('ig') && env.FB_PAGE_TOKEN && env.IG_ACCOUNT_ID)    results.ig = await postToInstagram(job, env.FB_PAGE_TOKEN, env.IG_ACCOUNT_ID);
+  if (platforms.includes('fb') && env.FB_PAGE_TOKEN && env.FB_PAGE_ID)       results.fb = await postToFacebook(job, env.FB_PAGE_TOKEN, env.FB_PAGE_ID, imageUrl);
+  if (platforms.includes('ig') && env.FB_PAGE_TOKEN && env.IG_ACCOUNT_ID)    results.ig = await postToInstagram(job, env.FB_PAGE_TOKEN, env.IG_ACCOUNT_ID, imageUrl);
 
   await logSocialPost(jobId, platforms, results);
-  return json({ results });
+  return json({ results, imageUrl });
 }
 
 async function saveScheduledPost(jobId, platforms, scheduledAt) {
@@ -831,10 +931,12 @@ async function processScheduledPosts(env) {
       );
       if (jobRes.ok) {
         const job = fsJobFromDoc(jobId, await jobRes.json());
-        const tgChan = env.TG_CHANNEL_ID || '@afraiq_jobs';
+        const tgChan   = env.TG_CHANNEL_ID || '@afraiq_jobs';
+        const needsImg = platforms.includes('fb') || platforms.includes('ig');
+        const imgUrl   = needsImg ? (await generateAndUploadImage(job, env) || OG_IMAGE) : OG_IMAGE;
         if (platforms.includes('tg'))                                             await postToTelegram(job, env.TELEGRAM_TOKEN, tgChan);
-        if (platforms.includes('fb') && env.FB_PAGE_TOKEN && env.FB_PAGE_ID)     await postToFacebook(job, env.FB_PAGE_TOKEN, env.FB_PAGE_ID);
-        if (platforms.includes('ig') && env.FB_PAGE_TOKEN && env.IG_ACCOUNT_ID)  await postToInstagram(job, env.FB_PAGE_TOKEN, env.IG_ACCOUNT_ID);
+        if (platforms.includes('fb') && env.FB_PAGE_TOKEN && env.FB_PAGE_ID)     await postToFacebook(job, env.FB_PAGE_TOKEN, env.FB_PAGE_ID, imgUrl);
+        if (platforms.includes('ig') && env.FB_PAGE_TOKEN && env.IG_ACCOUNT_ID)  await postToInstagram(job, env.FB_PAGE_TOKEN, env.IG_ACCOUNT_ID, imgUrl);
         status = 'done';
       }
 
