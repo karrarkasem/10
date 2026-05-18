@@ -80,26 +80,35 @@ ${allowNotJob ? 'إذا لم يكن النص إعلان وظيفة أرجع {"no
    - إذا لم تُذكر أي منطقة اتركها فارغة ""
 
 2. **الراتب**: حوّل كل صيغ الراتب العراقية لأرقام بالدينار:
+   - أرقام مفردة بدون وحدة (100-999): في العراق تعني دائماً آلاف → "400" = 400000، "700" = 700000، "250" = 250000
+   - أرقام مفردة (1-99): قد تعني ألف مضروب → "50" في سياق راتب = 50000
    - "500 الف / 500,000 / نص مليون / 0.5 مليون" → 500000
-   - "مليون" → 1000000، "مليون ونص" → 1500000
-   - "مليونين" → 2000000
+   - "مليون" → 1000000، "مليون ونص" → 1500000، "مليونين" → 2000000
+   - "مليون و500" → 1500000، "مليون و200" → 1200000
    - إذا ذُكر بالدولار ($ أو دولار) → ضع الرقم و currency:"USD"
    - "بالاتفاق / يُحدد / حسب الخبرة / تنافسي" → null
+   - إذا كان العمل على القطعة أو نسبة مبيعات أو حافز → salary: null واستخرج تفاصيلها في حقل commission
 
-3. **المسمى الوظيفي**: استخرجه بدقة، لا تضيف كلمات مثل "مطلوب" أو "وظيفة"
+3. **الحافز أو النسبة (commission)**:
+   - "على القطعة / نسبة / حافز / عمولة / حسب البيع / بالقطع" → استخرج وصفاً موجزاً
+   - مثال: "راتب + 5% من المبيعات" → commission: "5% من المبيعات"
+   - مثال: "العمل على القطعة" → commission: "على القطعة"
+   - إذا لا يوجد → commission: null
+
+4. **المسمى الوظيفي**: استخرجه بدقة، لا تضيف كلمات مثل "مطلوب" أو "وظيفة"
    - "مطلوب مبرمج" → title: "مبرمج"
    - "نحن نوظّف محاسب" → title: "محاسب"
 
-4. **نوع الدوام**:
+5. **نوع الدوام**:
    - دوام كامل/صباحي/مسائي/يومي = "full"
    - جزئي/ساعات/بارتايم = "part"
    - عن بُعد/أونلاين/ريموت/من البيت = "remote"
    - مشروع/مهمة/فريلانس/مستقل = "gig"
    - "حضوري أو أونلاين" → "part"
 
-5. **المهارات**: استخرجها من المتطلبات كقائمة نظيفة
+6. **المهارات**: استخرجها من المتطلبات كقائمة نظيفة
 
-6. **التصنيف**:
+7. **التصنيف**:
    - تقنية/برمجة/IT/حاسوب/شبكات = "tech"
    - محاسبة/مالية/أعمال/تسويق/مبيعات/إدارة = "biz"
    - طب/صيدلة/تمريض/مستشفى/عيادة = "med"
@@ -123,6 +132,7 @@ ${text.substring(0, 4000)}
   "salary": رقم_بالدينار_أو_null,
   "salaryMax": رقم_الحد_الأعلى_أو_null,
   "currency": "IQD أو USD",
+  "commission": "وصف مختصر للحافز أو النسبة أو القطعة أو null",
   "exp": "none أو 1-2 أو 3-5 أو 5+",
   "gender": "any أو male أو female",
   "desc": "وصف الوظيفة والمهام كاملاً",
@@ -416,18 +426,21 @@ async function processTgJob(text, token, adminChat, env) {
 
     const docId = await saveTgJob(job);
 
-    const TYPE_AR = { full: 'دوام كامل', part: 'دوام جزئي', remote: 'عن بُعد', gig: 'مهمة' };
-    const salTxt  = job.salary ? `${Number(job.salary).toLocaleString()} ${job.currency || 'IQD'}` : 'قابل للتفاوض';
+    const TYPE_AR2 = { full: 'دوام كامل', part: 'دوام جزئي', remote: 'عن بُعد', gig: 'مهمة' };
+    const salTxt  = job.salary
+      ? `${Number(job.salary).toLocaleString()} ${job.currency || 'IQD'}`
+      : (job.commission ? job.commission : 'قابل للتفاوض');
     const preview = [
       `📋 *وظيفة جديدة من تلغرام*`,
       ``,
       `*${job.title}*`,
-      job.company  ? `🏢 ${job.company}`        : '',
-      job.province ? `📍 ${job.province}`       : '',
-      `💼 ${TYPE_AR[job.type] || job.type}`,
-      `💰 ${salTxt}`,
-      job.exp !== 'none' && job.exp ? `⏱ خبرة: ${job.exp}` : '',
-      job.phone    ? `📞 ${job.phone}`          : '',
+      job.company    ? `🏢 ${job.company}`            : '',
+      job.province   ? `📍 ${job.province}`           : '',
+      `💼 ${TYPE_AR2[job.type] || job.type}`,
+      job.salary     ? `💰 ${salTxt}`                 : '',
+      job.commission ? `📊 حافز: ${job.commission}`   : (!job.salary ? `💰 قابل للتفاوض` : ''),
+      job.exp !== 'none' && job.exp ? `⏱ خبرة: ${EXP_AR[job.exp] || job.exp}` : '',
+      job.phone      ? `📞 ${job.phone}`              : '',
       ``,
       job.desc ? job.desc.substring(0, 250) + (job.desc.length > 250 ? '...' : '') : '',
     ].filter(Boolean).join('\n');
@@ -577,7 +590,9 @@ const TYP_AR = { full: 'دوام كامل', part: 'دوام جزئي', remote: '
 const EXP_AR = { none: 'بدون خبرة', no: 'بدون خبرة', '1-2': '1-2 سنة', '3-5': '3-5 سنوات', '5+': 'أكثر من 5 سنوات' };
 
 function buildSocialText(job, style) {
-  const salTxt = job.salary ? `${Number(job.salary).toLocaleString()} ${job.currency || 'IQD'}` : 'قابل للتفاوض';
+  const salTxt = job.salary
+    ? `${Number(job.salary).toLocaleString()} ${job.currency || 'IQD'}`
+    : (job.commission ? job.commission : 'قابل للتفاوض');
   const expTxt = EXP_AR[job.exp] || (job.exp && job.exp !== 'none' ? job.exp : null);
   const jobUrl = `${SITE_URL}/#job/${job.id}`;
 
@@ -586,11 +601,12 @@ function buildSocialText(job, style) {
       `🔔 *وظيفة جديدة — عفراء للتوظيف*`,
       ``,
       `*${job.title}*`,
-      job.company  ? `🏢 ${job.company}`   : '',
-      job.province ? `📍 ${job.province}`  : '',
+      job.company    ? `🏢 ${job.company}`           : '',
+      job.province   ? `📍 ${job.province}`          : '',
       `💼 ${TYP_AR[job.type] || job.type || 'دوام كامل'}`,
-      `💰 ${salTxt}`,
-      expTxt       ? `⏱ خبرة: ${expTxt}` : '',
+      job.salary     ? `💰 ${salTxt}`                : '',
+      job.commission ? `📊 حافز: ${job.commission}`  : (!job.salary ? `💰 قابل للتفاوض` : ''),
+      expTxt         ? `⏱ خبرة: ${expTxt}`          : '',
       ``,
       job.desc ? job.desc.substring(0, 280) + (job.desc.length > 280 ? '...' : '') : '',
       ``,
@@ -604,11 +620,12 @@ function buildSocialText(job, style) {
     `🔔 وظيفة جديدة — عفراء للتوظيف`,
     ``,
     `📌 ${job.title}`,
-    job.company  ? `🏢 ${job.company}`     : '',
-    job.province ? `📍 ${job.province}`    : '',
+    job.company    ? `🏢 ${job.company}`            : '',
+    job.province   ? `📍 ${job.province}`           : '',
     `💼 ${TYP_AR[job.type] || job.type || 'دوام كامل'}`,
-    `💰 الراتب: ${salTxt}`,
-    expTxt       ? `⏱ الخبرة: ${expTxt}` : '',
+    job.salary     ? `💰 الراتب: ${salTxt}`         : '',
+    job.commission ? `📊 الحافز: ${job.commission}` : (!job.salary ? `💰 قابل للتفاوض` : ''),
+    expTxt         ? `⏱ الخبرة: ${expTxt}`         : '',
     ``,
     job.desc ? job.desc.substring(0, 400) + (job.desc.length > 400 ? '...' : '') : '',
     ``,

@@ -45,6 +45,7 @@ function jCard(j) {
           <span class="b ${tc}"><i class="fas fa-clock"></i>${tl}</span>
           ${j.cat ? `<span class="b b-bl">${CATS[j.cat] || j.cat}</span>` : ''}
           ${j.exp && j.exp !== 'none' ? `<span class="b b-gy"><i class="fas fa-briefcase"></i>${expLabel(j.exp)}</span>` : ''}
+          ${j.commission ? `<span class="b" style="background:#fef3c7;color:#92400e" title="${san(j.commission)}"><i class="fas fa-percentage"></i>${j.commission.length > 20 ? j.commission.substring(0,20)+'...' : j.commission}</span>` : ''}
           ${j.socialInsurance ? `<span class="b b-gr" title="يشمل التأمين الاجتماعي وفق قانون العمل"><i class="fas fa-shield-alt"></i>تأمين اجتماعي</span>` : ''}
           ${j.skills?.slice(0,3).map(s => `<span class="b skill-chip" onclick="event.stopPropagation();filterBySkill('${s}')" title="تصفح وظائف ${s}">${s}</span>`).join('') || ''}
         </div>
@@ -288,7 +289,8 @@ function openJob(id) {
     <!-- شبكة المعلومات الرئيسية -->
     <div class="jd-meta-grid">
       ${[
-        { ico:'fa-money-bill-wave', c:'var(--success)', l:'الراتب',     v:`${sal} ${j.currency||'IQD'}` },
+        { ico:'fa-money-bill-wave', c:'var(--success)', l:'الراتب',     v: j.salary ? `${sal} ${j.currency||'IQD'}` : (j.commission ? 'حسب الحافز' : 'قابل للتفاوض') },
+        ...(j.commission ? [{ ico:'fa-percentage', c:'#b45309', l:'الحافز / النسبة', v: j.commission }] : []),
         { ico:'fa-clock',           c:'var(--info)',    l:'ساعات العمل', v:j.hours || 'غير محدد' },
         { ico:'fa-briefcase',       c:'var(--acc)',     l:'الخبرة',      v:expLabel(j.exp) },
         { ico:'fa-map-marker-alt',  c:'var(--danger)',  l:'الموقع',      v:j.province || '—' },
