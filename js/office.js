@@ -1696,9 +1696,8 @@ async function importJobFromText() {
     if (status) status.textContent = '✓ تم التحليل — راجع البيانات وعدّل ما تحتاج';
     notify('تم التحليل ✓', 'راجع البيانات ثم اضغط نشر', 'success');
   } catch (e) {
-    const noKey = !CFG.gemini?.key;
-    notify('فشل التحليل', noKey ? 'أدخل مفتاح Gemini في الأدمن > الإعدادات أولاً' : 'حاول مجدداً أو أدخل البيانات يدوياً', 'error');
-    if (status) status.textContent = noKey ? 'مفتاح Gemini غير موجود في الإعدادات' : 'فشل التحليل — حاول مجدداً';
+    notify('فشل التحليل', e.message || 'حاول مجدداً أو أدخل البيانات يدوياً', 'error');
+    if (status) status.textContent = 'فشل التحليل — حاول مجدداً';
   } finally {
     btn.disabled = false;
     btn.innerHTML = '<i class="fas fa-magic"></i> تحليل تلقائي';
@@ -1706,28 +1705,15 @@ async function importJobFromText() {
 }
 
 async function _parseJobText(text) {
-  const key = CFG.gemini?.key;
-  const prompt = _buildJobPrompt(text);
-
-  if (key) {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
-      }
-    );
-    if (!res.ok) throw new Error('api error');
-    const json = await res.json();
-    const raw  = json?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    return _extractJSON(raw);
-  }
-
-  // Fallback: Cloud Function
-  const raw = await callGemini(prompt);
-  if (!raw) throw new Error('no response');
-  return _extractJSON(raw);
+  // استخدم الـ Worker مباشرة — المفتاح محفوظ هناك بأمان
+  const res = await fetch('https://api.afra-iq.com/parse-job', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ text }),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.job) throw new Error(data.error || 'فشل التحليل');
+  return data.job;
 }
 
 function _buildJobPrompt(text) {
