@@ -199,11 +199,20 @@ ${text}
       const reason = data?.promptFeedback?.blockReason || '';
       return json({ error: `Gemini empty response${reason ? ': ' + reason : ''}`, raw: JSON.stringify(data).substring(0,200) }, 502);
     }
-    const cleaned = rawText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    // استخرج أول كتلة JSON صالحة من الرد
+    const stripped = rawText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    const firstBrace = stripped.indexOf('{');
+    const lastBrace  = stripped.lastIndexOf('}');
+    const jsonStr    = (firstBrace !== -1 && lastBrace > firstBrace)
+      ? stripped.slice(firstBrace, lastBrace + 1)
+      : stripped;
 
     let parsed;
-    try { parsed = JSON.parse(cleaned); }
-    catch { return json({ error: 'AI parse failed', raw: rawText }, 422); }
+    try { parsed = JSON.parse(jsonStr); }
+    catch { return json({ error: 'AI parse failed', raw: rawText.substring(0, 300) }, 422); }
+
+    if (parsed.notJob || !parsed.title)
+      return json({ error: 'not a job ad', notJob: true }, 422);
 
     return json({ job: parsed });
   } catch (e) {
@@ -338,13 +347,18 @@ ${text.substring(0, 3000)}
       return;
     }
 
-    const cleaned = rawText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    const stripped2   = rawText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    const firstBrace2 = stripped2.indexOf('{');
+    const lastBrace2  = stripped2.lastIndexOf('}');
+    const jsonStr2    = (firstBrace2 !== -1 && lastBrace2 > firstBrace2)
+      ? stripped2.slice(firstBrace2, lastBrace2 + 1)
+      : stripped2;
 
     let job;
     try {
-      job = JSON.parse(cleaned);
+      job = JSON.parse(jsonStr2);
     } catch (pe) {
-      await tgSend(token, adminChat, `❌ فشل تحليل JSON:\n${cleaned.substring(0, 200)}`);
+      await tgSend(token, adminChat, `❌ فشل تحليل JSON:\n${jsonStr2.substring(0, 200)}`);
       return;
     }
 
