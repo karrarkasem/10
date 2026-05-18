@@ -234,7 +234,7 @@ async function handleParseJob(request, env) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { maxOutputTokens: 1500, temperature: 0.1 },
+          generationConfig: { maxOutputTokens: 3000, temperature: 0.1 },
         }),
       }
     );
@@ -355,7 +355,7 @@ async function processTgJob(text, token, adminChat, env) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { maxOutputTokens: 1500, temperature: 0.1 },
+          generationConfig: { maxOutputTokens: 3000, temperature: 0.1 },
         }),
       }
     );
