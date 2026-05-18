@@ -2188,7 +2188,7 @@ function _fillImportForm(j) {
   set('imp_company',   j.company   || '');
   set('imp_province',  j.province  || '');
   set('imp_type',      j.type      || 'full');
-  set('imp_cat',       j.cat       || 'other');
+  set('imp_cat',       j.cat === 'biz' ? 'biz' : (j.cat || 'other'));
   set('imp_salary',    j.salary    || '');
   set('imp_salaryMax', j.salaryMax || '');
   set('imp_currency',  j.currency  || 'IQD');
@@ -2196,8 +2196,20 @@ function _fillImportForm(j) {
   set('imp_gender',    j.gender    || 'any');
   set('imp_phone',     j.phone     || '');
   set('imp_desc',      j.desc      || '');
-  set('imp_reqs',      Array.isArray(j.reqs) ? j.reqs.join('، ') : (j.reqs || ''));
-  set('imp_bens',      Array.isArray(j.bens) ? j.bens.join('، ') : (j.bens || ''));
+
+  // دمج reqs + skills في حقل المتطلبات
+  const reqs   = Array.isArray(j.reqs)   ? j.reqs   : [];
+  const skills = Array.isArray(j.skills) ? j.skills : [];
+  const allReqs = [...new Set([...reqs, ...skills])];
+  set('imp_reqs', allReqs.join('، '));
+
+  set('imp_bens', Array.isArray(j.bens) ? j.bens.join('، ') : (j.bens || ''));
+
+  // عرض العنوان التفصيلي في الوصف إذا وُجد ولم يكن فيه بالفعل
+  if (j.address && j.address.trim() && j.desc && !j.desc.includes(j.address)) {
+    const descEl = document.getElementById('imp_desc');
+    if (descEl) descEl.value = (descEl.value || '') + '\n\nالعنوان: ' + j.address;
+  }
 }
 
 async function publishImportedJob() {
@@ -2221,8 +2233,9 @@ async function publishImportedJob() {
     gender:    document.getElementById('imp_gender')?.value    || 'any',
     phone:     document.getElementById('imp_phone')?.value?.trim() || null,
     desc:      document.getElementById('imp_desc')?.value?.trim()  || '',
-    reqs:      reqsRaw.split(/[,،]/).map(s => s.trim()).filter(Boolean),
-    bens:      bensRaw.split(/[,،]/).map(s => s.trim()).filter(Boolean),
+    reqs:      reqsRaw.split(/[,،\n]/).map(s => s.trim()).filter(Boolean),
+    bens:      bensRaw.split(/[,،\n]/).map(s => s.trim()).filter(Boolean),
+    skills:    reqsRaw.split(/[,،\n]/).map(s => s.trim()).filter(Boolean).slice(0, 8),
     logo:      company.charAt(0),
     status:    'active',
     applicants: 0,
