@@ -6,8 +6,57 @@
 // ║  4. Telegram Bot Webhook (POST /telegram)           ║
 // ╚══════════════════════════════════════════════════════╝
 
-const GEMINI_MODEL   = 'gemini-2.5-flash';
-const MAX_PROMPT_LEN = 8000;
+const GEMINI_MODEL        = 'gemini-2.5-flash';
+const GEMINI_MODEL_BACKUP = 'gemini-1.5-flash';
+const MAX_PROMPT_LEN      = 8000;
+
+// ── استدعاء Gemini مع retry تلقائي عند 503 ──
+async function callGeminiWithRetry(prompt, geminiKey, maxTokens = 3000, retries = 3) {
+  const models = [GEMINI_MODEL, GEMINI_MODEL_BACKUP];
+  let lastErr = null;
+
+  for (const model of models) {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        const res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`,
+          {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: { maxOutputTokens: maxTokens, temperature: 0.1 },
+            }),
+          }
+        );
+
+        // 503 = مشغول → انتظر وأعد المحاولة
+        if (res.status === 503) {
+          lastErr = `503 UNAVAILABLE (${model} attempt ${attempt})`;
+          if (attempt < retries) await new Promise(r => setTimeout(r, attempt * 1500));
+          continue;
+        }
+
+        // أي خطأ آخر من API
+        if (!res.ok) {
+          const errBody = await res.text().catch(() => '');
+          return { ok: false, status: res.status, error: errBody, model };
+        }
+
+        const data    = await res.json();
+        const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        return { ok: true, rawText, model };
+
+      } catch (e) {
+        lastErr = e.message;
+        if (attempt < retries) await new Promise(r => setTimeout(r, attempt * 1000));
+      }
+    }
+    // فشل الموديل الأول → جرّب الاحتياطي
+  }
+
+  return { ok: false, status: 503, error: lastErr || 'All retries exhausted' };
+}
 
 // ── Prompt مشترك لتحليل إعلانات الوظائف ──
 function buildJobParsePrompt(text, allowNotJob = false) {
@@ -226,49 +275,26 @@ async function handleParseJob(request, env) {
 
   const prompt = buildJobParsePrompt(text, false);
 
-  try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${env.GEMINI_KEY}`,
-      {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { maxOutputTokens: 3000, temperature: 0.1 },
-        }),
-      }
-    );
+  const result = await callGeminiWithRetry(prompt, env.GEMINI_KEY);
+  if (!result.ok)
+    return json({ error: `Gemini ${result.status}: ${result.error?.substring(0, 300)}` }, result.status || 502);
 
-    if (!res.ok) {
-      const errBody = await res.text().catch(() => '');
-      return json({ error: `Gemini ${res.status}: ${errBody.substring(0, 300)}` }, res.status);
-    }
+  const { rawText } = result;
+  if (!rawText)
+    return json({ error: 'Gemini empty response' }, 502);
 
-    const data    = await res.json();
-    const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    if (!rawText) {
-      const reason = data?.promptFeedback?.blockReason || '';
-      return json({ error: `Gemini empty response${reason ? ': ' + reason : ''}`, raw: JSON.stringify(data).substring(0,200) }, 502);
-    }
-    // استخرج أول كتلة JSON صالحة من الرد
-    const stripped = rawText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-    const firstBrace = stripped.indexOf('{');
-    const lastBrace  = stripped.lastIndexOf('}');
-    const jsonStr    = (firstBrace !== -1 && lastBrace > firstBrace)
-      ? stripped.slice(firstBrace, lastBrace + 1)
-      : stripped;
+  const stripped  = rawText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+  const f = stripped.indexOf('{'), l = stripped.lastIndexOf('}');
+  const jsonStr = (f !== -1 && l > f) ? stripped.slice(f, l + 1) : stripped;
 
-    let parsed;
-    try { parsed = JSON.parse(jsonStr); }
-    catch { return json({ error: 'AI parse failed', raw: rawText.substring(0, 300) }, 422); }
+  let parsed;
+  try { parsed = JSON.parse(jsonStr); }
+  catch { return json({ error: 'AI parse failed', raw: rawText.substring(0, 300) }, 422); }
 
-    if (parsed.notJob || !parsed.title)
-      return json({ error: 'not a job ad', notJob: true }, 422);
+  if (parsed.notJob || !parsed.title)
+    return json({ error: 'not a job ad', notJob: true }, 422);
 
-    return json({ job: parsed });
-  } catch (e) {
-    return json({ error: 'Internal error' }, 500);
-  }
+  return json({ job: parsed });
 }
 
 // ═══════════════════════════════════════════════
@@ -348,39 +374,21 @@ async function processTgJob(text, token, adminChat, env) {
   const prompt = buildJobParsePrompt(text, true);
 
   try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${env.GEMINI_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { maxOutputTokens: 3000, temperature: 0.1 },
-        }),
-      }
-    );
-
-    if (!res.ok) {
-      const errBody = await res.text().catch(() => '');
-      await tgSend(token, adminChat, `❌ Gemini خطأ ${res.status}\n${errBody.substring(0, 200)}`);
+    const result = await callGeminiWithRetry(prompt, env.GEMINI_KEY);
+    if (!result.ok) {
+      await tgSend(token, adminChat, `❌ Gemini خطأ ${result.status}\n${String(result.error).substring(0, 200)}`);
       return;
     }
 
-    const data    = await res.json();
-    const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-
+    const rawText = result.rawText;
     if (!rawText) {
-      const reason = data?.promptFeedback?.blockReason || JSON.stringify(data).substring(0, 150);
-      await tgSend(token, adminChat, `❌ Gemini رجع فارغ\n${reason}`);
+      await tgSend(token, adminChat, `❌ Gemini رجع فارغ`);
       return;
     }
 
-    const stripped2   = rawText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-    const firstBrace2 = stripped2.indexOf('{');
-    const lastBrace2  = stripped2.lastIndexOf('}');
-    const jsonStr2    = (firstBrace2 !== -1 && lastBrace2 > firstBrace2)
-      ? stripped2.slice(firstBrace2, lastBrace2 + 1)
-      : stripped2;
+    const stripped2 = rawText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    const f2 = stripped2.indexOf('{'), l2 = stripped2.lastIndexOf('}');
+    const jsonStr2 = (f2 !== -1 && l2 > f2) ? stripped2.slice(f2, l2 + 1) : stripped2;
 
     let job;
     try {
