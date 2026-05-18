@@ -15,6 +15,9 @@ function jobTypeLabel(type) {
 function jobTypeClass(type) {
   return { full:'b-tl', part:'b-am', remote:'b-bl', gig:'b-pu' }[type] || 'b-pu';
 }
+function expLabel(exp) {
+  return { none:'بدون خبرة', 'no':'بدون خبرة', '1-2':'1-2 سنة', '3-5':'3-5 سنوات', '5+':'أكثر من 5 سنوات' }[exp] || (exp || 'غير محدد');
+}
 
 // ── بطاقة وظيفة محسّنة ──
 function jCard(j) {
@@ -41,7 +44,7 @@ function jCard(j) {
         <div class="jbs" style="margin-top:6px">
           <span class="b ${tc}"><i class="fas fa-clock"></i>${tl}</span>
           ${j.cat ? `<span class="b b-bl">${CATS[j.cat] || j.cat}</span>` : ''}
-          ${j.exp ? `<span class="b b-gy"><i class="fas fa-briefcase"></i>${j.exp}</span>` : ''}
+          ${j.exp && j.exp !== 'none' ? `<span class="b b-gy"><i class="fas fa-briefcase"></i>${expLabel(j.exp)}</span>` : ''}
           ${j.socialInsurance ? `<span class="b b-gr" title="يشمل التأمين الاجتماعي وفق قانون العمل"><i class="fas fa-shield-alt"></i>تأمين اجتماعي</span>` : ''}
           ${j.skills?.slice(0,3).map(s => `<span class="b skill-chip" onclick="event.stopPropagation();filterBySkill('${s}')" title="تصفح وظائف ${s}">${s}</span>`).join('') || ''}
         </div>
@@ -287,7 +290,7 @@ function openJob(id) {
       ${[
         { ico:'fa-money-bill-wave', c:'var(--success)', l:'الراتب',     v:`${sal} ${j.currency||'IQD'}` },
         { ico:'fa-clock',           c:'var(--info)',    l:'ساعات العمل', v:j.hours || 'غير محدد' },
-        { ico:'fa-briefcase',       c:'var(--acc)',     l:'الخبرة',      v:j.exp || 'غير محدد' },
+        { ico:'fa-briefcase',       c:'var(--acc)',     l:'الخبرة',      v:expLabel(j.exp) },
         { ico:'fa-map-marker-alt',  c:'var(--danger)',  l:'الموقع',      v:j.province || '—' },
         { ico:'fa-calendar-alt',    c:'var(--purple)',  l:'آخر موعد',    v:j.deadline || '—' },
         { ico:'fa-users',           c:'var(--p)',       l:'المتقدمون',   v:`${j.applicants||0} شخص` },
