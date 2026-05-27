@@ -123,7 +123,7 @@ function pgJobs(el) {
         <button class="tb2"     onclick="JF.type='remote';setTab(this);rJobs()"><i class="fas fa-laptop-house"></i>عن بُعد</button>
         <button class="tb2"     onclick="JF.type='gig';setTab(this);rJobs()"><i class="fas fa-tasks"></i>مهام</button>
       </div>
-      <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center">
+      <div class="cat-scroll-row">
         ${[
           { v:'',      l:'الكل',   ic:'fa-th-list' },
           { v:'tech',  l:'تقنية',  ic:'fa-laptop-code' },
@@ -133,15 +133,19 @@ function pgJobs(el) {
           { v:'eng',   l:'هندسة',  ic:'fa-cog' },
           { v:'other', l:'أخرى',   ic:'fa-ellipsis-h' },
         ].map(c => `<button class="fc2 ${c.v === JF.cat ? 'on' : ''}" onclick="JF.cat='${c.v}';setCat(this);rJobs()"><i class="fas ${c.ic}"></i>${c.l}</button>`).join('')}
-        ${BOOKMARKS.length ? `<button class="fc2" onclick="showBookmarks(this)" style="margin-right:auto"><i class="fas fa-bookmark" style="color:var(--acc)"></i>محفوظاتي (${BOOKMARKS.length})</button>` : ''}
+        ${BOOKMARKS.length ? `<button class="fc2" onclick="showBookmarks(this)"><i class="fas fa-bookmark" style="color:var(--acc)"></i>محفوظاتي (${BOOKMARKS.length})</button>` : ''}
       </div>
       <!-- فلتر المهارات -->
-      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:9px;padding-top:9px;border-top:1px solid var(--br)">
-        <span style="font-size:10px;font-weight:700;color:var(--tx3);flex-shrink:0"><i class="fas fa-tag"></i> مهارة:</span>
-        ${['Excel','Python','JavaScript','React','PHP','SQL','AutoCAD','Photoshop','محاسبة','تسويق رقمي','مبيعات','خدمة عملاء','إدارة مشاريع','لغة إنجليزية'].map(sk =>
-          `<button class="skill-filter-chip ${JF.skill===sk?'on':''}" onclick="filterBySkill('${sk}')">${sk}</button>`
-        ).join('')}
-        ${JF.skill ? `<button class="skill-filter-chip" style="background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.3);color:var(--danger)" onclick="filterBySkill('')"><i class="fas fa-times"></i> إلغاء</button>` : ''}
+      <div style="margin-top:9px;padding-top:9px;border-top:1px solid var(--br)">
+        <div class="skill-scroll-row">
+          <span class="skill-row-lbl"><i class="fas fa-tag"></i> مهارة:</span>
+          <div class="skill-chips-scroll">
+            ${['Excel','Python','JavaScript','React','PHP','SQL','AutoCAD','Photoshop','محاسبة','تسويق رقمي','مبيعات','خدمة عملاء','إدارة مشاريع','لغة إنجليزية'].map(sk =>
+              `<button class="skill-filter-chip ${JF.skill===sk?'on':''}" onclick="filterBySkill('${sk}')">${sk}</button>`
+            ).join('')}
+            ${JF.skill ? `<button class="skill-filter-chip" style="background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.3);color:var(--danger)" onclick="filterBySkill('')"><i class="fas fa-times"></i> إلغاء</button>` : ''}
+          </div>
+        </div>
       </div>
     </div>
 
