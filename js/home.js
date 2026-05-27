@@ -211,6 +211,7 @@ async function pgAdminHome(el) {
   el.innerHTML = `<div class="es"><div class="es-ico"><i class="fas fa-circle-notch spin" style="color:var(--p)"></i></div><div class="es-desc">جارٍ تحميل البيانات...</div></div>`;
 
   loadSocialAutoSetting(); // تحميل إعداد النشر التلقائي في الخلفية
+  loadDiscoveriesCount(); // تحميل عدد الوظائف المكتشفة
 
   let totalUsers = 0, totalOffices = 0, totalApps = 0, newThisWeek = 0;
   let recentJobs = JOBS.slice(0, 4);
@@ -303,7 +304,8 @@ async function pgAdminHome(el) {
         { ico:'fa-credit-card', l:'الاشتراكات',            c:'#f59e0b',       a:"goTo('payments')" },
         { ico:'fa-bullhorn',    l:'حملات التواصل',        c:'var(--p)',       a:"goTo('campaigns')" },
         { ico:'fa-cog',         l:'الإعدادات',             c:'var(--tx3)',     a:"goTo('settings')" },
-      ].map(a => '<div class="cat-item" onclick="' + a.a + '"><div class="cat-ico" style="color:' + a.c + ';background:' + a.c + '18"><i class="fas ' + a.ico + '"></i></div><div class="cat-label">' + a.l + '</div></div>').join('')}
+        { ico:'fa-search-location', l:'وظائف مكتشفة',    c:'#8b5cf6',       a:"goTo('discoveries')", id:'qaDiscoveries' },
+      ].map(a => `<div class="cat-item" onclick="${a.a}" ${a.id ? `id="${a.id}"` : ''}><div class="cat-ico" style="color:${a.c};background:${a.c}18"><i class="fas ${a.ico}"></i></div><div class="cat-label">${a.l}</div></div>`).join('')}
     </div>
     <div class="sh fade-up del3"><div class="st"><div class="st-ico"><i class="fas fa-briefcase"></i></div>أحدث الوظائف</div>
       <span class="b b-tl" onclick="goTo('alljobs')" style="cursor:pointer">${JOBS.length} وظيفة</span>
@@ -491,6 +493,10 @@ function openSocialPublish(jobId) {
           <input type="checkbox" id="spIg" ${autoPlats.includes('ig') ? 'checked' : ''} style="accent-color:#e1306c;width:15px;height:15px">
           <i class="fab fa-instagram" style="color:#e1306c;font-size:16px"></i> انستغرام
         </label>
+        <label style="display:flex;align-items:center;gap:7px;padding:8px 14px;border:2px solid var(--br);border-radius:10px;cursor:pointer;transition:.15s;font-size:14px">
+          <input type="checkbox" id="spWa" ${autoPlats.includes('wa') ? 'checked' : ''} style="accent-color:#25d366;width:15px;height:15px">
+          <i class="fab fa-whatsapp" style="color:#25d366;font-size:16px"></i> واتساب
+        </label>
       </div>
     </div>
     <div style="margin-bottom:18px">
@@ -519,7 +525,7 @@ function openSocialPublish(jobId) {
       <div style="background:var(--bg2);border:1px solid var(--br);border-radius:10px;padding:12px;font-size:12px;white-space:pre-wrap;direction:rtl;font-family:monospace;max-height:160px;overflow:auto;line-height:1.6">${san(prev)}</div>
       <div style="margin-top:10px;padding:9px 12px;background:linear-gradient(135deg,#eef2ff,#f0fdf4);border-radius:8px;font-size:12px;color:#4338ca;display:flex;align-items:center;gap:7px">
         <i class="fas fa-magic" style="color:#7c3aed"></i>
-        <span>سيتم توليد صورة احترافية بالذكاء الاصطناعي تلقائياً لكل منشور فيسبوك وانستغرام حسب تصنيف الوظيفة</span>
+        <span>سيتم توليد صورة احترافية بالذكاء الاصطناعي تلقائياً لكل منشور فيسبوك وانستغرام وواتساب حسب تصنيف الوظيفة</span>
       </div>
     </div>`;
 
@@ -541,7 +547,7 @@ function spToggleTiming() {
 
 async function submitSocialPublish() {
   if (!_spJob) return;
-  const platforms = ['tg','fb','ig'].filter(id => document.getElementById(`sp${id.charAt(0).toUpperCase()+id.slice(1)}`)?.checked);
+  const platforms = ['tg','fb','ig','wa'].filter(id => document.getElementById(`sp${id.charAt(0).toUpperCase()+id.slice(1)}`)?.checked);
   if (!platforms.length) return notify('تنبيه', 'اختر منصة واحدة على الأقل', 'warning');
 
   const timing  = document.querySelector('input[name="spTiming"]:checked')?.value || 'now';
@@ -600,6 +606,177 @@ async function autoPostJob(job) {
       body:    JSON.stringify({ jobId: job.id, platforms: window.SOCIAL_AUTO.platforms }),
     });
   } catch (_) {}
+}
+
+// ════════════════════════════════════════════
+// Job Discovery System — Admin UI
+// ════════════════════════════════════════════
+
+async function loadDiscoveriesCount() {
+  try {
+    const res  = await fetch('https://api.afra-iq.com/discoveries');
+    const data = await res.json();
+    const cnt  = data.total || 0;
+    if (cnt > 0) {
+      const el = document.getElementById('qaDiscoveries');
+      if (el) {
+        const lbl = el.querySelector('.cat-label');
+        if (lbl) lbl.innerHTML = `وظائف مكتشفة <span style="background:#8b5cf6;color:#fff;border-radius:999px;padding:1px 7px;font-size:11px;margin-right:4px">${cnt}</span>`;
+      }
+    }
+  } catch (_) {}
+}
+
+async function pgAdminDiscoveries(el) {
+  el.innerHTML = `<div class="es"><div class="es-ico"><i class="fas fa-circle-notch spin" style="color:var(--p)"></i></div><div class="es-desc">جارٍ تحميل الوظائف المكتشفة...</div></div>`;
+
+  let jobs = [];
+  try {
+    const res  = await fetch('https://api.afra-iq.com/discoveries');
+    const data = await res.json();
+    jobs = data.jobs || [];
+  } catch (e) {
+    el.innerHTML = `<div class="es"><div class="es-desc" style="color:var(--error)">فشل تحميل البيانات</div></div>`;
+    return;
+  }
+
+  const SRC_LABEL  = { google: 'جوجل', rss: 'RSS', telegram: 'تيليغرام' };
+  const SRC_COLOR  = { google: '#4285f4', rss: '#f59e0b', telegram: '#229ed9' };
+  const TYPE_AR    = { full: 'دوام كامل', part: 'دوام جزئي', remote: 'عن بُعد', gig: 'مهمة حرة' };
+  const scoreColor = s => s >= 8 ? '#22c55e' : s >= 6 ? '#f59e0b' : '#ef4444';
+  const scoreLabel = s => s >= 8 ? 'ممتاز' : s >= 6 ? 'جيد' : 'ضعيف';
+
+  el.innerHTML = `
+    <div class="hero-banner fade-up" style="background:linear-gradient(135deg,#4c1d95,#7c3aed)">
+      <div class="hero-lamp">🔍</div>
+      <div class="hero-content">
+        <p class="hero-label">نظام الاكتشاف التلقائي</p>
+        <h2 class="hero-name">وظائف مكتشفة <span style="font-size:18px;opacity:.8">(${jobs.length} بانتظار المراجعة)</span></h2>
+        <p class="hero-sub">يبحث النظام تلقائياً كل 6 ساعات عبر جوجل وفيسبوك ولينكدإن وموقع Bayt.com</p>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap" class="fade-up del1">
+      <button class="btn bp" onclick="triggerDiscovery(this)"><i class="fas fa-sync-alt"></i> ابحث الآن</button>
+      <div style="flex:1;min-width:200px;padding:12px 16px;background:linear-gradient(135deg,#f0fdf4,#dcfce7);border-radius:12px;font-size:13px;color:#166534;display:flex;align-items:center;gap:8px">
+        <i class="fas fa-info-circle"></i>
+        الوظائف بدرجة 7+ تُنشر تلقائياً بعد موافقتك — درجة 4-6 تحتاج مراجعة
+      </div>
+    </div>
+    ${jobs.length === 0
+      ? `<div class="es fade-up">
+           <div class="es-ico"><i class="fas fa-search" style="color:#8b5cf6"></i></div>
+           <div class="es-desc">لا توجد وظائف مكتشفة حالياً</div>
+           <div class="es-hint">اضغط "ابحث الآن" لبدء الاكتشاف الفوري، أو سيبدأ تلقائياً الساعة 00:00 / 06:00 / 12:00 / 18:00 UTC</div>
+         </div>`
+      : `<div style="display:flex;flex-direction:column;gap:14px" class="fade-up del2">${jobs.map(j => _discoveryCard(j, TYPE_AR, SRC_LABEL, SRC_COLOR, scoreColor, scoreLabel)).join('')}</div>`
+    }`;
+}
+
+function _discoveryCard(j, TYPE_AR, SRC_LABEL, SRC_COLOR, scoreColor, scoreLabel) {
+  const sal = j.salary ? `${Number(j.salary).toLocaleString()} ${j.currency || 'IQD'}` : (j.commission ? j.commission : 'غير محدد');
+  return `
+    <div id="disc_${j.id}" style="background:var(--bg2);border:1px solid var(--br);border-radius:14px;padding:16px 18px;display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:180px">
+          <div style="font-weight:700;font-size:16px;color:var(--tx1);margin-bottom:4px">${san(j.title)}</div>
+          ${j.company ? `<div style="font-size:13px;color:var(--tx2)"><i class="fas fa-building" style="opacity:.6"></i> ${san(j.company)}</div>` : ''}
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">
+            ${j.province ? `<span style="background:#e0f2fe;color:#0369a1;padding:2px 10px;border-radius:999px;font-size:12px"><i class="fas fa-map-marker-alt"></i> ${san(j.province)}</span>` : ''}
+            ${j.type     ? `<span style="background:#f3f4f6;color:var(--tx2);padding:2px 10px;border-radius:999px;font-size:12px">${TYPE_AR[j.type] || j.type}</span>` : ''}
+            <span style="background:${SRC_COLOR[j.source] || '#64748b'}22;color:${SRC_COLOR[j.source] || '#64748b'};padding:2px 10px;border-radius:999px;font-size:12px">
+              <i class="fas fa-${j.source === 'google' ? 'globe' : j.source === 'rss' ? 'rss' : 'telegram-plane'}"></i> ${SRC_LABEL[j.source] || j.source}
+            </span>
+          </div>
+        </div>
+        <div style="text-align:center;min-width:60px">
+          <div style="font-size:26px;font-weight:800;color:${scoreColor(j.score)}">${j.score}</div>
+          <div style="font-size:11px;color:${scoreColor(j.score)}">${scoreLabel(j.score)}</div>
+          <div style="font-size:10px;color:var(--tx3)">الجودة</div>
+        </div>
+      </div>
+      <div style="font-size:13px;color:var(--tx2);line-height:1.6;max-height:60px;overflow:hidden">${san(j.desc || '').substring(0, 200)}</div>
+      <div style="font-size:12px;color:var(--tx3)">
+        ${j.salary ? `<i class="fas fa-money-bill-wave"></i> ${sal}` : ''}
+        ${j.phone  ? `&nbsp;&nbsp;<i class="fas fa-phone"></i> ${san(j.phone)}` : ''}
+        ${j.sourceUrl ? `&nbsp;&nbsp;<a href="${san(j.sourceUrl)}" target="_blank" style="color:var(--p);text-decoration:none"><i class="fas fa-external-link-alt"></i> المصدر</a>` : ''}
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn bp bsm" onclick="approveDiscovery('${j.id}',this)"><i class="fas fa-check"></i> نشر على الموقع</button>
+        <button class="btn bsm" style="background:#22c55e;color:#fff" onclick="approveAndPublishDiscovery('${j.id}',this)"><i class="fas fa-share-alt"></i> نشر + سوشل ميديا</button>
+        <button class="btn bsm" style="background:var(--error);color:#fff" onclick="rejectDiscovery('${j.id}',this)"><i class="fas fa-times"></i> تجاهل</button>
+      </div>
+    </div>`;
+}
+
+async function approveDiscovery(id, btn) {
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-circle-notch spin"></i>'; }
+  try {
+    const res  = await fetch(`https://api.afra-iq.com/discoveries/${id}/approve`, { method: 'POST' });
+    const data = await res.json();
+    if (data.ok) {
+      document.getElementById(`disc_${id}`)?.remove();
+      notify('تم النشر ✅', 'الوظيفة أُضيفت للموقع', 'success');
+    } else {
+      notify('خطأ', data.error || 'فشل النشر', 'error');
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-check"></i> نشر على الموقع'; }
+    }
+  } catch (e) {
+    notify('خطأ', e.message, 'error');
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-check"></i> نشر على الموقع'; }
+  }
+}
+
+async function approveAndPublishDiscovery(id, btn) {
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-circle-notch spin"></i>'; }
+  try {
+    const res  = await fetch(`https://api.afra-iq.com/discoveries/${id}/approve`, { method: 'POST' });
+    const data = await res.json();
+    if (data.ok && data.jobId) {
+      // Auto-publish to all configured social platforms
+      const plats = window.SOCIAL_AUTO?.platforms || ['tg'];
+      await fetch('https://api.afra-iq.com/social-publish', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ jobId: data.jobId, platforms: plats }),
+      });
+      document.getElementById(`disc_${id}`)?.remove();
+      notify('تم النشر ✅', `الوظيفة نُشرت على ${plats.join(', ')}`, 'success');
+    } else {
+      notify('خطأ', data.error || 'فشل', 'error');
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-share-alt"></i> نشر + سوشل ميديا'; }
+    }
+  } catch (e) {
+    notify('خطأ', e.message, 'error');
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-share-alt"></i> نشر + سوشل ميديا'; }
+  }
+}
+
+async function rejectDiscovery(id, btn) {
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-circle-notch spin"></i>'; }
+  try {
+    const res  = await fetch(`https://api.afra-iq.com/discoveries/${id}/reject`, { method: 'POST' });
+    const data = await res.json();
+    if (data.ok) {
+      document.getElementById(`disc_${id}`)?.remove();
+      notify('تم التجاهل', 'حُذفت الوظيفة من قائمة الاكتشاف', 'info');
+    } else {
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-times"></i> تجاهل'; }
+    }
+  } catch {
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-times"></i> تجاهل'; }
+  }
+}
+
+async function triggerDiscovery(btn) {
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-circle-notch spin"></i> جارٍ البحث...'; }
+  try {
+    await fetch('https://api.afra-iq.com/discover-now', { method: 'POST' });
+    notify('بدأ البحث 🔍', 'قد يستغرق دقيقة أو دقيقتين، ثم حدّث الصفحة', 'info');
+  } catch { /* ignore */ }
+  setTimeout(() => {
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-sync-alt"></i> ابحث الآن'; }
+    pgAdminDiscoveries(document.getElementById('pcon'));
+  }, 8000);
 }
 
 async function adminJobApps(jobId, title) {

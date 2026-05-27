@@ -501,6 +501,7 @@ function renderPage(pg) {
     if (pg === 'campaigns')         return pgAdminCampaigns(el);
     if (pg === 'payments')          return pgAdminPayments(el);
     if (pg === 'import')            return pgAdminImport(el);
+    if (pg === 'discoveries')       return pgAdminDiscoveries(el);
     if (pg === 'seekers_catalog')   return pgSeekersCatalog(el);
     if (pg === 'employers_catalog') return pgEmployersCatalog(el);
     return pgAdminHome(el);

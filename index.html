@@ -79,7 +79,7 @@
 <!-- ══════════════════════════════════════════════
      الصفحة الرئيسية العامة (Landing)
 ══════════════════════════════════════════════ -->
-<div id="onboarding" style="display:none;min-height:100vh;background:linear-gradient(160deg,#060d1a 0%,#0d1b35 60%,#060d1a 100%);overflow-y:auto;overflow-x:hidden;position:relative">
+<div id="onboarding" style="display:none;min-height:100vh;background:linear-gradient(160deg,#060d1a 0%,#0d1b35 60%,#060d1a 100%);overflow-y:auto;overflow-x:hidden;position:relative;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain">
 
   <!-- أورب خلفية -->
   <div class="land-orb land-orb-1"></div>
@@ -89,7 +89,12 @@
   <!-- شريط علوي ثابت -->
   <div class="lnd-topbar">
     <div class="lnd-logo">✨ <span>عفراء للتوظيف</span></div>
-    <button class="lnd-login-btn" onclick="landingLogin()"><i class="fas fa-sign-in-alt"></i> دخول / تسجيل</button>
+    <div style="display:flex;align-items:center;gap:8px">
+      <button id="pwaInstallBtn" onclick="triggerPwaInstall()" title="تثبيت التطبيق">
+        <i class="fas fa-download"></i> تثبيت
+      </button>
+      <button class="lnd-login-btn" onclick="landingLogin()"><i class="fas fa-sign-in-alt"></i> دخول / تسجيل</button>
+    </div>
   </div>
 
   <!-- هيرو -->
@@ -637,6 +642,64 @@
   if (jid && !location.hash.startsWith('#job/')) {
     history.replaceState(null, '', '#job/' + jid + location.search.replace(/[?&]job=[^&]*/g, '').replace(/^[?&]/, '?'));
   }
+})();
+</script>
+
+<!-- PWA Install Banner -->
+<div id="pwaBanner">
+  <div class="pwa-icon">✨</div>
+  <div class="pwa-text">
+    <div class="pwa-title">ثبّت عفراء كتطبيق</div>
+    <div class="pwa-sub">وصول سريع — يعمل بدون إنترنت</div>
+  </div>
+  <button class="pwa-install-btn" onclick="triggerPwaInstall()"><i class="fas fa-download"></i> تثبيت</button>
+  <button class="pwa-close" onclick="dismissPwaBanner()">✕</button>
+</div>
+
+<!-- ── PWA Install Logic ── -->
+<script>
+(function() {
+  let _deferredPrompt = null;
+  const DISMISSED_KEY = 'pwa_banner_dismissed';
+
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    _deferredPrompt = e;
+    // لا تظهر البانر إذا كان المستخدم رفضه سابقاً
+    if (sessionStorage.getItem(DISMISSED_KEY)) return;
+    // أظهر البانر بعد 3 ثوانٍ
+    setTimeout(() => {
+      const banner = document.getElementById('pwaBanner');
+      if (banner) banner.style.display = 'flex';
+      const btn = document.getElementById('pwaInstallBtn');
+      if (btn) btn.style.display = 'flex';
+    }, 3000);
+  });
+
+  window.triggerPwaInstall = async function() {
+    if (!_deferredPrompt) return;
+    _deferredPrompt.prompt();
+    const { outcome } = await _deferredPrompt.userChoice;
+    _deferredPrompt = null;
+    dismissPwaBanner();
+    if (outcome === 'accepted') {
+      const btn = document.getElementById('pwaInstallBtn');
+      if (btn) btn.style.display = 'none';
+    }
+  };
+
+  window.dismissPwaBanner = function() {
+    const banner = document.getElementById('pwaBanner');
+    if (banner) banner.style.display = 'none';
+    sessionStorage.setItem(DISMISSED_KEY, '1');
+  };
+
+  // إخفاء عند تثبيت التطبيق
+  window.addEventListener('appinstalled', () => {
+    dismissPwaBanner();
+    const btn = document.getElementById('pwaInstallBtn');
+    if (btn) btn.style.display = 'none';
+  });
 })();
 </script>
 

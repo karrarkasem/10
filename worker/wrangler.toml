@@ -2,6 +2,11 @@ name = "fanoos-ai"
 main = "index.js"
 compatibility_date = "2024-01-01"
 
+[[rules]]
+type = "CompiledWasm"
+globs = ["**/*.wasm"]
+fallthrough = false
+
 [triggers]
 crons = ["*/5 * * * *"]
 
@@ -12,7 +17,14 @@ binding = "AI"
 # المتغيرات العامة (غير السرية) — السرية تُضاف من لوحة Cloudflare أو GitHub Secrets
 # Secrets (set via Cloudflare dashboard or wrangler secret put):
 #   GEMINI_KEY, TELEGRAM_TOKEN, TELEGRAM_ADMIN_CHAT
-#   TG_CHANNEL_ID    — numeric channel ID or @afraiq_jobs
-#   FB_PAGE_TOKEN    — Facebook Page Access Token (long-lived)
-#   FB_PAGE_ID       — Facebook Page ID
-#   IG_ACCOUNT_ID    — Instagram Business Account ID
+#   TG_CHANNEL_ID      — numeric channel ID or @afraiq_jobs
+#   FB_PAGE_TOKEN      — Facebook Page Access Token (long-lived)
+#   FB_PAGE_ID         — Facebook Page ID
+#   IG_ACCOUNT_ID      — Instagram Business Account ID
+#   IMGBB_KEY          — imgbb API key for job card image hosting
+#   WA_PHONE_NUMBER_ID — WhatsApp Business phone number ID (from Meta)
+#   WA_ACCESS_TOKEN    — WhatsApp Cloud API access token (from Meta)
+#   WA_CHANNEL_ID      — WhatsApp Channel ID to publish jobs to
+#   GOOGLE_CSE_KEY     — Google Custom Search API key (free: 100 queries/day)
+#   GOOGLE_CSE_ID      — Google Custom Search Engine ID (configure at cse.google.com)
+#   TG_JOB_CHANNELS    — comma-separated Telegram channel usernames to monitor (e.g. @iraqjobs,@baghdadjobs)
