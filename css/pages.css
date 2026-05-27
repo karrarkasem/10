@@ -502,7 +502,7 @@
 /* ── Job card footer: stack on small phones ── */
 @media (max-width: 480px) {
   .jft        { flex-direction: column; align-items: flex-start; gap: 8px; }
-  .jc-actions { width: 100%; justify-content: space-between; }
+  .jc-footer  { flex-wrap: wrap; gap: 6px; }
   .jsal       { font-size: 13px; }
   .jtit       { font-size: 14px; }
 }

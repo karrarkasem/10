@@ -689,8 +689,7 @@ function toggleBookmark(id, e) {
   localStorage.setItem('afraa_bookmarks', JSON.stringify(BOOKMARKS));
   document.querySelectorAll(`[data-bkm="${id}"]`).forEach(btn => {
     const saved = BOOKMARKS.includes(id);
-    btn.className = 'bkm-btn' + (saved ? ' on' : '');
-    btn.innerHTML = `<i class="fas fa-bookmark" style="font-size:12px"></i>`;
+    btn.classList.toggle('on', saved);
   });
   // تحديث عدد المحفوظات في البانر
   const bkEl = document.getElementById('bkmCount');

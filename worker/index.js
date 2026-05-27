@@ -222,14 +222,6 @@ export default {
       return json({ started: true });
     }
 
-    // ── GET /test-cse → debug CSE access from Worker ──
-    if (request.method === 'GET' && url.pathname === '/test-cse') {
-      const cseUrl = `https://www.googleapis.com/customsearch/v1?key=${env.GOOGLE_CSE_KEY}&cx=${env.GOOGLE_CSE_ID}&q=%D9%88%D8%B8%D8%A7%D8%A6%D9%81+%D8%A7%D9%84%D8%B9%D8%B1%D8%A7%D9%82&num=3`;
-      const res = await fetch(cseUrl);
-      const data = await res.json();
-      return json({ status: res.status, data });
-    }
-
     // ── POST / → Gemini Proxy ──
     if (request.method === 'POST') {
       return handleGemini(request, env);
