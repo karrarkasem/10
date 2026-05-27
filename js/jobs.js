@@ -31,53 +31,41 @@ function jCard(j) {
   const isOfficeView = ROLE === 'office';
 
   return `<div class="jc${j.featured ? ' jc-featured' : ''}" onclick="openJob('${j.id}')">
+    <!-- الصف الأول: شعار + معلومات + وقت -->
     <div class="jc-top">
       <div class="jlo">${san(j.logo) || san(j.company?.charAt(0)) || '🏢'}</div>
-      <div class="ji" style="flex:1;min-width:0">
-        <div style="display:flex;align-items:flex-start;gap:6px;flex-wrap:wrap;margin-bottom:3px">
+      <div class="ji" style="flex:1;min-width:0;overflow:hidden">
+        <div class="jc-title-row">
           <div class="jtit">${j.title}</div>
-          ${j.featured ? `<span class="b" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;font-size:10px;border-radius:10px;padding:2px 8px"><i class="fas fa-star"></i> مميزة</span>` : ''}
-          ${isHot ? `<span class="hot-badge"><i class="fas fa-fire"></i>عاجل</span>` : ''}
-          ${match === 'high' ? `<span class="match-badge match-high"><i class="fas fa-map-marker-alt"></i>محافظتك</span>` : ''}
+          <span class="jc-ago">${ago(j.postedAt)}</span>
         </div>
         <div class="jco"><i class="fas fa-building" style="font-size:10px;color:var(--tx3)"></i> ${j.company} • <i class="fas fa-map-marker-alt" style="font-size:10px;color:var(--tx3)"></i> ${j.province || '—'}</div>
-        <div class="jbs" style="margin-top:6px">
-          <span class="b ${tc}"><i class="fas fa-clock"></i>${tl}</span>
-          ${j.cat ? `<span class="b b-bl">${CATS[j.cat] || j.cat}</span>` : ''}
-          ${j.exp && j.exp !== 'none' ? `<span class="b b-gy"><i class="fas fa-briefcase"></i>${expLabel(j.exp)}</span>` : ''}
-          ${j.commission ? `<span class="b" style="background:#fef3c7;color:#92400e" title="${san(j.commission)}"><i class="fas fa-percentage"></i>${j.commission.length > 20 ? j.commission.substring(0,20)+'...' : j.commission}</span>` : ''}
-          ${j.socialInsurance ? `<span class="b b-gr" title="يشمل التأمين الاجتماعي وفق قانون العمل"><i class="fas fa-shield-alt"></i>تأمين اجتماعي</span>` : ''}
-          ${j.skills?.slice(0,3).map(s => `<span class="b skill-chip" onclick="event.stopPropagation();filterBySkill('${s}')" title="تصفح وظائف ${s}">${s}</span>`).join('') || ''}
-        </div>
-      </div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
-        <div style="display:flex;gap:6px;align-items:center">
-          <button class="share-ico-btn" onclick="event.stopPropagation();shareJobGeneral('${j.id}')" title="مشاركة الوظيفة">
-            <i class="fas fa-share-alt" style="font-size:12px"></i>
-          </button>
-          <button class="bkm-btn ${saved ? 'on' : ''}" data-bkm="${j.id}"
-            onclick="toggleBookmark('${j.id}',event)" title="حفظ الوظيفة">
-            <i class="fas fa-bookmark" style="font-size:12px"></i>
-          </button>
-          ${isOfficeView
-            ? `<button class="btn bsm" style="background:rgba(139,92,246,.12);color:var(--purple);border:1px solid rgba(139,92,246,.3);gap:5px"
-                onclick="event.stopPropagation();referCandidate('${j.id}')">
-                <i class="fas fa-user-plus"></i>لديّ موظف
-              </button>`
-            : `<button class="btn bp bsm jc-apply-btn" onclick="event.stopPropagation();openQuiz('${j.id}')">
-                <i class="fas fa-paper-plane"></i>تقدّم
-              </button>`
-          }
-        </div>
-        <span style="font-size:10px;color:var(--tx3)">${ago(j.postedAt)}</span>
       </div>
     </div>
-    <div style="font-size:12px;color:var(--tx2);line-height:1.6;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:10px">${j.desc || ''}</div>
-    <div class="jc-meta">
-      <div class="jsal"><i class="fas fa-money-bill-wave" style="font-size:11px;margin-left:4px"></i>${sal} ${j.currency || 'IQD'}</div>
-      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-        <span style="font-size:11px;color:var(--tx3);display:flex;align-items:center;gap:3px"><i class="fas fa-users"></i>${j.applicants || 0} متقدم</span>
+    <!-- الصف الثاني: badges -->
+    <div class="jbs" style="margin:8px 0 6px">
+      ${j.featured ? `<span class="b" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;font-size:10px"><i class="fas fa-star"></i> مميزة</span>` : ''}
+      ${isHot ? `<span class="hot-badge"><i class="fas fa-fire"></i>عاجل</span>` : ''}
+      <span class="b ${tc}"><i class="fas fa-clock"></i>${tl}</span>
+      ${j.cat ? `<span class="b b-bl">${CATS[j.cat] || j.cat}</span>` : ''}
+      ${j.exp && j.exp !== 'none' ? `<span class="b b-gy"><i class="fas fa-briefcase"></i>${expLabel(j.exp)}</span>` : ''}
+      ${match === 'high' ? `<span class="match-badge match-high"><i class="fas fa-map-marker-alt"></i>محافظتك</span>` : ''}
+      ${j.commission ? `<span class="b" style="background:#fef3c7;color:#92400e"><i class="fas fa-percentage"></i>${j.commission.length > 18 ? j.commission.substring(0,18)+'...' : j.commission}</span>` : ''}
+      ${j.socialInsurance ? `<span class="b b-gr"><i class="fas fa-shield-alt"></i>تأمين</span>` : ''}
+      ${j.skills?.slice(0,2).map(s => `<span class="b skill-chip" onclick="event.stopPropagation();filterBySkill('${s}')">${s}</span>`).join('') || ''}
+    </div>
+    <!-- الصف الثالث: راتب + أزرار -->
+    <div class="jc-footer">
+      <div class="jsal"><i class="fas fa-money-bill-wave" style="font-size:11px;margin-left:3px"></i>${sal} <span style="font-size:10px;font-weight:600;color:var(--tx3)">${j.currency || 'IQD'}</span></div>
+      <div class="jc-actions">
+        <span style="font-size:10px;color:var(--tx3);display:flex;align-items:center;gap:3px"><i class="fas fa-users" style="font-size:9px"></i>${j.applicants || 0}</span>
         ${daysLeftBadge(j.deadline)}
+        <button class="jc-icon-btn" onclick="event.stopPropagation();shareJobGeneral('${j.id}')"><i class="fas fa-share-alt"></i></button>
+        <button class="jc-icon-btn ${saved ? 'on' : ''}" data-bkm="${j.id}" onclick="toggleBookmark('${j.id}',event)"><i class="fas fa-bookmark"></i></button>
+        ${isOfficeView
+          ? `<button class="btn bsm" style="background:rgba(139,92,246,.12);color:var(--purple);border:1px solid rgba(139,92,246,.3)" onclick="event.stopPropagation();referCandidate('${j.id}')"><i class="fas fa-user-plus"></i></button>`
+          : `<button class="btn bp bsm jc-apply-btn" onclick="event.stopPropagation();openQuiz('${j.id}')"><i class="fas fa-paper-plane"></i>تقدّم</button>`
+        }
       </div>
     </div>
   </div>`;
@@ -96,31 +84,20 @@ function pgJobs(el) {
 
     <!-- شريط البحث والفلاتر -->
     <div class="jobs-filter-card">
-      <!-- صف البحث -->
+
+      <!-- ① البحث + موقعي -->
       <div class="jf-search-row">
         <div class="sb jf-sb">
           <i class="fas fa-search"></i>
           <input type="text" placeholder="ابحث عن وظيفة أو شركة..." oninput="JF.q=this.value;rJobs()" id="jq">
-          <button id="jqClear" style="display:none;background:none;border:none;color:var(--tx3);cursor:pointer;font-size:14px" onclick="document.getElementById('jq').value='';JF.q='';this.style.display='none';rJobs()">✕</button>
+          <button id="jqClear" style="display:none;background:none;border:none;color:var(--tx3);cursor:pointer;font-size:14px;padding:0 4px" onclick="document.getElementById('jq').value='';JF.q='';this.style.display='none';rJobs()">✕</button>
         </div>
         <button id="geoBtn" class="jf-geo-btn" onclick="geoFilterJobs()" title="وظائف قريبة مني">
           <i class="fas fa-map-marker-alt"></i>
         </button>
       </div>
-      <!-- صف المحافظة والترتيب -->
-      <div class="jf-selects-row">
-        <select class="fc jf-sel" onchange="JF.prov=this.value;rJobs()">
-          <option value="">📍 كل المحافظات</option>
-          ${PROVS.map(p => `<option ${p === P?.province ? 'selected' : ''}>${p}</option>`).join('')}
-        </select>
-        <select class="fc jf-sel" onchange="JSORT=this.value;rJobs()">
-          <option value="newest">🕐 الأحدث أولاً</option>
-          <option value="salary_high">💰 أعلى راتب</option>
-          <option value="salary_low">📉 أقل راتب</option>
-          <option value="applicants">👥 الأكثر تقديماً</option>
-        </select>
-      </div>
-      <!-- تبويبات النوع -->
+
+      <!-- ② نوع الوظيفة (تبويبات) -->
       <div class="tabs jf-tabs">
         <button class="tb2 on"  onclick="JF.type='';setTab(this);rJobs()"><i class="fas fa-th"></i>الكل</button>
         <button class="tb2"     onclick="JF.type='full';setTab(this);rJobs()"><i class="fas fa-briefcase"></i>كامل</button>
@@ -128,29 +105,41 @@ function pgJobs(el) {
         <button class="tb2"     onclick="JF.type='remote';setTab(this);rJobs()"><i class="fas fa-laptop-house"></i>عن بُعد</button>
         <button class="tb2"     onclick="JF.type='gig';setTab(this);rJobs()"><i class="fas fa-tasks"></i>مهام</button>
       </div>
-      <!-- فلتر الفئات -->
-      <div class="cat-scroll-row">
+
+      <!-- ③ شريط الفلاتر (محافظة + ترتيب + فئات) — scroll أفقي -->
+      <div class="jf-filters-bar">
+        <select class="jf-fsel" onchange="JF.prov=this.value;rJobs()">
+          <option value="">📍 المحافظة</option>
+          ${PROVS.map(p => `<option ${p === P?.province ? 'selected' : ''}>${p}</option>`).join('')}
+        </select>
+        <select class="jf-fsel" onchange="JSORT=this.value;rJobs()">
+          <option value="newest">↕ الأحدث</option>
+          <option value="salary_high">💰 الراتب ↑</option>
+          <option value="salary_low">💰 الراتب ↓</option>
+          <option value="applicants">👥 الأكثر تقديماً</option>
+        </select>
+        <span class="jf-sep"></span>
         ${[
-          { v:'',      l:'الكل',   ic:'fa-th-list' },
-          { v:'tech',  l:'تقنية',  ic:'fa-laptop-code' },
-          { v:'biz',   l:'أعمال',  ic:'fa-chart-line' },
-          { v:'med',   l:'طب',     ic:'fa-stethoscope' },
-          { v:'edu',   l:'تعليم',  ic:'fa-graduation-cap' },
-          { v:'eng',   l:'هندسة',  ic:'fa-cog' },
-          { v:'other', l:'أخرى',   ic:'fa-ellipsis-h' },
-        ].map(c => `<button class="fc2 ${c.v === JF.cat ? 'on' : ''}" onclick="JF.cat='${c.v}';setCat(this);rJobs()"><i class="fas ${c.ic}"></i>${c.l}</button>`).join('')}
-        ${BOOKMARKS.length ? `<button class="fc2" onclick="showBookmarks(this)"><i class="fas fa-bookmark" style="color:var(--acc)"></i>محفوظاتي (${BOOKMARKS.length})</button>` : ''}
+          { v:'',      l:'كل الفئات', ic:'fa-th-list' },
+          { v:'tech',  l:'تقنية',     ic:'fa-laptop-code' },
+          { v:'biz',   l:'أعمال',     ic:'fa-chart-line' },
+          { v:'med',   l:'طب',        ic:'fa-stethoscope' },
+          { v:'edu',   l:'تعليم',     ic:'fa-graduation-cap' },
+          { v:'eng',   l:'هندسة',     ic:'fa-cog' },
+          { v:'other', l:'أخرى',      ic:'fa-ellipsis-h' },
+        ].map(c => `<button class="jf-chip ${c.v === JF.cat ? 'on' : ''}" onclick="JF.cat='${c.v}';this.closest('.jf-filters-bar').querySelectorAll('.jf-chip').forEach(b=>b.classList.remove('on'));this.classList.add('on');rJobs()"><i class="fas ${c.ic}"></i>${c.l}</button>`).join('')}
+        ${BOOKMARKS.length ? `<button class="jf-chip" onclick="showBookmarks(this)"><i class="fas fa-bookmark" style="color:var(--acc)"></i>محفوظاتي</button>` : ''}
       </div>
-      <!-- فلتر المهارات -->
-      <div class="jf-skills-row">
-        <span class="skill-row-lbl"><i class="fas fa-tag"></i> مهارة:</span>
-        <div class="skill-chips-scroll">
-          ${['Excel','Python','JavaScript','React','PHP','SQL','AutoCAD','Photoshop','محاسبة','تسويق رقمي','مبيعات','خدمة عملاء','إدارة مشاريع','لغة إنجليزية'].map(sk =>
-            `<button class="skill-filter-chip ${JF.skill===sk?'on':''}" onclick="filterBySkill('${sk}')">${sk}</button>`
-          ).join('')}
-          ${JF.skill ? `<button class="skill-filter-chip" style="background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.3);color:var(--danger)" onclick="filterBySkill('')"><i class="fas fa-times"></i> إلغاء</button>` : ''}
-        </div>
+
+      <!-- ④ فلتر المهارات (scroll أفقي) -->
+      <div class="jf-skills-bar">
+        <span class="jf-skills-lbl"><i class="fas fa-tag"></i></span>
+        ${['Excel','Python','JavaScript','React','PHP','SQL','AutoCAD','Photoshop','محاسبة','تسويق رقمي','مبيعات','خدمة عملاء','إدارة مشاريع'].map(sk =>
+          `<button class="skill-filter-chip ${JF.skill===sk?'on':''}" onclick="filterBySkill('${sk}')">${sk}</button>`
+        ).join('')}
+        ${JF.skill ? `<button class="skill-filter-chip jf-skill-clear" onclick="filterBySkill('')"><i class="fas fa-times"></i></button>` : ''}
       </div>
+
     </div>
 
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
