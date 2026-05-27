@@ -95,34 +95,40 @@ function pgJobs(el) {
     </div>
 
     <!-- شريط البحث والفلاتر -->
-    <div class="card" style="padding:14px;margin-bottom:14px">
-      <div style="display:flex;gap:9px;margin-bottom:11px;flex-wrap:wrap">
-        <div class="sb" style="flex:1;min-width:180px">
+    <div class="jobs-filter-card">
+      <!-- صف البحث -->
+      <div class="jf-search-row">
+        <div class="sb jf-sb">
           <i class="fas fa-search"></i>
           <input type="text" placeholder="ابحث عن وظيفة أو شركة..." oninput="JF.q=this.value;rJobs()" id="jq">
-          <button id="jqClear" style="display:none;background:none;border:none;color:var(--tx3);cursor:pointer;font-size:12px" onclick="document.getElementById('jq').value='';JF.q='';this.style.display='none';rJobs()">✕</button>
+          <button id="jqClear" style="display:none;background:none;border:none;color:var(--tx3);cursor:pointer;font-size:14px" onclick="document.getElementById('jq').value='';JF.q='';this.style.display='none';rJobs()">✕</button>
         </div>
-        <select class="fc" style="width:auto;padding:8px 12px;font-size:12px" onchange="JF.prov=this.value;rJobs()">
-          <option value="">كل المحافظات</option>
+        <button id="geoBtn" class="jf-geo-btn" onclick="geoFilterJobs()" title="وظائف قريبة مني">
+          <i class="fas fa-map-marker-alt"></i>
+        </button>
+      </div>
+      <!-- صف المحافظة والترتيب -->
+      <div class="jf-selects-row">
+        <select class="fc jf-sel" onchange="JF.prov=this.value;rJobs()">
+          <option value="">📍 كل المحافظات</option>
           ${PROVS.map(p => `<option ${p === P?.province ? 'selected' : ''}>${p}</option>`).join('')}
         </select>
-        <button id="geoBtn" class="btn bo bsm" onclick="geoFilterJobs()" title="وظائف قريبة من موقعك الحالي" style="white-space:nowrap;flex-shrink:0">
-          <i class="fas fa-map-marker-alt" style="color:var(--danger)"></i> قريبة مني
-        </button>
-        <select class="sort-select" onchange="JSORT=this.value;rJobs()" title="ترتيب النتائج">
-          <option value="newest">الأحدث أولاً</option>
-          <option value="salary_high">أعلى راتب</option>
-          <option value="salary_low">أقل راتب</option>
-          <option value="applicants">الأكثر تقديماً</option>
+        <select class="fc jf-sel" onchange="JSORT=this.value;rJobs()">
+          <option value="newest">🕐 الأحدث أولاً</option>
+          <option value="salary_high">💰 أعلى راتب</option>
+          <option value="salary_low">📉 أقل راتب</option>
+          <option value="applicants">👥 الأكثر تقديماً</option>
         </select>
       </div>
-      <div class="tabs" style="margin-bottom:11px">
+      <!-- تبويبات النوع -->
+      <div class="tabs jf-tabs">
         <button class="tb2 on"  onclick="JF.type='';setTab(this);rJobs()"><i class="fas fa-th"></i>الكل</button>
         <button class="tb2"     onclick="JF.type='full';setTab(this);rJobs()"><i class="fas fa-briefcase"></i>كامل</button>
         <button class="tb2"     onclick="JF.type='part';setTab(this);rJobs()"><i class="fas fa-clock"></i>جزئي</button>
         <button class="tb2"     onclick="JF.type='remote';setTab(this);rJobs()"><i class="fas fa-laptop-house"></i>عن بُعد</button>
         <button class="tb2"     onclick="JF.type='gig';setTab(this);rJobs()"><i class="fas fa-tasks"></i>مهام</button>
       </div>
+      <!-- فلتر الفئات -->
       <div class="cat-scroll-row">
         ${[
           { v:'',      l:'الكل',   ic:'fa-th-list' },
@@ -136,15 +142,13 @@ function pgJobs(el) {
         ${BOOKMARKS.length ? `<button class="fc2" onclick="showBookmarks(this)"><i class="fas fa-bookmark" style="color:var(--acc)"></i>محفوظاتي (${BOOKMARKS.length})</button>` : ''}
       </div>
       <!-- فلتر المهارات -->
-      <div style="margin-top:9px;padding-top:9px;border-top:1px solid var(--br)">
-        <div class="skill-scroll-row">
-          <span class="skill-row-lbl"><i class="fas fa-tag"></i> مهارة:</span>
-          <div class="skill-chips-scroll">
-            ${['Excel','Python','JavaScript','React','PHP','SQL','AutoCAD','Photoshop','محاسبة','تسويق رقمي','مبيعات','خدمة عملاء','إدارة مشاريع','لغة إنجليزية'].map(sk =>
-              `<button class="skill-filter-chip ${JF.skill===sk?'on':''}" onclick="filterBySkill('${sk}')">${sk}</button>`
-            ).join('')}
-            ${JF.skill ? `<button class="skill-filter-chip" style="background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.3);color:var(--danger)" onclick="filterBySkill('')"><i class="fas fa-times"></i> إلغاء</button>` : ''}
-          </div>
+      <div class="jf-skills-row">
+        <span class="skill-row-lbl"><i class="fas fa-tag"></i> مهارة:</span>
+        <div class="skill-chips-scroll">
+          ${['Excel','Python','JavaScript','React','PHP','SQL','AutoCAD','Photoshop','محاسبة','تسويق رقمي','مبيعات','خدمة عملاء','إدارة مشاريع','لغة إنجليزية'].map(sk =>
+            `<button class="skill-filter-chip ${JF.skill===sk?'on':''}" onclick="filterBySkill('${sk}')">${sk}</button>`
+          ).join('')}
+          ${JF.skill ? `<button class="skill-filter-chip" style="background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.3);color:var(--danger)" onclick="filterBySkill('')"><i class="fas fa-times"></i> إلغاء</button>` : ''}
         </div>
       </div>
     </div>

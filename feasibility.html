@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+<title>دراسة الجدوى الاقتصادية — عفراء للتوظيف</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Cairo',sans-serif;background:#f8fafc;color:#1e293b;font-size:14px;line-height:1.8}
+  .page{width:210mm;min-height:297mm;margin:0 auto;background:#fff;padding:20mm 18mm}
+  @media print{
+    body{background:#fff}
+    .page{margin:0;padding:15mm 15mm;page-break-after:always}
+    .no-break{page-break-inside:avoid}
+    .page-break{page-break-before:always}
+  }
+
+  /* Cover */
+  .cover{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:270mm;text-align:center}
+  .cover-logo{width:90px;height:90px;background:linear-gradient(135deg,#0d9488,#0f766e);border-radius:24px;display:flex;align-items:center;justify-content:center;margin:0 auto 24px;box-shadow:0 20px 60px rgba(13,148,136,.3)}
+  .cover-logo span{font-size:40px}
+  .cover h1{font-size:32px;font-weight:900;color:#0d9488;margin-bottom:8px}
+  .cover h2{font-size:20px;font-weight:700;color:#1e293b;margin-bottom:32px}
+  .cover-divider{width:80px;height:4px;background:linear-gradient(135deg,#0d9488,#0f766e);border-radius:2px;margin:0 auto 32px}
+  .cover-meta{background:#f1fafa;border:2px solid #ccfbf1;border-radius:16px;padding:24px 40px;display:inline-block}
+  .cover-meta p{font-size:13px;color:#475569;margin:4px 0}
+  .cover-meta strong{color:#0d9488}
+  .cover-badge{background:#0d9488;color:#fff;border-radius:8px;padding:6px 20px;font-size:12px;font-weight:700;display:inline-block;margin-top:20px}
+
+  /* Headings */
+  .section-title{font-size:22px;font-weight:900;color:#0d9488;border-bottom:3px solid #ccfbf1;padding-bottom:10px;margin-bottom:20px;margin-top:36px}
+  .sub-title{font-size:16px;font-weight:800;color:#1e293b;margin:20px 0 10px;display:flex;align-items:center;gap:8px}
+  .sub-title::before{content:'';display:inline-block;width:4px;height:18px;background:#0d9488;border-radius:2px}
+
+  /* Cards */
+  .card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px 20px;margin-bottom:14px}
+  .card-teal{background:#f0fdfa;border-color:#99f6e4}
+  .card-blue{background:#eff6ff;border-color:#bfdbfe}
+  .card-amber{background:#fffbeb;border-color:#fde68a}
+  .card-red{background:#fff1f2;border-color:#fecdd3}
+  .card-purple{background:#faf5ff;border-color:#e9d5ff}
+
+  /* Grid */
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  .grid-4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px}
+
+  /* Stat box */
+  .stat{text-align:center;padding:20px 12px;border-radius:12px;border:2px solid}
+  .stat .num{font-size:28px;font-weight:900;line-height:1}
+  .stat .lbl{font-size:11px;color:#64748b;margin-top:6px;font-weight:600}
+  .stat-teal{background:#f0fdfa;border-color:#0d9488;color:#0d9488}
+  .stat-blue{background:#eff6ff;border-color:#3b82f6;color:#3b82f6}
+  .stat-amber{background:#fffbeb;border-color:#f59e0b;color:#f59e0b}
+  .stat-purple{background:#faf5ff;border-color:#8b5cf6;color:#8b5cf6}
+
+  /* Table */
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13px}
+  th{background:#0d9488;color:#fff;padding:10px 14px;text-align:right;font-weight:700}
+  td{padding:9px 14px;border-bottom:1px solid #e2e8f0}
+  tr:nth-child(even) td{background:#f8fafc}
+  tr:last-child td{border-bottom:none}
+  .total-row td{background:#f0fdfa;font-weight:800;color:#0d9488;border-top:2px solid #0d9488}
+
+  /* Chart bars */
+  .bar-chart{margin:16px 0}
+  .bar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .bar-label{width:80px;font-size:12px;font-weight:700;text-align:left;flex-shrink:0}
+  .bar-track{flex:1;background:#e2e8f0;border-radius:6px;height:28px;overflow:hidden}
+  .bar-fill{height:100%;border-radius:6px;display:flex;align-items:center;padding:0 10px;font-size:11px;font-weight:800;color:#fff;transition:width .3s}
+  .bar-y1{background:linear-gradient(90deg,#0d9488,#14b8a6)}
+  .bar-y2{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+  .bar-y3{background:linear-gradient(90deg,#8b5cf6,#a78bfa)}
+
+  /* Tags */
+  .tag{display:inline-block;padding:3px 12px;border-radius:20px;font-size:11px;font-weight:700;margin:3px}
+  .tag-teal{background:#ccfbf1;color:#0f766e}
+  .tag-blue{background:#dbeafe;color:#1d4ed8}
+  .tag-amber{background:#fef3c7;color:#92400e}
+
+  /* List */
+  .check-list{list-style:none;padding:0}
+  .check-list li{padding:6px 0;display:flex;align-items:flex-start;gap:8px;font-size:13px}
+  .check-list li::before{content:'✅';flex-shrink:0;margin-top:1px}
+  .warn-list li::before{content:'⚠️'}
+  .star-list li::before{content:'⭐'}
+
+  /* Info box */
+  .info-box{border-right:4px solid #0d9488;background:#f0fdfa;padding:14px 18px;border-radius:0 10px 10px 0;margin:14px 0;font-size:13px}
+  .warn-box{border-right:4px solid #f59e0b;background:#fffbeb;padding:14px 18px;border-radius:0 10px 10px 0;margin:14px 0;font-size:13px}
+
+  /* Footer */
+  .footer{text-align:center;margin-top:40px;padding-top:20px;border-top:2px solid #e2e8f0;color:#94a3b8;font-size:11px}
+
+  p{margin-bottom:10px;font-size:13px;color:#374151}
+  strong{color:#0f172a}
+</style>
+</head>
+<body>
+
+<!-- ══ صفحة الغلاف ══ -->
+<div class="page">
+  <div class="cover">
+    <div class="cover-logo"><span>🪔</span></div>
+    <h1>عفراء للتوظيف</h1>
+    <h2>دراسة الجدوى الاقتصادية المتكاملة</h2>
+    <div class="cover-divider"></div>
+    <div class="cover-meta">
+      <p><strong>اسم المشروع:</strong> منصة عفراء للتوظيف — Afra Jobs Platform</p>
+      <p><strong>النطاق:</strong> afra-iq.com</p>
+      <p><strong>السوق المستهدف:</strong> جمهورية العراق — 18 محافظة</p>
+      <p><strong>تاريخ الدراسة:</strong> مايو 2026</p>
+      <p><strong>نوع المشروع:</strong> منصة تقنية للتوظيف (B2B + B2C)</p>
+    </div>
+    <div class="cover-badge">سري وخاص — للاستخدام الداخلي</div>
+  </div>
+</div>
+
+<!-- ══ الملخص التنفيذي ══ -->
+<div class="page page-break">
+  <div class="section-title">📋 الملخص التنفيذي</div>
+
+  <div class="info-box">
+    <strong>عفراء للتوظيف</strong> هي منصة رقمية متكاملة لسوق العمل العراقي، تربط الباحثين عن عمل بأصحاب العمل ومكاتب التوظيف عبر تقنيات الذكاء الاصطناعي وتكامل واتساب وتلغرام. تُعدّ المنصة الأولى في العراق التي توفر استيراداً تلقائياً للوظائف من منصات التواصل الاجتماعي بالذكاء الاصطناعي.
+  </div>
+
+  <div class="grid-4">
+    <div class="stat stat-teal"><div class="num">42M</div><div class="lbl">نفوس العراق</div></div>
+    <div class="stat stat-blue"><div class="num">16%</div><div class="lbl">نسبة البطالة</div></div>
+    <div class="stat stat-amber"><div class="num">4.5M</div><div class="lbl">باحث عن عمل</div></div>
+    <div class="stat stat-purple"><div class="num">25M</div><div class="lbl">مستخدم إنترنت</div></div>
+  </div>
+
+  <div class="sub-title">نقاط القوة التنافسية</div>
+  <div class="grid-2">
+    <div class="card card-teal">
+      <strong>🤖 الذكاء الاصطناعي</strong>
+      <p>استيراد الوظائف تلقائياً من فيسبوك وتلغرام وواتساب بتحليل نصي فوري.</p>
+    </div>
+    <div class="card card-teal">
+      <strong>📱 تكامل واتساب وتلغرام</strong>
+      <p>كل وظيفة تُشارك ببطاقة غنية على واتساب وتُنشر تلقائياً في القناة.</p>
+    </div>
+    <div class="card card-blue">
+      <strong>📍 الفلتر الجغرافي</strong>
+      <p>أول منصة عراقية بفلتر "قريبة مني" لـ 18 محافظة بدقة GPS.</p>
+    </div>
+    <div class="card card-blue">
+      <strong>🆓 تكلفة تشغيل شبه صفرية</strong>
+      <p>بنية تحتية على Firebase وCloudflare بتكلفة أقل من $50/شهر.</p>
+    </div>
+  </div>
+
+  <div class="sub-title">التوقعات المالية — ملخص</div>
+  <table>
+    <tr><th>السنة</th><th>الإيرادات (IQD)</th><th>التكاليف (IQD)</th><th>الربح الصافي (IQD)</th><th>هامش الربح</th></tr>
+    <tr><td>السنة الأولى</td><td>78,000,000</td><td>28,000,000</td><td>50,000,000</td><td>64%</td></tr>
+    <tr><td>السنة الثانية</td><td>234,000,000</td><td>65,000,000</td><td>169,000,000</td><td>72%</td></tr>
+    <tr><td>السنة الثالثة</td><td>520,000,000</td><td>120,000,000</td><td>400,000,000</td><td>77%</td></tr>
+  </table>
+</div>
+
+<!-- ══ معلومات المشروع ══ -->
+<div class="page page-break">
+  <div class="section-title">🏗️ معلومات المشروع</div>
+
+  <div class="sub-title">الرؤية والمهمة</div>
+  <div class="grid-2">
+    <div class="card card-teal">
+      <strong>الرؤية 👁️</strong>
+      <p>أن تكون عفراء المنصة الرقمية الأولى في العراق لسوق العمل، تربط كل باحث عن عمل بفرصته المناسبة.</p>
+    </div>
+    <div class="card card-blue">
+      <strong>المهمة 🎯</strong>
+      <p>تبسيط عملية التوظيف في العراق من خلال تقنيات ذكية ومجانية تناسب البيئة المحلية.</p>
+    </div>
+  </div>
+
+  <div class="sub-title">المكونات التقنية</div>
+  <table>
+    <tr><th>المكوّن</th><th>التقنية المستخدمة</th><th>الغرض</th><th>التكلفة</th></tr>
+    <tr><td>الواجهة الأمامية</td><td>Vanilla JS + HTML5 + CSS3</td><td>تجربة المستخدم</td><td>مجاني</td></tr>
+    <tr><td>قاعدة البيانات</td><td>Firebase Firestore</td><td>تخزين البيانات</td><td>مجاني حتى حد معين</td></tr>
+    <tr><td>المصادقة</td><td>Firebase Auth</td><td>تسجيل الدخول</td><td>مجاني</td></tr>
+    <tr><td>الذكاء الاصطناعي</td><td>Google Gemini 2.0 Flash</td><td>تحليل الوظائف</td><td>مجاني (حصة مجانية)</td></tr>
+    <tr><td>الـ API والبوت</td><td>Cloudflare Workers</td><td>OG Preview + تلغرام</td><td>مجاني (100K طلب/يوم)</td></tr>
+    <tr><td>النطاق</td><td>afra-iq.com</td><td>الهوية الرقمية</td><td>~$20/سنة</td></tr>
+    <tr class="total-row"><td colspan="3"><strong>إجمالي التكلفة التقنية السنوية</strong></td><td><strong>~$600 (840,000 IQD)</strong></td></tr>
+  </table>
+
+  <div class="sub-title">الأدوار والمستخدمون</div>
+  <div class="grid-3">
+    <div class="card">
+      <strong>🔍 باحث عن عمل</strong><br>
+      <span class="tag tag-teal">مجاني دائماً</span>
+      <ul class="check-list" style="margin-top:8px">
+        <li>تصفح الوظائف</li>
+        <li>التقديم الفوري</li>
+        <li>سيرة ذاتية PDF</li>
+        <li>متابعة الطلبات</li>
+      </ul>
+    </div>
+    <div class="card">
+      <strong>🏢 صاحب عمل</strong><br>
+      <span class="tag tag-amber">مدفوع</span>
+      <ul class="check-list" style="margin-top:8px">
+        <li>نشر الوظائف</li>
+        <li>إدارة المتقدمين</li>
+        <li>pipeline التوظيف</li>
+        <li>تقييم المرشحين</li>
+      </ul>
+    </div>
+    <div class="card">
+      <strong>🏛 مكتب توظيف</strong><br>
+      <span class="tag tag-amber">مدفوع</span>
+      <ul class="check-list" style="margin-top:8px">
+        <li>نشر وظائف متعددة</li>
+        <li>إدارة الموظفين</li>
+        <li>خارطة المكاتب</li>
+        <li>تقييمات العملاء</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="sub-title">تحليل المنافسين</div>
+  <table>
+    <tr><th>المنصة</th><th>التواجد</th><th>نقاط الضعف</th><th>ميزة عفراء</th></tr>
+    <tr><td>Bayt.com</td><td>خليجي عام</td><td>غير مخصص للعراق، مدفوع كلياً</td><td>محلي، مجاني للباحثين</td></tr>
+    <tr><td>LinkedIn</td><td>عالمي</td><td>لا يفهم السوق العراقي</td><td>واتساب + تلغرام</td></tr>
+    <tr><td>مجموعات فيسبوك</td><td>عراقي</td><td>فوضوي، لا فلترة</td><td>AI + فلتر ذكي</td></tr>
+    <tr><td>قنوات تلغرام</td><td>عراقي</td><td>لا تفاعل، لا بيانات</td><td>استيراد تلقائي للمنصة</td></tr>
+  </table>
+</div>
+
+<!-- ══ نموذج الإيرادات ══ -->
+<div class="page page-break">
+  <div class="section-title">💰 نموذج الإيرادات والأرباح</div>
+
+  <div class="sub-title">مصادر الدخل</div>
+
+  <div class="card card-teal no-break">
+    <strong>1️⃣ اشتراكات أصحاب العمل (المصدر الرئيسي)</strong>
+    <table style="margin-top:10px">
+      <tr><th>الخطة</th><th>السعر/شهر</th><th>عدد الوظائف</th><th>المميزات</th></tr>
+      <tr><td>المجانية</td><td>0 IQD</td><td>1 وظيفة</td><td>أساسية</td></tr>
+      <tr><td>القياسية</td><td>25,000 IQD</td><td>5 وظائف</td><td>إحصاءات + أولوية</td></tr>
+      <tr><td>الاحترافية</td><td>75,000 IQD</td><td>غير محدود</td><td>كل المميزات + دعم</td></tr>
+      <tr><td>المؤسسية</td><td>150,000 IQD</td><td>غير محدود</td><td>API + تقارير مخصصة</td></tr>
+    </table>
+  </div>
+
+  <div class="card card-blue no-break">
+    <strong>2️⃣ اشتراكات مكاتب التوظيف</strong>
+    <table style="margin-top:10px">
+      <tr><th>الخطة</th><th>السعر/شهر</th><th>المميزات</th></tr>
+      <tr><td>الأساسية</td><td>50,000 IQD</td><td>10 وظائف + صفحة المكتب</td></tr>
+      <tr><td>الاحترافية</td><td>100,000 IQD</td><td>غير محدود + خارطة + تقييمات</td></tr>
+      <tr><td>الذهبية</td><td>200,000 IQD</td><td>كل المميزات + شارة موثّق</td></tr>
+    </table>
+  </div>
+
+  <div class="grid-2">
+    <div class="card card-amber no-break">
+      <strong>3️⃣ الوظائف المميّزة (Featured Jobs)</strong>
+      <p>ترقية أي وظيفة لتظهر في الأعلى</p>
+      <ul class="check-list">
+        <li>7 أيام: 15,000 IQD</li>
+        <li>14 يوم: 25,000 IQD</li>
+        <li>30 يوم: 45,000 IQD</li>
+      </ul>
+    </div>
+    <div class="card card-purple no-break">
+      <strong>4️⃣ الخدمات المدفوعة الأخرى</strong>
+      <ul class="check-list">
+        <li>السيرة الذاتية الاحترافية PDF: 5,000 IQD</li>
+        <li>مراجعة السيرة بالـ AI: 10,000 IQD</li>
+        <li>إعلان بانر على المنصة: 30,000 IQD/أسبوع</li>
+        <li>تقرير سوق العمل: 50,000 IQD</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="sub-title">التوقعات المالية التفصيلية</div>
+
+  <div class="card card-teal no-break">
+    <strong>📅 السنة الأولى — مرحلة الإطلاق</strong>
+    <table style="margin-top:10px">
+      <tr><th>المصدر</th><th>العدد</th><th>متوسط الدخل/شهر</th><th>الإيراد السنوي</th></tr>
+      <tr><td>أصحاب عمل (قياسية)</td><td>30 عميل</td><td>25,000 IQD</td><td>9,000,000 IQD</td></tr>
+      <tr><td>أصحاب عمل (احترافية)</td><td>15 عميل</td><td>75,000 IQD</td><td>13,500,000 IQD</td></tr>
+      <tr><td>مكاتب توظيف</td><td>20 مكتب</td><td>100,000 IQD</td><td>24,000,000 IQD</td></tr>
+      <tr><td>وظائف مميّزة</td><td>100/شهر</td><td>20,000 IQD</td><td>24,000,000 IQD</td></tr>
+      <tr><td>خدمات أخرى</td><td>—</td><td>—</td><td>7,500,000 IQD</td></tr>
+      <tr class="total-row"><td colspan="3"><strong>إجمالي السنة الأولى</strong></td><td><strong>78,000,000 IQD</strong><br><small>(~$60,000 USD)</small></td></tr>
+    </table>
+  </div>
+
+  <div class="card card-blue no-break">
+    <strong>📅 السنة الثانية — مرحلة النمو (3× السنة الأولى)</strong>
+    <table style="margin-top:10px">
+      <tr><th>المصدر</th><th>العدد</th><th>متوسط الدخل/شهر</th><th>الإيراد السنوي</th></tr>
+      <tr><td>أصحاب عمل (قياسية)</td><td>100 عميل</td><td>25,000 IQD</td><td>30,000,000 IQD</td></tr>
+      <tr><td>أصحاب عمل (احترافية)</td><td>50 عميل</td><td>75,000 IQD</td><td>45,000,000 IQD</td></tr>
+      <tr><td>مكاتب توظيف</td><td>60 مكتب</td><td>100,000 IQD</td><td>72,000,000 IQD</td></tr>
+      <tr><td>وظائف مميّزة</td><td>300/شهر</td><td>20,000 IQD</td><td>72,000,000 IQD</td></tr>
+      <tr><td>خدمات أخرى</td><td>—</td><td>—</td><td>15,000,000 IQD</td></tr>
+      <tr class="total-row"><td colspan="3"><strong>إجمالي السنة الثانية</strong></td><td><strong>234,000,000 IQD</strong><br><small>(~$180,000 USD)</small></td></tr>
+    </table>
+  </div>
+
+  <div class="card card-purple no-break">
+    <strong>📅 السنة الثالثة — مرحلة التوسع (×2.2)</strong>
+    <table style="margin-top:10px">
+      <tr><th>المصدر</th><th>العدد</th><th>متوسط الدخل/شهر</th><th>الإيراد السنوي</th></tr>
+      <tr><td>أصحاب عمل (كل الخطط)</td><td>350 عميل</td><td>60,000 IQD</td><td>252,000,000 IQD</td></tr>
+      <tr><td>مكاتب توظيف</td><td>150 مكتب</td><td>120,000 IQD</td><td>216,000,000 IQD</td></tr>
+      <tr><td>وظائف مميّزة + إعلانات</td><td>—</td><td>—</td><td>52,000,000 IQD</td></tr>
+      <tr class="total-row"><td colspan="3"><strong>إجمالي السنة الثالثة</strong></td><td><strong>520,000,000 IQD</strong><br><small>(~$400,000 USD)</small></td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ══ التكاليف والأرباح ══ -->
+<div class="page page-break">
+  <div class="section-title">📊 التكاليف والأرباح الصافية</div>
+
+  <div class="sub-title">هيكل التكاليف</div>
+  <table>
+    <tr><th>البند</th><th>السنة الأولى</th><th>السنة الثانية</th><th>السنة الثالثة</th></tr>
+    <tr><td>البنية التحتية (Firebase, Cloudflare, Domain)</td><td>840,000</td><td>2,000,000</td><td>4,000,000</td></tr>
+    <tr><td>التسويق الرقمي (إعلانات، محتوى)</td><td>12,000,000</td><td>24,000,000</td><td>40,000,000</td></tr>
+    <tr><td>الرواتب والفريق</td><td>12,000,000</td><td>30,000,000</td><td>60,000,000</td></tr>
+    <tr><td>العمليات والدعم الفني</td><td>2,160,000</td><td>6,000,000</td><td>12,000,000</td></tr>
+    <tr><td>القانونية والتسجيل</td><td>1,000,000</td><td>3,000,000</td><td>4,000,000</td></tr>
+    <tr class="total-row"><td><strong>إجمالي التكاليف</strong></td><td><strong>28,000,000 IQD</strong></td><td><strong>65,000,000 IQD</strong></td><td><strong>120,000,000 IQD</strong></td></tr>
+  </table>
+
+  <div class="sub-title">ملخص الأرباح الصافية</div>
+  <div class="grid-3">
+    <div class="stat stat-teal">
+      <div class="num">50M</div>
+      <div class="lbl">ربح السنة الأولى (IQD)</div>
+      <div style="font-size:11px;margin-top:4px;color:#0f766e">هامش ربح 64%</div>
+    </div>
+    <div class="stat stat-blue">
+      <div class="num">169M</div>
+      <div class="lbl">ربح السنة الثانية (IQD)</div>
+      <div style="font-size:11px;margin-top:4px;color:#1d4ed8">هامش ربح 72%</div>
+    </div>
+    <div class="stat stat-purple">
+      <div class="num">400M</div>
+      <div class="lbl">ربح السنة الثالثة (IQD)</div>
+      <div style="font-size:11px;margin-top:4px;color:#6d28d9">هامش ربح 77%</div>
+    </div>
+  </div>
+
+  <div class="sub-title">مخطط نمو الإيرادات</div>
+  <div class="bar-chart">
+    <div class="bar-row">
+      <span class="bar-label">السنة 1</span>
+      <div class="bar-track"><div class="bar-fill bar-y1" style="width:15%">78M IQD</div></div>
+    </div>
+    <div class="bar-row">
+      <span class="bar-label">السنة 2</span>
+      <div class="bar-track"><div class="bar-fill bar-y2" style="width:45%">234M IQD</div></div>
+    </div>
+    <div class="bar-row">
+      <span class="bar-label">السنة 3</span>
+      <div class="bar-track"><div class="bar-fill bar-y3" style="width:100%">520M IQD</div></div>
+    </div>
+  </div>
+
+  <div class="sub-title">نقطة التعادل (Break-Even)</div>
+  <div class="card card-amber">
+    <div class="grid-3" style="text-align:center">
+      <div>
+        <div style="font-size:24px;font-weight:900;color:#f59e0b">الشهر 6</div>
+        <div style="font-size:12px;color:#64748b">تاريخ التعادل المتوقع</div>
+      </div>
+      <div>
+        <div style="font-size:24px;font-weight:900;color:#f59e0b">65 عميل</div>
+        <div style="font-size:12px;color:#64748b">العدد الأدنى للتعادل</div>
+      </div>
+      <div>
+        <div style="font-size:24px;font-weight:900;color:#f59e0b">2.3M IQD</div>
+        <div style="font-size:12px;color:#64748b">الإيراد الشهري للتعادل</div>
+      </div>
+    </div>
+    <div class="info-box" style="margin-top:12px">
+      مع <strong>30 صاحب عمل (قياسية)</strong> + <strong>20 مكتب توظيف (أساسية)</strong> تتجاوز نقطة التعادل وتبدأ الأرباح.
+    </div>
+  </div>
+
+  <div class="sub-title">مؤشرات الأداء الرئيسية (KPIs)</div>
+  <table>
+    <tr><th>المؤشر</th><th>السنة 1</th><th>السنة 2</th><th>السنة 3</th></tr>
+    <tr><td>المستخدمون المسجّلون</td><td>5,000</td><td>25,000</td><td>80,000</td></tr>
+    <tr><td>الوظائف المنشورة/شهر</td><td>200</td><td>800</td><td>2,500</td></tr>
+    <tr><td>العملاء المدفوعون</td><td>65</td><td>210</td><td>500</td></tr>
+    <tr><td>معدل التحويل (مجاني→مدفوع)</td><td>5%</td><td>8%</td><td>12%</td></tr>
+    <tr><td>متوسط قيمة العميل/سنة (LTV)</td><td>1.2M IQD</td><td>1.5M IQD</td><td>2M IQD</td></tr>
+    <tr><td>تكلفة اكتساب العميل (CAC)</td><td>184,000 IQD</td><td>116,000 IQD</td><td>80,000 IQD</td></tr>
+  </table>
+</div>
+
+<!-- ══ الفوائد والتأثير ══ -->
+<div class="page page-break">
+  <div class="section-title">🌟 الفوائد والتأثير الاجتماعي والاقتصادي</div>
+
+  <div class="sub-title">الفوائد الاقتصادية</div>
+  <div class="grid-2">
+    <div class="card card-teal">
+      <strong>💼 تقليص فترة البطالة</strong>
+      <p>تسريع وصول الباحث للوظيفة من متوسط 6 أشهر إلى أسابيع قليلة عبر الإشعارات الفورية والفلاتر الذكية.</p>
+    </div>
+    <div class="card card-teal">
+      <strong>📈 رفع كفاءة سوق العمل</strong>
+      <p>ربط العرض بالطلب بدقة جغرافية لـ 18 محافظة، مما يقلل التكاليف على أصحاب العمل بنسبة تصل لـ 40%.</p>
+    </div>
+    <div class="card card-blue">
+      <strong>🏭 دعم المشاريع الصغيرة</strong>
+      <p>توفير أداة توظيف احترافية للمشاريع الصغيرة والمتوسطة بتكلفة أقل بـ 90% من الوكالات التقليدية.</p>
+    </div>
+    <div class="card card-blue">
+      <strong>💰 ضخ رأسمال محلي</strong>
+      <p>إبقاء الإنفاق على التوظيف داخل الاقتصاد العراقي بدلاً من الاشتراك في منصات خليجية أو عالمية.</p>
+    </div>
+  </div>
+
+  <div class="sub-title">الفوائد الاجتماعية</div>
+  <div class="grid-2">
+    <div class="card card-amber">
+      <strong>👩‍💼 تمكين المرأة</strong>
+      <p>فلتر الجنس ووظائف "عن بُعد" تفتح فرصاً لشريحة واسعة من الكفاءات النسائية غير الموظّفة.</p>
+    </div>
+    <div class="card card-amber">
+      <strong>🎓 دعم الخريجين الجدد</strong>
+      <p>خيار "بدون خبرة" والتقديم الفوري بدون حساب يُخفّض حاجز الدخول لسوق العمل.</p>
+    </div>
+    <div class="card card-red">
+      <strong>🌍 توزيع الفرص جغرافياً</strong>
+      <p>نشر الوظائف في المحافظات غير العاصمة يُقلل الهجرة الداخلية نحو بغداد.</p>
+    </div>
+    <div class="card card-red">
+      <strong>🛡️ مكافحة النصب والاحتيال</strong>
+      <p>التحقق من المكاتب والشركات يحمي الباحثين من إعلانات التوظيف الوهمية المنتشرة على السوشل ميديا.</p>
+    </div>
+  </div>
+
+  <div class="sub-title">الفوائد التقنية والابتكارية</div>
+  <ul class="check-list">
+    <li><strong>أول منصة عراقية بـ AI لاستيراد الوظائف</strong> — تحليل إعلانات السوشل ميديا تلقائياً بالذكاء الاصطناعي</li>
+    <li><strong>تكامل واتساب وتلغرام</strong> — استخدام قنوات التواصل الأكثر شيوعاً في العراق لنشر الوظائف</li>
+    <li><strong>PWA متكامل</strong> — تجربة تطبيق موبايل بدون الحاجة للنشر على المتاجر</li>
+    <li><strong>بنية تحتية Edge</strong> — Cloudflare Workers تضمن سرعة تحميل عالية من أي محافظة</li>
+    <li><strong>SEO متكامل</strong> — ظهور في نتائج Google Jobs وبحث الوظائف العراقية</li>
+  </ul>
+
+  <div class="sub-title">تحليل SWOT</div>
+  <div class="grid-2">
+    <div class="card card-teal">
+      <strong>💪 نقاط القوة (Strengths)</strong>
+      <ul class="check-list" style="margin-top:8px">
+        <li>تكلفة تشغيل شبه صفرية</li>
+        <li>AI متكامل لاستيراد الوظائف</li>
+        <li>مخصص 100% للسوق العراقي</li>
+        <li>تكامل واتساب وتلغرام</li>
+        <li>متعدد الأدوار والوظائف</li>
+      </ul>
+    </div>
+    <div class="card card-red">
+      <strong>⚠️ نقاط الضعف (Weaknesses)</strong>
+      <ul class="check-list warn-list" style="margin-top:8px">
+        <li>لا يوجد تطبيق موبايل أصلي بعد</li>
+        <li>يحتاج محتوى لبناء الثقة</li>
+        <li>لا بوابة دفع محلية حالياً</li>
+        <li>فريق صغير في مرحلة الإطلاق</li>
+      </ul>
+    </div>
+    <div class="card card-blue">
+      <strong>🚀 الفرص (Opportunities)</strong>
+      <ul class="check-list star-list" style="margin-top:8px">
+        <li>36% بطالة شباب = سوق ضخم</li>
+        <li>نمو الاقتصاد الرقمي العراقي</li>
+        <li>غياب منافس محلي قوي</li>
+        <li>التوسع للسوق العربي لاحقاً</li>
+      </ul>
+    </div>
+    <div class="card card-amber">
+      <strong>🌪️ التهديدات (Threats)</strong>
+      <ul class="check-list warn-list" style="margin-top:8px">
+        <li>دخول منافس خليجي ممول</li>
+        <li>تغيّر سياسات Firebase/Google</li>
+        <li>بطء انتشار الدفع الرقمي</li>
+        <li>عدم استقرار الإنترنت في بعض المحافظات</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ══ خطة التسويق ══ -->
+<div class="page page-break">
+  <div class="section-title">📣 خطة التسويق الذاتي (Self-Marketing)</div>
+
+  <div class="info-box">
+    المنصة مصمّمة لتسوّق نفسها — كل وظيفة تُشارك تجلب زوّاراً جدداً، وكل مستخدم مرضٍ يُحيل آخرين.
+  </div>
+
+  <div class="grid-2">
+    <div class="card card-teal">
+      <strong>🔄 الانتشار العضوي</strong>
+      <ul class="check-list" style="margin-top:8px">
+        <li>كل مشاركة واتساب = بطاقة غنية بصورة وتفاصيل</li>
+        <li>كل وظيفة = منشور تلقائي في @afraiq_jobs</li>
+        <li>Deep links تُبقي المستخدم داخل المنصة</li>
+        <li>SEO يُدرج المنصة في Google Jobs</li>
+      </ul>
+    </div>
+    <div class="card card-blue">
+      <strong>📊 مراحل النمو</strong>
+      <ul class="check-list" style="margin-top:8px">
+        <li>الشهر 1-3: 100 وظيفة حقيقية كأساس</li>
+        <li>الشهر 4-6: تفعيل الخطط المدفوعة</li>
+        <li>الشهر 7-12: شراكات مع مكاتب التوظيف</li>
+        <li>السنة 2: إطلاق تطبيق الموبايل</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="sub-title">الخلاصة والتوصية</div>
+  <div class="card card-teal">
+    <p>
+      <strong>عفراء للتوظيف</strong> مشروع واعد بهامش ربح مرتفع (64-77%) وتكاليف تشغيل منخفضة جداً.
+      الفرصة السوقية ضخمة في ظل غياب منافس محلي متكامل وارتفاع معدلات البطالة.
+    </p>
+    <p>
+      <strong>التوصية:</strong> التركيز في الـ 90 يوماً الأولى على جمع <strong>100 وظيفة حقيقية</strong> و<strong>50 عميل مدفوع</strong>
+      لإثبات نموذج الإيرادات، ثم التوسع التسويقي والتقني.
+    </p>
+    <div class="grid-3" style="margin-top:16px;text-align:center">
+      <div class="stat stat-teal"><div class="num">$400K</div><div class="lbl">إيرادات السنة 3 (USD)</div></div>
+      <div class="stat stat-blue"><div class="num">77%</div><div class="lbl">هامش الربح المتوقع</div></div>
+      <div class="stat stat-purple"><div class="num">6 أشهر</div><div class="lbl">للوصول لنقطة التعادل</div></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <p>دراسة الجدوى الاقتصادية — منصة عفراء للتوظيف | afra-iq.com | مايو 2026</p>
+    <p>جميع الأرقام تقديرية بناءً على تحليل السوق العراقي وبيانات قطاع التوظيف الإقليمي</p>
+  </div>
+</div>
+
+</body>
+</html>

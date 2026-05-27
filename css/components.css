@@ -986,3 +986,115 @@ html:not([data-theme="dark"]) .sidebar {
 html:not([data-theme="dark"]) .sidebar::after {
   background: linear-gradient(180deg, rgba(13,148,136,.22) 0%, transparent 35%);
 }
+
+/* ═══════════════════════════════════════════════════════════
+   تجربة تطبيق الهاتف — تحسين شامل (Mobile App Feel)
+   الهدف: مظهر ونمط تطبيق أصلي على جميع الشاشات الصغيرة
+═══════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+
+  /* ── Shell & Layout ── */
+  .pc {
+    padding: 14px 12px;
+    padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* ── Topbar: تصغير ليشبه app header ── */
+  .tb {
+    height: 54px;
+    padding: 0 12px;
+    padding-top: env(safe-area-inset-top, 0px);
+    gap: 10px;
+  }
+  .tb-title { font-size: 15px; font-weight: 900; }
+  .tb-menu  { width: 36px; height: 36px; font-size: 14px; border-radius: 10px; }
+  .ibtn     { width: 36px; height: 36px; font-size: 13px; border-radius: 10px; }
+  .tb-acts  { gap: 7px; }
+
+  /* ── Bottom Nav: أكثر وضوحاً وأرحب ── */
+  .bnav {
+    height: auto;
+    padding: 6px 6px calc(8px + env(safe-area-inset-bottom, 0px));
+    box-shadow: 0 -2px 16px rgba(0,0,0,.12);
+  }
+  .bni { padding: 5px 2px 4px; border-radius: 14px; min-width: 0; }
+  .bni i { font-size: 20px; }
+  .bni    { font-size: 9.5px; }
+
+  /* ── Cards: مستديرة أكثر تشبه التطبيقات ── */
+  .card    { border-radius: 18px; }
+  .sc      { border-radius: 16px; padding: 14px 13px; }
+  .cp      { padding: 16px 14px; }
+  .ch      { padding: 13px 16px; }
+  .skc     { border-radius: 16px; padding: 14px; }
+  .comp-card { border-radius: 18px; }
+
+  /* ── Job cards: تهوية أكثر ── */
+  .jc      { border-radius: 18px; padding: 14px 12px; }
+  .jc-top  { gap: 9px; }
+  .jlo     { width: 44px; height: 44px; border-radius: 12px; font-size: 18px; }
+
+  /* ── Section headers ── */
+  .sh      { margin-bottom: 14px; }
+  .st      { font-size: 16px; }
+  .st-ico  { width: 32px; height: 32px; font-size: 14px; border-radius: 9px; }
+
+  /* ── Buttons: حجم مناسب للمس (min 44px height) ── */
+  .btn     { min-height: 44px; padding: 0 16px; font-size: 13px; border-radius: 11px; }
+  .bsm     { min-height: 38px; padding: 0 13px; font-size: 12px; border-radius: 9px; }
+  .blg     { min-height: 50px; padding: 0 22px; font-size: 15px; }
+  .bfu     { width: 100%; justify-content: center; }
+
+  /* ── Form controls: أسهل للمس ── */
+  .fc      { min-height: 46px; font-size: 14px; padding: 11px 14px; border-radius: 12px; }
+  textarea.fc { min-height: auto; }
+  .fc:focus { box-shadow: 0 0 0 3px rgba(13,148,136,.15); }
+
+  /* ── Tabs: أطول قليلاً ── */
+  .tabs    { border-radius: 13px; padding: 3px; }
+  .tb2     { min-height: 38px; font-size: 12px; border-radius: 9px; }
+
+  /* ── Filter chips: أكبر للمس ── */
+  .fc2     { min-height: 36px; padding: 0 12px; font-size: 11px; border-radius: 20px; }
+
+  /* ── Stats grid: ثنائي العمود دائماً على الموبايل ── */
+  .sg      { grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px; }
+  .si      { width: 40px; height: 40px; border-radius: 11px; font-size: 17px; }
+  .sl      { font-size: 10.5px; }
+  .sv      { font-size: 22px; }
+
+  /* ── Modals: bottom sheet كامل العرض ── */
+  .mo      { padding: 0; align-items: flex-end; }
+  .md      { border-radius: 22px 22px 0 0; max-height: 93vh; max-width: 100%; }
+  .mh      { padding: 16px 18px; }
+  .mb      { padding: 16px 18px; }
+  .mf      { padding: 14px 18px; flex-wrap: wrap; gap: 9px; }
+  .mf .btn { flex: 1; justify-content: center; min-height: 46px; }
+
+  /* ── الفلاتر: أدق ── */
+  .fb      { padding: 10px 12px; gap: 6px; border-radius: 16px; }
+  .sort-select { min-height: 44px; font-size: 13px; border-radius: 12px; padding: 0 12px; }
+
+  /* ── Timeline ── */
+  .tl      { padding-right: 22px; }
+
+  /* ── Notifications panel ── */
+  .notif-panel { border-radius: 22px 22px 0 0; left: 0; right: 0; width: 100%; }
+
+  /* ── إخفاء hover effects على touch ── */
+  .card:hover   { transform: none; }
+  .sc:hover     { transform: none; }
+  .jc:hover     { transform: none; }
+  .btn:hover    { transform: none; }
+}
+
+/* ── Small phones ≤480px ── */
+@media (max-width: 480px) {
+  .pc      { padding: 12px 10px; padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px)); }
+  .card    { border-radius: 16px; }
+  .jc      { border-radius: 16px; padding: 12px 10px; }
+  .md      { border-radius: 18px 18px 0 0; }
+  .sg      { gap: 8px; }
+  .sv      { font-size: 20px; }
+  .fc2     { min-height: 34px; padding: 0 10px; font-size: 10.5px; }
+}

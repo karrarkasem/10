@@ -1228,8 +1228,49 @@ html:not([data-theme="dark"]) .lnd-sf-sel option { background: #fff; color: #0f1
 @media (min-width: 768px) { .wa-float { bottom: 30px; left: 28px; } }
 
 /* ═══════════════════════════════════════════════
-   صفحة الوظائف — فلاتر قابلة للتمرير
+   صفحة الوظائف — بطاقة الفلاتر (app style)
 ═══════════════════════════════════════════════ */
+.jobs-filter-card {
+  background: var(--bgc); border: 1px solid var(--br);
+  border-radius: 18px; box-shadow: var(--sh);
+  padding: 14px 14px 12px;
+  margin-bottom: 14px; display: flex; flex-direction: column; gap: 11px;
+  overflow: hidden;
+}
+
+/* صف البحث */
+.jf-search-row {
+  display: flex; gap: 8px; align-items: center;
+}
+.jf-sb {
+  flex: 1; min-width: 0;
+  height: 46px; border-radius: 13px;
+}
+.jf-sb input { font-size: 13px; }
+.jf-geo-btn {
+  width: 46px; height: 46px; flex-shrink: 0;
+  border-radius: 13px; border: 1.5px solid var(--br);
+  background: var(--bgc2); color: var(--danger);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; cursor: pointer; transition: all .2s;
+}
+.jf-geo-btn:hover { border-color: var(--danger); background: rgba(239,68,68,.08); }
+.jf-geo-btn.on    { border-color: var(--danger); background: rgba(239,68,68,.12); }
+
+/* صف المحافظة والترتيب */
+.jf-selects-row {
+  display: flex; gap: 8px;
+}
+.jf-sel {
+  flex: 1; min-width: 0;
+  height: 42px; padding: 0 12px; font-size: 12px;
+  border-radius: 12px; width: auto !important;
+}
+
+/* تبويبات النوع */
+.jf-tabs { margin: 0; }
+
+/* فلتر الفئات */
 .cat-scroll-row {
   display: flex; gap: 7px; align-items: center;
   overflow-x: auto; flex-wrap: nowrap;
@@ -1239,8 +1280,10 @@ html:not([data-theme="dark"]) .lnd-sf-sel option { background: #fff; color: #0f1
 .cat-scroll-row::-webkit-scrollbar { display: none; }
 .cat-scroll-row .fc2 { flex-shrink: 0; }
 
-.skill-scroll-row {
+/* فلتر المهارات */
+.jf-skills-row {
   display: flex; align-items: center; gap: 0;
+  padding-top: 9px; border-top: 1px solid var(--br);
 }
 .skill-row-lbl {
   font-size: 10px; font-weight: 700; color: var(--tx3);
@@ -1255,19 +1298,53 @@ html:not([data-theme="dark"]) .lnd-sf-sel option { background: #fff; color: #0f1
 .skill-chips-scroll::-webkit-scrollbar { display: none; }
 .skill-chips-scroll .skill-filter-chip { flex-shrink: 0; }
 
+/* Light theme */
+html:not([data-theme="dark"]) .jobs-filter-card {
+  background: #fff;
+  border-color: rgba(13,20,52,.07);
+  box-shadow: 0 1px 3px rgba(13,20,52,.04), 0 6px 20px rgba(13,20,52,.06);
+}
+html:not([data-theme="dark"]) .jf-geo-btn {
+  background: rgba(13,20,52,.04);
+  border-color: rgba(13,20,52,.1);
+}
+
 /* ═══════════════════════════════════════════════
    بطاقة الوظيفة — تحسين الموبايل
 ═══════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════
+   بطاقة الوظيفة — مظهر تطبيق الهاتف (≤768px)
+═══════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  /* الجزء التوضيحي مقتطع لسطر واحد على الموبايل */
+  .jc > div[style*="-webkit-line-clamp:2"] {
+    -webkit-line-clamp: 1 !important;
+    font-size: 11.5px;
+  }
+  /* زر التقديم أكبر وأوضح */
+  .jc-apply-btn {
+    min-height: 38px; padding: 0 14px;
+    font-size: 12px; border-radius: 10px;
+  }
+  /* أزرار المشاركة والحفظ أصغر */
+  .share-ico-btn { width: 32px; height: 32px; border-radius: 9px; }
+  .bkm-btn       { width: 32px; height: 32px; }
+  /* الراتب أوضح */
+  .jsal { font-size: 13px; font-weight: 900; }
+  /* تاريخ النشر أصغر */
+  .jc-top > div:last-child > span { font-size: 9.5px; }
+}
+
 @media (max-width: 480px) {
-  .jc { padding: 12px 10px; }
+  .jobs-filter-card { border-radius: 16px; padding: 12px 12px 10px; gap: 9px; }
+  .jf-sb { height: 44px; }
+  .jf-geo-btn { width: 44px; height: 44px; }
+  .jf-sel { height: 40px; font-size: 12px; }
+  .jc { padding: 12px 10px; border-radius: 16px; }
   .jc-top { gap: 8px; }
-  .jlo { width: 42px; height: 42px; font-size: 17px; border-radius: 10px; }
+  .jlo { width: 42px; height: 42px; font-size: 17px; border-radius: 11px; }
   .jtit { font-size: 13px; }
-  .jco { font-size: 11px; }
-  .jc-apply-btn { padding: 5px 9px; font-size: 11px; }
-  .share-ico-btn { width: 28px; height: 28px; }
-  .bkm-btn { width: 28px; height: 28px; }
-  .jsal { font-size: 12px; }
-  /* منع الـ overflow الأفقي في صفحة الوظائف */
+  .jco  { font-size: 11px; }
+  /* منع الـ overflow الأفقي */
   .pc { overflow-x: hidden; }
 }
