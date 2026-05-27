@@ -1259,12 +1259,14 @@ html:not([data-theme="dark"]) .lnd-sf-sel option { background: #fff; color: #0f1
 
 /* صف المحافظة والترتيب */
 .jf-selects-row {
-  display: flex; gap: 8px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
 }
 .jf-sel {
-  flex: 1; min-width: 0;
+  width: 100%;
   height: 42px; padding: 0 12px; font-size: 12px;
-  border-radius: 12px; width: auto !important;
+  border-radius: 12px;
 }
 
 /* تبويبات النوع */
