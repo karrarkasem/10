@@ -430,6 +430,21 @@
      المودالات
 ══════════════════════════════════════════════ -->
 
+<!-- فلاتر الوظائف -->
+<div class="mo" id="moJobFilter"><div class="md">
+  <div class="mh">
+    <div class="mt"><i class="fas fa-sliders-h" style="color:var(--p)"></i> فلاتر البحث</div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <button onclick="clearJobFilters()" style="background:none;border:none;color:var(--tx3);font-size:12px;font-family:Cairo,sans-serif;cursor:pointer;font-weight:700;padding:4px 8px;border-radius:8px;transition:all .18s" onmouseenter="this.style.color='var(--danger)'" onmouseleave="this.style.color='var(--tx3)'"><i class="fas fa-trash-alt"></i> مسح</button>
+      <div class="mc" onclick="cmo('moJobFilter')"><i class="fas fa-times"></i></div>
+    </div>
+  </div>
+  <div class="mb" id="moJobFilterB"></div>
+  <div class="mf">
+    <button class="btn bp bfu blg" onclick="applyJobFilter()"><i class="fas fa-check"></i> تطبيق الفلاتر</button>
+  </div>
+</div></div>
+
 <!-- تفاصيل الوظيفة -->
 <div class="mo" id="moJob"><div class="md md-lg">
   <div class="mh"><div class="mt"><i class="fas fa-briefcase" style="color:var(--p)"></i> تفاصيل الوظيفة</div><div class="mc" onclick="cmo('moJob')"><i class="fas fa-times"></i></div></div>

@@ -71,6 +71,17 @@ function jCard(j) {
   </div>`;
 }
 
+// ── الفئات ──
+const JF_CATS = [
+  { v:'',      l:'الكل',   ic:'fa-th-large',      color:'#0d9488' },
+  { v:'tech',  l:'تقنية',  ic:'fa-laptop-code',   color:'#3b82f6' },
+  { v:'biz',   l:'أعمال',  ic:'fa-chart-line',    color:'#f59e0b' },
+  { v:'med',   l:'طب',     ic:'fa-stethoscope',   color:'#ef4444' },
+  { v:'edu',   l:'تعليم',  ic:'fa-graduation-cap',color:'#22c55e' },
+  { v:'eng',   l:'هندسة',  ic:'fa-cog',           color:'#8b5cf6' },
+  { v:'other', l:'أخرى',   ic:'fa-ellipsis-h',    color:'#64748b' },
+];
+
 // ── صفحة تصفح الوظائف ──
 function pgJobs(el) {
   const res = fSortJobs(fJobs());
@@ -82,76 +93,60 @@ function pgJobs(el) {
       <span class="b b-tl" id="jobsCountBadge">${JOBS.length} وظيفة</span>
     </div>
 
-    <!-- شريط البحث والفلاتر -->
     <div class="jobs-filter-card">
 
-      <!-- ① البحث + موقعي -->
+      <!-- ① بحث + زر الفلاتر -->
       <div class="jf-search-row">
         <div class="sb jf-sb">
-          <i class="fas fa-search"></i>
-          <input type="text" placeholder="ابحث عن وظيفة أو شركة..." oninput="JF.q=this.value;rJobs()" id="jq">
-          <button id="jqClear" style="display:none;background:none;border:none;color:var(--tx3);cursor:pointer;font-size:14px;padding:0 4px" onclick="document.getElementById('jq').value='';JF.q='';this.style.display='none';rJobs()">✕</button>
+          <i class="fas fa-search" style="color:var(--tx3);font-size:13px;flex-shrink:0"></i>
+          <input type="text" placeholder="ابحث عن وظيفة أو شركة..." oninput="JF.q=this.value;_updateJFBadge();rJobs()" id="jq" value="${JF.q}">
+          <button id="jqClear" style="display:${JF.q?'block':'none'};background:none;border:none;color:var(--tx3);cursor:pointer;font-size:14px;padding:0 4px;flex-shrink:0" onclick="document.getElementById('jq').value='';JF.q='';this.style.display='none';_updateJFBadge();rJobs()">✕</button>
         </div>
-        <button id="geoBtn" class="jf-geo-btn" onclick="geoFilterJobs()" title="وظائف قريبة مني">
-          <i class="fas fa-map-marker-alt"></i>
+        <button class="jf-filter-btn" id="jfFilterBtn" onclick="openJobFilter()">
+          <i class="fas fa-sliders-h"></i>
+          <span class="jf-badge" id="jfBadge" style="display:none">0</span>
         </button>
       </div>
 
-      <!-- ② نوع الوظيفة (تبويبات) -->
-      <div class="tabs jf-tabs">
-        <button class="tb2 on"  onclick="JF.type='';setTab(this);rJobs()"><i class="fas fa-th"></i>الكل</button>
-        <button class="tb2"     onclick="JF.type='full';setTab(this);rJobs()"><i class="fas fa-briefcase"></i>كامل</button>
-        <button class="tb2"     onclick="JF.type='part';setTab(this);rJobs()"><i class="fas fa-clock"></i>جزئي</button>
-        <button class="tb2"     onclick="JF.type='remote';setTab(this);rJobs()"><i class="fas fa-laptop-house"></i>عن بُعد</button>
-        <button class="tb2"     onclick="JF.type='gig';setTab(this);rJobs()"><i class="fas fa-tasks"></i>مهام</button>
-      </div>
-
-      <!-- ③ شريط الفلاتر (محافظة + ترتيب + فئات) — scroll أفقي -->
-      <div class="jf-filters-bar">
-        <select class="jf-fsel" onchange="JF.prov=this.value;rJobs()">
-          <option value="">📍 المحافظة</option>
-          ${PROVS.map(p => `<option ${p === P?.province ? 'selected' : ''}>${p}</option>`).join('')}
-        </select>
-        <select class="jf-fsel" onchange="JSORT=this.value;rJobs()">
-          <option value="newest">↕ الأحدث</option>
-          <option value="salary_high">💰 الراتب ↑</option>
-          <option value="salary_low">💰 الراتب ↓</option>
-          <option value="applicants">👥 الأكثر تقديماً</option>
-        </select>
-        <span class="jf-sep"></span>
+      <!-- ② نوع الوظيفة — chips أفقية -->
+      <div class="jf-type-row">
         ${[
-          { v:'',      l:'كل الفئات', ic:'fa-th-list' },
-          { v:'tech',  l:'تقنية',     ic:'fa-laptop-code' },
-          { v:'biz',   l:'أعمال',     ic:'fa-chart-line' },
-          { v:'med',   l:'طب',        ic:'fa-stethoscope' },
-          { v:'edu',   l:'تعليم',     ic:'fa-graduation-cap' },
-          { v:'eng',   l:'هندسة',     ic:'fa-cog' },
-          { v:'other', l:'أخرى',      ic:'fa-ellipsis-h' },
-        ].map(c => `<button class="jf-chip ${c.v === JF.cat ? 'on' : ''}" onclick="JF.cat='${c.v}';this.closest('.jf-filters-bar').querySelectorAll('.jf-chip').forEach(b=>b.classList.remove('on'));this.classList.add('on');rJobs()"><i class="fas ${c.ic}"></i>${c.l}</button>`).join('')}
-        ${BOOKMARKS.length ? `<button class="jf-chip" onclick="showBookmarks(this)"><i class="fas fa-bookmark" style="color:var(--acc)"></i>محفوظاتي</button>` : ''}
+          { v:'',       l:'الكل',   ic:'fa-th' },
+          { v:'full',   l:'كامل',   ic:'fa-briefcase' },
+          { v:'part',   l:'جزئي',   ic:'fa-clock' },
+          { v:'remote', l:'عن بُعد',ic:'fa-laptop-house' },
+          { v:'gig',    l:'مهام',   ic:'fa-tasks' },
+        ].map(t => `<button class="jf-type-btn${JF.type===t.v?' on':''}" onclick="JF.type='${t.v}';document.querySelectorAll('.jf-type-btn').forEach(b=>b.classList.remove('on'));this.classList.add('on');rJobs()"><i class="fas ${t.ic}"></i>${t.l}</button>`).join('')}
       </div>
 
-      <!-- ④ فلتر المهارات (scroll أفقي) -->
-      <div class="jf-skills-bar">
-        <span class="jf-skills-lbl"><i class="fas fa-tag"></i></span>
-        ${['Excel','Python','JavaScript','React','PHP','SQL','AutoCAD','Photoshop','محاسبة','تسويق رقمي','مبيعات','خدمة عملاء','إدارة مشاريع'].map(sk =>
-          `<button class="skill-filter-chip ${JF.skill===sk?'on':''}" onclick="filterBySkill('${sk}')">${sk}</button>`
-        ).join('')}
-        ${JF.skill ? `<button class="skill-filter-chip jf-skill-clear" onclick="filterBySkill('')"><i class="fas fa-times"></i></button>` : ''}
+      <!-- ③ فئات بشكل أيقونات -->
+      <div class="jf-cat-row">
+        ${JF_CATS.map(c => `
+          <button class="jf-cat-btn${JF.cat===c.v?' on':''}" style="--cc:${c.color}" onclick="JF.cat='${c.v}';document.querySelectorAll('.jf-cat-btn').forEach(b=>b.classList.remove('on'));this.classList.add('on');_updateJFBadge();rJobs()">
+            <span class="jf-cat-ico"><i class="fas ${c.ic}"></i></span>
+            <span class="jf-cat-lbl">${c.l}</span>
+          </button>`).join('')}
+        ${BOOKMARKS.length ? `
+          <button class="jf-cat-btn" style="--cc:#f59e0b" onclick="showBookmarks(this)">
+            <span class="jf-cat-ico"><i class="fas fa-bookmark"></i></span>
+            <span class="jf-cat-lbl">محفوظة</span>
+          </button>` : ''}
       </div>
+
+      <!-- ④ فلاتر نشطة (تظهر عند وجود فلتر) -->
+      <div class="jf-active-bar" id="jfActiveBar" style="display:none"></div>
 
     </div>
 
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
       <span class="results-count" id="resultsCount">${res.length} نتيجة</span>
     </div>
 
     <div class="jg" id="jobsList">
-      ${res.length ? res.slice(0, JOBS_PER_PAGE).map(j => jCard(j)).join('') : emptyState('🔍', 'لا توجد وظائف مطابقة', 'جرب تغيير فلاتر البحث أو اختر تخصصاً مختلفاً')}
+      ${res.length ? res.slice(0, JOBS_PER_PAGE).map(j => jCard(j)).join('') : emptyState('🔍', 'لا توجد وظائف مطابقة', 'جرب تغيير الفلاتر أو اختر تخصصاً مختلفاً')}
     </div>
     <div id="jobsPag" class="pag">${res.length > JOBS_PER_PAGE ? _buildPagination(Math.ceil(res.length/JOBS_PER_PAGE), 1, p => { JOBS_PAGE = p; _renderJobsPage(); }) : ''}</div>`;
 
-  // مراقبة حقل البحث لإظهار زر المسح
   const jqEl = document.getElementById('jq');
   if (jqEl) {
     jqEl.addEventListener('input', function() {
@@ -159,6 +154,96 @@ function pgJobs(el) {
       if (cl) cl.style.display = this.value ? 'block' : 'none';
     });
   }
+  _updateJFBadge();
+}
+
+// ── فتح Bottom Sheet للفلاتر المتقدمة ──
+function openJobFilter() {
+  const el = document.getElementById('moJobFilterB');
+  if (!el) return;
+  el.innerHTML = `
+    <!-- المحافظة -->
+    <div class="jff-sec">
+      <div class="jff-lbl"><i class="fas fa-map-marker-alt" style="color:var(--danger)"></i> المحافظة</div>
+      <select class="fc" id="jffProv" onchange="JF.prov=this.value" style="width:100%">
+        <option value="">📍 كل المحافظات</option>
+        ${PROVS.map(p => `<option ${JF.prov===p?'selected':''}>${p}</option>`).join('')}
+      </select>
+    </div>
+    <!-- الترتيب -->
+    <div class="jff-sec">
+      <div class="jff-lbl"><i class="fas fa-sort-amount-down" style="color:var(--p)"></i> ترتيب النتائج</div>
+      <div class="jff-sort-row">
+        ${[
+          { v:'newest',      l:'الأحدث',        ic:'fa-clock' },
+          { v:'salary_high', l:'الراتب الأعلى', ic:'fa-arrow-up' },
+          { v:'salary_low',  l:'الراتب الأقل',  ic:'fa-arrow-down' },
+          { v:'applicants',  l:'الأكثر تقديماً',ic:'fa-users' },
+        ].map(s => `<button class="jff-sort-btn${JSORT===s.v?' on':''}" onclick="JSORT='${s.v}';this.closest('.jff-sort-row').querySelectorAll('.jff-sort-btn').forEach(b=>b.classList.remove('on'));this.classList.add('on')"><i class="fas ${s.ic}"></i>${s.l}</button>`).join('')}
+      </div>
+    </div>
+    <!-- المهارات -->
+    <div class="jff-sec">
+      <div class="jff-lbl"><i class="fas fa-tag" style="color:var(--acc)"></i> فلتر بالمهارة</div>
+      <div class="jff-skills-wrap">
+        ${['Excel','Python','JavaScript','React','PHP','SQL','AutoCAD','Photoshop','محاسبة','تسويق رقمي','مبيعات','خدمة عملاء','إدارة مشاريع'].map(sk =>
+          `<button class="jff-skill-chip${JF.skill===sk?' on':''}" onclick="JF.skill=(JF.skill==='${sk}'?'':'${sk}');this.closest('.jff-skills-wrap').querySelectorAll('.jff-skill-chip').forEach(b=>b.classList.remove('on'));if(JF.skill)this.classList.add('on')">${sk}</button>`
+        ).join('')}
+      </div>
+    </div>
+    <!-- موقع جغرافي -->
+    <div class="jff-sec">
+      <button class="btn bfu" style="border:1.5px solid var(--br);background:var(--bgc2);color:var(--tx2)" onclick="geoFilterJobs();cmo('moJobFilter')">
+        <i class="fas fa-map-marker-alt" style="color:var(--danger)"></i> وظائف قريبة من موقعي
+      </button>
+    </div>`;
+  oMo('moJobFilter');
+}
+
+// ── تطبيق الفلاتر من الـ Bottom Sheet ──
+function applyJobFilter() {
+  cmo('moJobFilter');
+  _updateJFBadge();
+  rJobs();
+}
+
+// ── مسح الفلاتر المتقدمة ──
+function clearJobFilters() {
+  JF.prov = ''; JF.skill = ''; JSORT = 'newest';
+  const el = document.getElementById('moJobFilterB');
+  if (el) {
+    el.querySelectorAll('.jff-skill-chip').forEach(b => b.classList.remove('on'));
+    el.querySelectorAll('.jff-sort-btn').forEach((b, i) => b.classList.toggle('on', i === 0));
+    const sel = el.querySelector('#jffProv');
+    if (sel) sel.value = '';
+  }
+  _updateJFBadge();
+}
+
+// ── تحديث شارة عدد الفلاتر النشطة ──
+function _updateJFBadge() {
+  let n = 0;
+  if (JF.prov)            n++;
+  if (JF.skill)           n++;
+  if (JSORT !== 'newest') n++;
+
+  const badge = document.getElementById('jfBadge');
+  const btn   = document.getElementById('jfFilterBtn');
+  if (badge) { badge.textContent = n; badge.style.display = n ? 'flex' : 'none'; }
+  if (btn)   btn.classList.toggle('active', n > 0);
+
+  // شريط الفلاتر النشطة
+  const bar = document.getElementById('jfActiveBar');
+  if (!bar) return;
+  const chips = [];
+  if (JF.prov)  chips.push(`<button class="jf-active-chip" onclick="JF.prov='';_updateJFBadge();rJobs()"><i class="fas fa-map-marker-alt"></i>${JF.prov}<i class="fas fa-times"></i></button>`);
+  if (JF.skill) chips.push(`<button class="jf-active-chip" onclick="JF.skill='';_updateJFBadge();rJobs()"><i class="fas fa-tag"></i>${JF.skill}<i class="fas fa-times"></i></button>`);
+  if (JSORT !== 'newest') {
+    const sl = { salary_high:'راتب↑', salary_low:'راتب↓', applicants:'الأكثر تقديماً' }[JSORT] || JSORT;
+    chips.push(`<button class="jf-active-chip" onclick="JSORT='newest';_updateJFBadge();rJobs()"><i class="fas fa-sort"></i>${sl}<i class="fas fa-times"></i></button>`);
+  }
+  bar.style.display = chips.length ? 'flex' : 'none';
+  bar.innerHTML = chips.join('');
 }
 
 function setCat(btn) {
@@ -168,11 +253,8 @@ function setCat(btn) {
 
 function filterBySkill(sk) {
   JF.skill = (JF.skill === sk) ? '' : sk;
+  _updateJFBadge();
   rJobs();
-  // إعادة رسم فلتر المهارات
-  document.querySelectorAll('.skill-filter-chip').forEach(b => {
-    b.classList.toggle('on', b.textContent.trim() === sk && sk !== '');
-  });
 }
 
 function fJobs() {
