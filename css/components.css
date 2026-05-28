@@ -3,11 +3,11 @@
 ═══════════════════════════════════════════════ */
 
 /* ── App Shell ── */
-.shell   { display: flex; min-height: 100vh; }
-.main    { flex: 1; margin-right: 256px; min-height: 100vh; display: flex; flex-direction: column; }
-.pc      { padding: 22px; flex: 1; }
+.shell   { display: flex; min-height: 100vh; overflow-x: hidden; }
+.main    { flex: 1; margin-right: 256px; min-height: 100vh; display: flex; flex-direction: column; min-width: 0; }
+.pc      { padding: 22px; flex: 1; min-width: 0; }
 @media (min-width: 769px) and (max-width: 1024px) { .main { margin-right: 210px; } .pc { padding: 16px; } }
-@media (max-width: 768px) { .main { margin-right: 0; } .pc { padding: 14px; padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px)); } }
+@media (max-width: 768px) { .main { margin-right: 0; min-width: 0; overflow-x: hidden; } .pc { padding: 14px; padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px)); min-width: 0; } }
 
 /* ── Save Bar — ثابت في أسفل صفحة الإعدادات ── */
 .save-bar {
