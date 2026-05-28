@@ -115,9 +115,16 @@ function landingBrowse() {
   enterGuest();
 }
 
-function landingGoogleLogin() {
+async function landingGoogleLogin() {
   document.getElementById('onboarding').style.display = 'none';
-  SEL_ROLE = 'seeker';
+  const role = await _preGoogleLoginPickRole();
+  if (!role) {
+    document.getElementById('onboarding').style.display = 'block';
+    return;
+  }
+  SEL_ROLE          = role;
+  SEL_ROLE_EXPLICIT = true;
+  sessionStorage.setItem('afra_google_role', role);
   doGoogleLogin();
 }
 
@@ -207,10 +214,62 @@ function mainSwitchTab(tab) {
 }
 
 function chooseRole(role) {
-  SEL_ROLE = role;
+  SEL_ROLE          = role;
+  SEL_ROLE_EXPLICIT = true;
   document.getElementById('whoStep').style.display    = 'none';
   document.getElementById('screenAuth').style.display = 'block';
   pickRole(role);
+}
+
+// ── نافذة اختيار الدور قبل تسجيل الدخول بـ Google (للمستخدم الجديد) ──
+function _preGoogleLoginPickRole() {
+  return new Promise(resolve => {
+    const mo = document.createElement('div');
+    mo.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.72);display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)';
+
+    const roles = [
+      { r:'seeker',   e:'🧑‍💼', t:'باحث عن عمل',  d:'أبحث عن وظيفة مناسبة',         c:'13,148,136'  },
+      { r:'office',   e:'🏢',   t:'مكتب توظيف',   d:'أنشر وظائف وأوظّف بعمولة',     c:'139,92,246'  },
+      { r:'employer', e:'🏪',   t:'صاحب عمل',     d:'شركة أو محل يوظّف لصالح نفسه', c:'245,158,11'  },
+    ];
+
+    mo.innerHTML = `
+      <div style="background:var(--bgc,#1e293b);border-radius:22px 22px 0 0;width:100%;max-width:480px;padding:22px 20px calc(28px + env(safe-area-inset-bottom,0px))">
+        <div style="width:40px;height:4px;background:var(--br,#334155);border-radius:2px;margin:0 auto 18px"></div>
+        <div style="text-align:center;margin-bottom:16px">
+          <div style="font-size:28px;margin-bottom:6px">👋</div>
+          <div style="font-size:16px;font-weight:900;color:var(--tx,#e2e8f0);margin-bottom:4px">من أنت؟</div>
+          <div style="font-size:12px;color:var(--tx2,#94a3b8)">اختر نوع حسابك لإتمام التسجيل بـ Google</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:9px;margin-bottom:14px">
+          ${roles.map(x => `
+            <button data-grole="${x.r}"
+              style="display:flex;align-items:center;gap:12px;background:rgba(${x.c},.1);border:2px solid rgba(${x.c},.3);border-radius:14px;padding:13px 15px;cursor:pointer;font-family:Cairo,sans-serif;text-align:right;width:100%;transition:all .18s"
+              onmouseenter="this.style.borderColor='rgba(${x.c},.8)'"
+              onmouseleave="this.style.borderColor='rgba(${x.c},.3)'">
+              <span style="font-size:26px">${x.e}</span>
+              <div style="flex:1;text-align:right">
+                <div style="font-size:14px;font-weight:800;color:var(--tx,#e2e8f0)">${x.t}</div>
+                <div style="font-size:11px;color:var(--tx2,#94a3b8);margin-top:2px">${x.d}</div>
+              </div>
+              <i class="fas fa-arrow-left" style="color:var(--tx3,#64748b);font-size:11px;flex-shrink:0"></i>
+            </button>
+          `).join('')}
+        </div>
+        <button id="_groleCancelBtn" style="width:100%;background:none;border:none;color:var(--tx3,#64748b);font-size:12px;font-family:Cairo,sans-serif;cursor:pointer;font-weight:600;padding:8px">
+          إلغاء
+        </button>
+      </div>`;
+
+    document.body.appendChild(mo);
+
+    const finish = (role) => { mo.remove(); resolve(role); };
+    mo.querySelectorAll('[data-grole]').forEach(btn =>
+      btn.addEventListener('click', () => finish(btn.dataset.grole))
+    );
+    document.getElementById('_groleCancelBtn').addEventListener('click', () => finish(null));
+    mo.addEventListener('click', e => { if (e.target === mo) finish(null); });
+  });
 }
 
 function backToWho() {
@@ -331,7 +390,16 @@ async function doGoogleLogin() {
     const doc = await window.db.collection('users').doc(uid).get();
     if (!doc.exists) {
       const gEmail = (res.user.email || '').toLowerCase();
-      let gRole = SEL_ROLE || 'seeker';
+
+      // تحديد الدور: sessionStorage (مسار الـ redirect) ← الاختيار الصريح ← نافذة الاختيار
+      let gRole = sessionStorage.getItem('afra_google_role')
+               || (SEL_ROLE_EXPLICIT ? SEL_ROLE : null);
+      sessionStorage.removeItem('afra_google_role');
+      if (!gRole) {
+        gRole = await _preGoogleLoginPickRole() || 'seeker';
+      }
+
+      // فحص الدعوة من الأدمن (تتجاوز الدور المختار)
       try {
         const invDoc = await window.db.collection('invites').doc(gEmail).get();
         if (invDoc.exists && !invDoc.data().used) {
@@ -339,6 +407,7 @@ async function doGoogleLogin() {
           await window.db.collection('invites').doc(gEmail).update({ used: true, usedAt: firebase.firestore.FieldValue.serverTimestamp() });
         }
       } catch(_) {}
+
       await window.db.collection('users').doc(uid).set({
         name: res.user.displayName || 'مستخدم',
         email: res.user.email,
@@ -348,20 +417,20 @@ async function doGoogleLogin() {
         status: 'active',
       });
     } else {
-      // ترحيل المستخدمين القدامى
+      // ترحيل المستخدمين القدامى — لا تعدّل الدور لمن اختاره مسبقاً
       const d = doc.data();
       const upd = {};
-      if (!d.role)     upd.role     = SEL_ROLE || 'seeker';
-      if (!d.status)   upd.status   = 'active';
-      // توحيد حقل الصورة: avatar → photoURL
+      if (!d.role || d.role === 'user') upd.role = 'seeker';
+      if (!d.status || d.status === 'approved') upd.status = 'active';
       if (d.avatar && !d.photoURL) upd.photoURL = d.avatar;
       if (Object.keys(upd).length) await window.db.collection('users').doc(uid).update(upd);
     }
   } catch (e) {
     console.error('Google login error:', e.code, e.message);
-    // If popup was blocked, fall back to redirect automatically
     if (e.code === 'auth/popup-blocked' || e.code === 'auth/popup-closed-by-user') {
       try {
+        // حفظ الدور قبل الـ redirect حتى لا يضيع بعد إعادة التحميل
+        if (SEL_ROLE_EXPLICIT) sessionStorage.setItem('afra_google_role', SEL_ROLE);
         const provider2 = new firebase.auth.GoogleAuthProvider();
         provider2.setCustomParameters({ prompt: 'select_account' });
         await window.auth.signInWithRedirect(provider2);
@@ -381,7 +450,9 @@ async function handleGoogleRedirect() {
     const doc = await window.db.collection('users').doc(uid).get();
     if (!doc.exists) {
       const gEmail = (res.user.email || '').toLowerCase();
-      let gRole = SEL_ROLE || 'seeker';
+      // قراءة الدور المحفوظ قبل الـ redirect
+      let gRole = sessionStorage.getItem('afra_google_role') || SEL_ROLE || 'seeker';
+      sessionStorage.removeItem('afra_google_role');
       try {
         const invDoc = await window.db.collection('invites').doc(gEmail).get();
         if (invDoc.exists && !invDoc.data().used) {

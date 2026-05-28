@@ -27,6 +27,21 @@ service cloud.firestore {
     // صاحب وظيفة: مكتب أو صاحب عمل
     function isJobPoster() { return isOffice() || isEmployer() || isAdmin(); }
 
+    // تحقق من أن صاحب العمل ينشر ضمن التصنيف المسموح لنشاطه التجاري
+    function empCanPostCat(cat) {
+      let bt = userData().businessType;
+      return isOffice() || isAdmin()
+        || (bt == 'شركة تقنية'      && cat in ['tech'])
+        || (bt == 'محل تجاري'       && cat in ['biz', 'other'])
+        || (bt == 'مطعم / كافيه'    && cat in ['other'])
+        || (bt == 'مستشفى / عيادة'  && cat in ['med'])
+        || (bt == 'مدرسة / معهد'    && cat in ['edu'])
+        || (bt == 'مصنع / مستودع'   && cat in ['eng', 'other'])
+        || (bt == 'مؤسسة حكومية'   && cat in ['biz', 'edu', 'eng', 'other'])
+        || bt == 'أخرى'
+        || cat == '' || cat == null; // وظيفة بدون تصنيف
+    }
+
     // يدعم المستخدمين القدامى الذين ليس لديهم status
     function isActive() {
       return isLoggedIn() && (
@@ -92,7 +107,8 @@ service cloud.firestore {
             && validStr(request.resource.data.title,   3, 100)
             && validStr(request.resource.data.company,  2, 100)
             && validStr(request.resource.data.desc,    20, 3000)
-            && request.resource.data.status == 'active');
+            && request.resource.data.status in ['active', 'paused']
+            && empCanPostCat(request.resource.data.cat));
 
       allow update: if isAdmin()
         || (isLoggedIn() && resource.data.postedBy == request.auth.uid

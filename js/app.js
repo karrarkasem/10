@@ -44,7 +44,8 @@ let JOBS        = [];
 let MY_APPS     = [];
 let OFFICE_APPS = []; // طلبات وظائف المكتب الحالي
 let SEL_JOB     = null;
-let SEL_ROLE    = 'seeker';
+let SEL_ROLE          = 'seeker';
+let SEL_ROLE_EXPLICIT = false; // true فقط عند الاختيار الصريح من whoStep أو نافذة الدور
 
 const CATS  = { tech:'تقنية', biz:'أعمال', med:'طب', edu:'تعليم', eng:'هندسة', other:'أخرى' };
 const PROVS = ['بغداد','كربلاء','النجف','البصرة','نينوى','أربيل','كركوك','بابل','ذي قار','ميسان','القادسية','واسط','المثنى','الأنبار','صلاح الدين','ديالى','دهوك','السليمانية'];
