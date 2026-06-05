@@ -19,6 +19,7 @@ const CFG = {
   youtube:   { apiKey: '', channelId: '' },
   gemini:    { key: '' },
   general:   { maintenance: false, siteName: 'عفراء للتوظيف', siteUrl: 'https://afra-iq.com' },
+  pricing:   { jobPostCost: 2500, hireCost: 10000, freeJobsLimit: 3, bookingCost: 5000, freeBookingsPerMonth: 2 },
   site: {
     email:          'afrahub.iq@gmail.com',
     phone:          '',
@@ -43,6 +44,7 @@ const DEMO = window.FIREBASE_ERROR || false;
 let JOBS        = [];
 let MY_APPS     = [];
 let OFFICE_APPS = []; // طلبات وظائف المكتب الحالي
+let MY_NOTIFS   = []; // إشعارات Firestore الحقيقية
 let SEL_JOB     = null;
 let SEL_ROLE          = 'seeker';
 let SEL_ROLE_EXPLICIT = false; // true فقط عند الاختيار الصريح من whoStep أو نافذة الدور
@@ -196,8 +198,8 @@ function requireAuth(requiredRole) {
   // المستخدم غير مسجّل أو ضيف مجهول
   if (DEMO || !U || ROLE === 'guest') {
     confirm2(
-      'تسجيل مطلوب',
-      'يجب أن تكون مسجلاً في المنصة للقيام بهذا الإجراء. سجّل الآن مجاناً!',
+      'سجّل حساباً مجاناً',
+      'للتقديم على الوظائف وتتبع طلباتك، سجّل حساباً مجانياً في أقل من دقيقة!',
       async () => {
         // تسجيل خروج الضيف المجهول أولاً
         if (U?.isAnonymous && window.auth) await window.auth.signOut();
@@ -540,6 +542,37 @@ function updateUserUI() {
   document.getElementById('srole').textContent = roleLabels[ROLE] || 'باحث عن عمل';
 }
 
+// ═══════════════════════════════════════════════
+// نظام الإشعارات الحقيقي
+// ═══════════════════════════════════════════════
+async function loadNotifications() {
+  if (DEMO || !window.db || !U || ROLE === 'guest') return;
+  try {
+    const snap = await window.db.collection('notifications')
+      .where('userId', '==', U.uid)
+      .orderBy('createdAt', 'desc')
+      .limit(25)
+      .get();
+    MY_NOTIFS = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch(_) {}
+  _updateNotifBadge();
+}
+
+function _updateNotifBadge() {
+  const unread = MY_NOTIFS.filter(n => !n.read).length;
+  const ndot   = document.getElementById('ndot');
+  if (ndot) ndot.style.display = unread > 0 ? 'block' : 'none';
+}
+
+async function _markNotifsRead() {
+  if (DEMO || !window.db || !U) return;
+  MY_NOTIFS.filter(n => !n.read).forEach(n => {
+    n.read = true;
+    window.db.collection('notifications').doc(n.id).update({ read: true }).catch(() => {});
+  });
+  _updateNotifBadge();
+}
+
 function bootApp() {
   document.getElementById('onboarding').style.display = 'none';
   document.getElementById('authScreen').style.display = 'none';
@@ -547,8 +580,7 @@ function bootApp() {
   initTheme();
   buildNav();
   updateUserUI();
-  const ndot = document.getElementById('ndot');
-  if (ndot && MY_APPS.length > 0) ndot.style.display = 'block';
+  if (ROLE !== 'guest') loadNotifications();
   if (ROLE === 'admin') {
     updatePaymentBadge();
     setInterval(updatePaymentBadge, 120000);
@@ -746,33 +778,43 @@ function openNotifs() {
   panel.id = 'notifsPanel';
   panel.className = 'notif-panel';
 
-  const unread = MY_APPS.length;
-  const ndot = document.getElementById('ndot');
+  // أيقونة وألوان لكل نوع إشعار
+  const _nIco = {
+    booking    : { ico: 'fa-lock',          cls: 'tl' },
+    app_status : { ico: 'fa-clipboard-list', cls: 'pu' },
+    top_up     : { ico: 'fa-coins',         cls: 'gr' },
+    hire_commission: { ico: 'fa-user-check', cls: 'am' },
+  };
 
-  const items = unread ? MY_APPS.slice(0, 6).map(a => {
-    const s = STAT[a.status] || STAT.pending;
-    const cls = a.status === 'hired' ? 'gr' : a.status === 'rejected' ? 'rd' : a.status === 'interview' ? 'pu' : 'tl';
-    return `<div class="np-item" onclick="cmo('notifsPanel');goTo('myapps')">
-      <div class="np-ico ${cls}"><i class="fas ${s.ico}"></i></div>
-      <div class="np-tx">
-        <div class="np-tit">طلبك على "${a.jobTitle}"</div>
-        <div class="np-sub">${s.l} • ${a.appliedAt?.slice(0,10) || ''}</div>
-      </div>
-    </div>`;
-  }) : [`<div class="np-empty"><i class="fas fa-bell-slash" style="font-size:24px;opacity:.3;margin-bottom:8px;display:block"></i>لا توجد إشعارات</div>`];
+  const notifs  = MY_NOTIFS.slice(0, 15);
+  const unread  = notifs.filter(n => !n.read).length;
+
+  const items = notifs.length
+    ? notifs.map(n => {
+        const { ico, cls } = _nIco[n.type] || { ico: 'fa-bell', cls: 'tl' };
+        const timeStr = n.createdAt?.toDate
+          ? n.createdAt.toDate().toLocaleDateString('ar-IQ')
+          : (n.createdAt?.slice?.(0,10) || '');
+        return `<div class="np-item${n.read ? '' : ' np-unread'}" onclick="document.getElementById('notifsPanel')?.remove()">
+          <div class="np-ico ${cls}"><i class="fas ${ico}"></i></div>
+          <div class="np-tx">
+            <div class="np-tit">${san(n.title || n.type)}</div>
+            <div class="np-sub">${san(n.body || '')}${timeStr ? ` • ${timeStr}` : ''}</div>
+          </div>
+          ${!n.read ? `<div style="width:7px;height:7px;background:var(--p);border-radius:50%;flex-shrink:0"></div>` : ''}
+        </div>`;
+      })
+    : [`<div class="np-empty"><i class="fas fa-bell-slash" style="font-size:24px;opacity:.3;margin-bottom:8px;display:block"></i>لا توجد إشعارات</div>`];
 
   panel.innerHTML = `
     <div class="np-header">
       <span><i class="fas fa-bell" style="color:var(--p);margin-left:5px"></i>الإشعارات</span>
-      ${unread ? `<span class="b b-tl">${unread}</span>` : ''}
+      ${unread ? `<span class="b b-rd" style="font-size:10px">${unread} جديد</span>` : ''}
     </div>
-    ${items.join('')}
-    ${unread ? `<div style="padding:10px 16px;border-top:1px solid var(--br);text-align:center">
-      <button class="btn bg bsm" onclick="document.getElementById('notifsPanel')?.remove();goTo('myapps')"><i class="fas fa-eye"></i>عرض كل الطلبات</button>
-    </div>` : ''}`;
+    ${items.join('')}`;
 
   document.body.appendChild(panel);
-  if (ndot) ndot.style.display = 'none';
+  _markNotifsRead();
 
   setTimeout(() => {
     function closePanel(e) {

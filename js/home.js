@@ -640,8 +640,8 @@ async function pgAdminDiscoveries(el) {
     return;
   }
 
-  const SRC_LABEL  = { google: 'جوجل', rss: 'RSS', telegram: 'تيليغرام' };
-  const SRC_COLOR  = { google: '#4285f4', rss: '#f59e0b', telegram: '#229ed9' };
+  const SRC_LABEL  = { google: 'جوجل', rss: 'RSS', telegram: 'تيليغرام', linkedin: 'LinkedIn', telegram_channel: 'قناة تيليجرام' };
+  const SRC_COLOR  = { google: '#4285f4', rss: '#f59e0b', telegram: '#229ed9', linkedin: '#0a66c2', telegram_channel: '#229ed9' };
   const TYPE_AR    = { full: 'دوام كامل', part: 'دوام جزئي', remote: 'عن بُعد', gig: 'مهمة حرة' };
   const scoreColor = s => s >= 8 ? '#22c55e' : s >= 6 ? '#f59e0b' : '#ef4444';
   const scoreLabel = s => s >= 8 ? 'ممتاز' : s >= 6 ? 'جيد' : 'ضعيف';
@@ -684,7 +684,7 @@ function _discoveryCard(j, TYPE_AR, SRC_LABEL, SRC_COLOR, scoreColor, scoreLabel
             ${j.province ? `<span style="background:#e0f2fe;color:#0369a1;padding:2px 10px;border-radius:999px;font-size:12px"><i class="fas fa-map-marker-alt"></i> ${san(j.province)}</span>` : ''}
             ${j.type     ? `<span style="background:#f3f4f6;color:var(--tx2);padding:2px 10px;border-radius:999px;font-size:12px">${TYPE_AR[j.type] || j.type}</span>` : ''}
             <span style="background:${SRC_COLOR[j.source] || '#64748b'}22;color:${SRC_COLOR[j.source] || '#64748b'};padding:2px 10px;border-radius:999px;font-size:12px">
-              <i class="fas fa-${j.source === 'google' ? 'globe' : j.source === 'rss' ? 'rss' : 'telegram-plane'}"></i> ${SRC_LABEL[j.source] || j.source}
+              <i class="${j.source === 'linkedin' ? 'fab fa-linkedin' : 'fas fa-' + (j.source === 'google' ? 'globe' : j.source === 'rss' ? 'rss' : 'telegram-plane')}"></i> ${SRC_LABEL[j.source] || j.source}
             </span>
           </div>
         </div>
@@ -1686,7 +1686,7 @@ async function pgAdminSettings(el) {
       const doc = await window.db.collection('config').doc('settings').get();
       if (doc.exists) {
         const s = doc.data();
-        ['telegram','emailjs','imgbb','facebook','instagram','twitter','linkedin','tiktok','snapchat','youtube','gemini','general','site'].forEach(k => {
+        ['telegram','emailjs','imgbb','facebook','instagram','twitter','linkedin','tiktok','snapchat','youtube','gemini','general','site','pricing'].forEach(k => {
           if (s[k]) CFG[k] = { ...CFG[k], ...s[k] };
         });
       }
@@ -1703,6 +1703,7 @@ async function pgAdminSettings(el) {
       <button class="tb2"    onclick="swSettTab('services',this)"><i class="fas fa-plug"></i> الخدمات</button>
       <button class="tb2"    onclick="swSettTab('general',this)"><i class="fas fa-sliders-h"></i> عام</button>
       <button class="tb2"    onclick="swSettTab('siteinfo',this)"><i class="fas fa-id-card"></i> معلومات الموقع</button>
+      <button class="tb2"    onclick="swSettTab('pricing',this)"><i class="fas fa-tag"></i> التسعير</button>
     </div>
 
     <!-- ══ السوشال ميديا ══ -->
@@ -1720,6 +1721,13 @@ async function pgAdminSettings(el) {
         <div class="fg"><label class="fl">Channel ID (للنشر العام)</label>
           <input class="fc" id="tgChannel" value="${c.telegram.channel||''}" placeholder="@channel_username أو -100xxxxxxxxx">
           <div class="fh">معرّف القناة العامة التي ستُنشر فيها الوظائف تلقائياً</div>
+        </div>
+        <div class="fg" style="margin-top:10px">
+          <label class="fl"><i class="fas fa-search" style="color:#229ed9"></i> قنوات المصادر (سحب وظائف تلقائي)</label>
+          <textarea class="fc" id="tgJobChannels" rows="3"
+            placeholder="@wazaef_iraq&#10;@jobs_baghdad&#10;@iraq_jobs_2025"
+            style="direction:ltr;font-size:12px">${(c.telegram.jobChannels||[]).join('\n')}</textarea>
+          <div class="fh">قنوات تيليجرام عامة يسحب منها النظام إعلانات الوظائف تلقائياً — كل قناة في سطر</div>
         </div>
         <div style="display:flex;gap:8px;margin-top:8px">
           <button class="btn bsm" style="background:#0088cc;color:#fff;border:none" onclick="testTelegram()">
@@ -2005,6 +2013,64 @@ async function pgAdminSettings(el) {
 
     </div>
 
+    <!-- ══ التسعير ══ -->
+    <div id="stPricing" style="display:none">
+      <div class="card" style="margin-bottom:14px">
+        <div style="font-size:14px;font-weight:900;color:var(--tx);margin-bottom:4px">
+          <i class="fas fa-tag" style="color:var(--p)"></i> أسعار المنصة
+        </div>
+        <p style="font-size:12px;color:var(--tx3);margin-bottom:16px">
+          هذه الأسعار تُطبَّق على أصحاب العمل ومكاتب التوظيف بعد انتهاء الفترة التجريبية المجانية.
+        </p>
+        <div class="fr">
+          <div class="fg">
+            <label class="fl"><i class="fas fa-briefcase" style="color:var(--p)"></i> سعر نشر الوظيفة الواحدة (IQD)</label>
+            <input type="number" class="fc" id="jobPostCost"
+              value="${c.pricing?.jobPostCost ?? 2500}" min="0" placeholder="2500">
+            <div class="fh">يُخصم من رصيد صاحب العمل أو المكتب عند كل نشر وظيفة</div>
+          </div>
+          <div class="fg">
+            <label class="fl"><i class="fas fa-user-check" style="color:var(--acc)"></i> عمولة التوظيف الناجح (IQD)</label>
+            <input type="number" class="fc" id="hireCost"
+              value="${c.pricing?.hireCost ?? 10000}" min="0" placeholder="10000">
+            <div class="fh">يُخصم من رصيد مكتب التوظيف عند تأكيد قبول موظف (status = hired)</div>
+          </div>
+        </div>
+        <div class="fg">
+          <label class="fl"><i class="fas fa-gift" style="color:var(--success)"></i> عدد الوظائف المجانية في الفترة التجريبية</label>
+          <input type="number" class="fc" id="freeJobsLimit"
+            value="${c.pricing?.freeJobsLimit ?? 3}" min="0" max="20" placeholder="3">
+          <div class="fh">عدد الوظائف المجانية المتاحة لكل حساب جديد (صاحب عمل أو مكتب)</div>
+        </div>
+        <div class="fr" style="margin-top:8px">
+          <div class="fg">
+            <label class="fl"><i class="fas fa-lock" style="color:var(--acc)"></i> سعر الحجز الحصري الإضافي (IQD)</label>
+            <input type="number" class="fc" id="bookingCost"
+              value="${c.pricing?.bookingCost ?? 5000}" min="0" placeholder="5000">
+            <div class="fh">يُخصم من الرصيد عند تجاوز الحجوزات المجانية الشهرية</div>
+          </div>
+          <div class="fg">
+            <label class="fl"><i class="fas fa-calendar-check" style="color:var(--info)"></i> حجوزات مجانية في الشهر</label>
+            <input type="number" class="fc" id="freeBookingsPerMonth"
+              value="${c.pricing?.freeBookingsPerMonth ?? 2}" min="0" max="10" placeholder="2">
+            <div class="fh">عدد مرات الحجز المجانية لكل مكتب / صاحب عمل شهرياً</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="al al-i" style="margin-bottom:14px">
+        <i class="fas fa-info-circle"></i>
+        <div style="font-size:12px;line-height:1.7">
+          <b>كيف يعمل النظام:</b><br>
+          1. كل حساب جديد يحصل على ${c.pricing?.freeJobsLimit ?? 3} وظائف مجانية (الفترة التجريبية)<br>
+          2. بعد نفاد الوظائف المجانية، يحتاج المستخدم لشحن رصيد<br>
+          3. كل وظيفة منشورة تخصم <b>${(c.pricing?.jobPostCost ?? 2500).toLocaleString('ar-IQ')} IQD</b> من الرصيد<br>
+          4. كل توظيف ناجح من مكتب توظيف يخصم <b>${(c.pricing?.hireCost ?? 10000).toLocaleString('ar-IQ')} IQD</b> عمولة<br>
+          5. الحجز الحصري: ${c.pricing?.freeBookingsPerMonth ?? 2} مجانية/شهر ثم <b>${(c.pricing?.bookingCost ?? 5000).toLocaleString('ar-IQ')} IQD</b> لكل حجز إضافي
+        </div>
+      </div>
+    </div>
+
     <div style="position:sticky;bottom:0;background:var(--bg);padding:12px 0;border-top:1px solid var(--br);margin-top:8px">
       <button class="btn bp bfu blg" style="width:100%" id="saveSettingsBtn" onclick="adminSaveSettings()">
         <i class="fas fa-save"></i>حفظ جميع الإعدادات
@@ -2013,7 +2079,7 @@ async function pgAdminSettings(el) {
 }
 
 function swSettTab(tab, btn) {
-  ['Social','Services','General','Siteinfo'].forEach(t => {
+  ['Social','Services','General','Siteinfo','Pricing'].forEach(t => {
     const el = document.getElementById('st' + t);
     if (el) el.style.display = t.toLowerCase() === tab ? 'block' : 'none';
   });
@@ -2111,10 +2177,11 @@ async function uploadFounderPhoto() {
 async function adminSaveSettings() {
   const settings = {
     telegram: {
-      bot:      _gv('tgBot'),
-      chat:     _gv('tgChat'),
-      channel:  _gv('tgChannel'),
-      autoPost: _gc('tgAutoPost'),
+      bot:         _gv('tgBot'),
+      chat:        _gv('tgChat'),
+      channel:     _gv('tgChannel'),
+      autoPost:    _gc('tgAutoPost'),
+      jobChannels: (_gv('tgJobChannels') || '').split('\n').map(s => s.trim()).filter(Boolean),
     },
     facebook: {
       pageToken: _gv('fbToken'),
@@ -2178,6 +2245,13 @@ async function adminSaveSettings() {
       telegramUrl:    _gv('siteTgUrl'),
       whatsappNum:    _gv('siteWaNum'),
       founderPhotoURL:_gv('founderPhotoURL'),
+    },
+    pricing: {
+      jobPostCost         : parseInt(_gv('jobPostCost'))          || 2500,
+      hireCost            : parseInt(_gv('hireCost'))             || 10000,
+      freeJobsLimit       : parseInt(_gv('freeJobsLimit'))        || 3,
+      bookingCost         : parseInt(_gv('bookingCost'))          || 5000,
+      freeBookingsPerMonth: parseInt(_gv('freeBookingsPerMonth')) || 2,
     },
   };
 
@@ -2707,6 +2781,9 @@ async function pgSeekersCatalog(el) {
       seekers = snap.docs.map(d => ({ id: d.id, ...d.data() }))
         .sort((a, b) => {
           if (!!a.permissions?.featured !== !!b.permissions?.featured) return a.permissions?.featured ? -1 : 1;
+          const aScore = a.ivScore ?? -1;
+          const bScore = b.ivScore ?? -1;
+          if (aScore !== bScore) return bScore - aScore;
           if (!!a.seekerAvailable !== !!b.seekerAvailable) return a.seekerAvailable ? -1 : 1;
           return 0;
         });
@@ -2793,9 +2870,10 @@ function seekerCatalogCard(s) {
         ? `<img src="${s.photoURL}" class="av avl" style="object-fit:cover;flex-shrink:0">`
         : `<div class="av avl" style="background:var(--grad-p);color:#fff;font-size:16px;font-weight:900;flex-shrink:0">${name.charAt(0)}</div>`}
       <div style="flex:1;min-width:0">
-        <div style="font-size:13px;font-weight:900;color:var(--tx);display:flex;align-items:center;gap:5px">
+        <div style="font-size:13px;font-weight:900;color:var(--tx);display:flex;align-items:center;gap:5px;flex-wrap:wrap">
           ${san(name)}
           ${s.verified ? '<i class="fas fa-check-circle" style="color:var(--p);font-size:10px"></i>' : ''}
+          ${s.ivScore != null ? `<span style="font-size:9px;padding:2px 7px;border-radius:10px;background:${s.ivScore>=80?'rgba(34,197,94,.12)':s.ivScore>=60?'rgba(245,158,11,.12)':'rgba(107,114,128,.1)'};color:${s.ivScore>=80?'var(--success)':s.ivScore>=60?'var(--acc)':'var(--tx3)'};font-weight:800;display:inline-flex;align-items:center;gap:3px"><i class="fas fa-robot" style="font-size:8px"></i>${s.ivScore}%</span>` : ''}
         </div>
         ${s.jobTitle ? `<div style="font-size:11px;color:var(--p);font-weight:700;margin-top:1px">${san(s.jobTitle)}</div>` : ''}
         <div style="font-size:11px;color:var(--tx3);margin-top:2px">

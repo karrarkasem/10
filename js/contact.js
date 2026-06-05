@@ -19,7 +19,7 @@ async function loadContactCampaigns() {
     window.BANNERS      = bannerSnap.docs.map(d => ({ id: d.id, ...d.data() }));
     if (cfgDoc.exists) {
       const s = cfgDoc.data();
-      ['telegram','emailjs','imgbb','facebook','instagram','twitter','linkedin','tiktok','snapchat','youtube','gemini','general','site'].forEach(k => {
+      ['telegram','emailjs','imgbb','facebook','instagram','twitter','linkedin','tiktok','snapchat','youtube','gemini','general','site','pricing'].forEach(k => {
         if (s[k]) CFG[k] = { ...CFG[k], ...s[k] };
       });
       _refreshWaFloat();
@@ -111,9 +111,10 @@ function _hiringCampPublicCard(c) {
 function isContactVisible() {
   // الأدمن يرى دائماً
   if (ROLE === 'admin') return true;
-  // المشترك بأي خطة مدفوعة يرى أرقام التواصل
-  const plan = typeof getUserPlan === 'function' ? getUserPlan() : (P?.plan || 'free');
-  if (P?.plus || plan === 'standard' || plan === 'premium') return true;
+  // من لديه رصيد أو يستخدم وظائف مجانية يرى أرقام التواصل
+  const hasCredits = (P?.credits || 0) > 0;
+  const inTrial    = (P?.freeJobsUsed || 0) < (CFG.pricing?.freeJobsLimit || 3);
+  if (P?.plus || hasCredits || inTrial) return true;
 
   const now  = Date.now();
   const prov = P?.province || '';

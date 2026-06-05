@@ -63,10 +63,34 @@ TIP: [نصيحة عملية قصيرة لإجابة أفضل]`;
   return { score, feedback: feedbacks[score], tip: 'استخدم أسلوب STAR: الموقف، المهمة، الإجراء، النتيجة.', isAI: false };
 }
 
-function buildIVModal() {
-  const uid      = U?.uid;
-  const attempts = uid ? parseInt(localStorage.getItem('iv_attempts_' + uid) || '0') : 0;
-  const lastScore = uid ? parseInt(localStorage.getItem('iv_last_score_' + uid) || '0') : 0;
+async function buildIVModal() {
+  const uid = U?.uid;
+  const el  = document.getElementById('moIVB');
+
+  // spinner أثناء جلب البيانات
+  if (el) el.innerHTML = `<div style="text-align:center;padding:40px"><div class="spin2" style="margin:0 auto"></div></div>`;
+
+  // قراءة المحاولات من Firestore أولاً، localStorage كـ fallback
+  let attempts = 0, lastScore = 0;
+  if (uid) {
+    if (!DEMO && window.db) {
+      try {
+        const doc = await window.db.collection('users').doc(uid).get();
+        const d   = doc.data() || {};
+        attempts  = d.ivAttempts || 0;
+        lastScore = d.ivScore    || 0;
+        // مزامنة localStorage
+        localStorage.setItem('iv_attempts_' + uid, attempts);
+        localStorage.setItem('iv_last_score_' + uid, lastScore);
+      } catch(_) {
+        attempts  = parseInt(localStorage.getItem('iv_attempts_' + uid) || '0');
+        lastScore = parseInt(localStorage.getItem('iv_last_score_' + uid) || '0');
+      }
+    } else {
+      attempts  = parseInt(localStorage.getItem('iv_attempts_' + uid) || '0');
+      lastScore = parseInt(localStorage.getItem('iv_last_score_' + uid) || '0');
+    }
+  }
 
   // محاولتان استُنفدتا
   if (uid && attempts >= 2) {
@@ -275,11 +299,18 @@ async function showIVResult() {
   const uid = U?.uid;
   if (uid) {
     const prevAttempts = parseInt(localStorage.getItem('iv_attempts_' + uid) || '0');
+    const newAttempts  = prevAttempts + 1;
+    // localStorage كـ cache سريع
     localStorage.setItem('iv_last_score_' + uid, total);
-    localStorage.setItem('iv_attempts_' + uid, prevAttempts + 1);
-    // حفظ الدرجة في وثيقة السيرة الذاتية بـ Firestore
+    localStorage.setItem('iv_attempts_'   + uid, newAttempts);
+    // Firestore — المصدر الموثوق (لا يمكن التلاعب به)
     if (!DEMO && window.db) {
       window.db.collection('cvs').doc(uid).update({ ivScore: total }).catch(() => {});
+      window.db.collection('users').doc(uid).update({
+        ivScore:    total,
+        ivAttempts: newAttempts,
+      }).catch(() => {});
+      if (window.P) { window.P.ivScore = total; window.P.ivAttempts = newAttempts; }
     }
   }
 

@@ -2,15 +2,19 @@
 // ║  عفراء — نظام الحجز الحصري (12 ساعة)               ║
 // ╚══════════════════════════════════════════════════════╝
 
-const MAX_BOOKINGS        = 3;
 const BOOKING_MS          = 12 * 60 * 60 * 1000; // 12 ساعة (للمكاتب)
 const BOOKING_MS_EMPLOYER =  1 * 60 * 60 * 1000; //  1 ساعة (لوظائف أصحاب العمل)
 
 let MY_BOOKINGS = [];
 
+// ── مفتاح الشهر الحالي (yyyy-mm) ──
+function _monthKey() {
+  return new Date().toISOString().slice(0, 7);
+}
+
 // ── تحميل حجوزات المكتب النشطة ──
 async function loadMyBookings() {
-  if (DEMO || ROLE !== 'office' || !window.db) return;
+  if (DEMO || !U || !['office','employer'].includes(ROLE) || !window.db) return;
   try {
     const snap = await window.db.collection('bookings')
       .where('officeId', '==', U.uid)
@@ -22,7 +26,6 @@ async function loadMyBookings() {
       const b = { id: d.id, ...d.data() };
       const exp = b.expiresAt?.toDate?.() || new Date(b.expiresAt);
       if (exp.getTime() <= now) {
-        // انتهى الحجز — تحديث تلقائي
         await d.ref.update({ status: 'expired' });
       } else {
         MY_BOOKINGS.push(b);
@@ -31,13 +34,41 @@ async function loadMyBookings() {
   } catch (e) { console.warn('bookings load error', e); }
 }
 
+// ── قراءة عداد الحجوزات الشهرية للمستخدم ──
+async function _getMonthlyBookingCount() {
+  if (DEMO || !window.db) return 0;
+  try {
+    const doc  = await window.db.collection('users').doc(U.uid).get();
+    const data = doc.data() || {};
+    const mk   = _monthKey();
+    if (data.bookingMonthKey === mk) return data.bookingMonthCount || 0;
+    return 0;
+  } catch(e) { return 0; }
+}
+
 // ── حجز مرشح ──
 async function bookCandidate(candidateId, candidateName, jobId) {
-  if (!requireAuth('office')) return;
-
-  if (MY_BOOKINGS.length >= MAX_BOOKINGS) {
-    notify('وصلت للحد الأقصى', `لا يمكنك حجز أكثر من ${MAX_BOOKINGS} مرشحين في وقت واحد`, 'error');
+  if (!requireAuth()) return;
+  if (!['office','employer'].includes(ROLE)) {
+    notify('غير مسموح ⛔', 'الحجز متاح فقط لمكاتب التوظيف وأصحاب العمل', 'error');
     return;
+  }
+
+  // التحقق من الحد الشهري
+  const FREE_LIMIT  = CFG.pricing?.freeBookingsPerMonth ?? 2;
+  const BOOKING_COST = CFG.pricing?.bookingCost ?? 5000;
+  const monthCount  = await _getMonthlyBookingCount();
+  const isPaid      = monthCount >= FREE_LIMIT;
+
+  if (isPaid) {
+    const credits = P?.credits || 0;
+    if (credits < BOOKING_COST) {
+      notify('رصيد غير كافٍ',
+        `استنفدت حجوزاتك المجانية هذا الشهر (${FREE_LIMIT}). حجز إضافي يتطلب ${BOOKING_COST.toLocaleString('ar-IQ')} IQD`,
+        'warning');
+      showRechargeModal(BOOKING_COST);
+      return;
+    }
   }
 
   // التحقق أن المرشح غير محجوز حالياً
@@ -57,39 +88,66 @@ async function bookCandidate(candidateId, candidateName, jobId) {
     }
   } catch (e) { console.warn('bookingCheck:', e.message); }
 
-  // وظائف أصحاب العمل: ساعة واحدة فقط
   const job = JOBS.find(j => j.id === jobId);
-  const isEmployerJob  = job?.postedByType === 'employer';
-  const duration       = isEmployerJob ? BOOKING_MS_EMPLOYER : BOOKING_MS;
-  const durationLabel  = isEmployerJob ? 'ساعة واحدة' : '12 ساعة';
+  const isEmployerJob = job?.postedByType === 'employer';
+  const duration      = isEmployerJob ? BOOKING_MS_EMPLOYER : BOOKING_MS;
+  const durationLabel = isEmployerJob ? 'ساعة واحدة' : '12 ساعة';
+  const costLabel     = isPaid ? ` — سيُخصم ${BOOKING_COST.toLocaleString('ar-IQ')} IQD من رصيدك` : ' (مجاني)';
 
-  confirm2('تأكيد الحجز', `هل تريد حجز "${candidateName}" لمدة ${durationLabel} حصرياً؟`, async () => {
-    try {
-      const expiresAt = new Date(Date.now() + duration);
-      await window.db.collection('bookings').add({
-        officeId:      U.uid,
-        officeName:    P.officeName || P.name,
-        candidateId,
-        candidateName,
-        jobId,
-        bookedAt:  firebase.firestore.FieldValue.serverTimestamp(),
-        expiresAt: firebase.firestore.Timestamp.fromDate(expiresAt),
-        status:    'active',
-      });
-      // إشعار للمرشح
-      await window.db.collection('notifications').add({
-        userId:    candidateId,
-        type:      'booking',
-        title:     '🔔 مكتب مهتم بملفك!',
-        body:      `قام ${san(P.officeName || P.name)} بحجز ملفك الوظيفي لمدة ${durationLabel}`,
-        read:      false,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-      });
-      await loadMyBookings();
-      notify('تم الحجز ✅', `تم حجز ${candidateName} حصرياً لـ ${durationLabel}`, 'success');
-      goTo('candidates');
-    } catch (e) { console.error(e); notify('خطأ', 'فشل الحجز، حاول مرة أخرى', 'error'); }
-  });
+  confirm2('تأكيد الحجز',
+    `هل تريد حجز "${candidateName}" لمدة ${durationLabel} حصرياً؟${costLabel}`,
+    async () => {
+      try {
+        const mk         = _monthKey();
+        const expiresAt  = new Date(Date.now() + duration);
+        const newCount   = monthCount + 1;
+
+        await window.db.collection('bookings').add({
+          officeId:      U.uid,
+          officeName:    P.officeName || P.name,
+          candidateId,
+          candidateName,
+          jobId,
+          paid:          isPaid,
+          bookedAt:      firebase.firestore.FieldValue.serverTimestamp(),
+          expiresAt:     firebase.firestore.Timestamp.fromDate(expiresAt),
+          status:        'active',
+        });
+
+        // تحديث العداد الشهري + خصم الرصيد إن لزم
+        const userUpdate = {
+          bookingMonthKey:   mk,
+          bookingMonthCount: newCount,
+        };
+        if (isPaid) {
+          userUpdate.credits = firebase.firestore.FieldValue.increment(-BOOKING_COST);
+          if (window.P) window.P.credits = (window.P.credits || 0) - BOOKING_COST;
+          // سجل الخصم
+          window.db.collection('credits_log').add({
+            userId:    U.uid,
+            type:      'booking',
+            amount:    -BOOKING_COST,
+            note:      `حجز حصري: ${candidateName}`,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          }).catch(() => {});
+        }
+        await window.db.collection('users').doc(U.uid).update(userUpdate);
+
+        // إشعار للمرشح
+        await window.db.collection('notifications').add({
+          userId:    candidateId,
+          type:      'booking',
+          title:     '🔔 مكتب مهتم بملفك!',
+          body:      `قام ${san(P.officeName || P.name)} بحجز ملفك الوظيفي لمدة ${durationLabel}`,
+          read:      false,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        });
+
+        await loadMyBookings();
+        notify('تم الحجز ✅', `تم حجز ${candidateName} حصرياً لـ ${durationLabel}`, 'success');
+        goTo('candidates');
+      } catch (e) { console.error(e); notify('خطأ', 'فشل الحجز، حاول مرة أخرى', 'error'); }
+    });
 }
 
 // ── إلغاء حجز ──
@@ -138,8 +196,13 @@ async function getCandidateBookingStatus(candidateId) {
 async function pgBookings(el) {
   el.innerHTML = `<div style="text-align:center;padding:30px"><div class="spin2"></div></div>`;
   await loadMyBookings();
-  const remaining = MAX_BOOKINGS - MY_BOOKINGS.length;
-  const pct = Math.round((MY_BOOKINGS.length / MAX_BOOKINGS) * 100);
+
+  const FREE_LIMIT   = CFG.pricing?.freeBookingsPerMonth ?? 2;
+  const BOOKING_COST = CFG.pricing?.bookingCost ?? 5000;
+  const monthCount   = await _getMonthlyBookingCount();
+  const freeLeft     = Math.max(0, FREE_LIMIT - monthCount);
+  const credits      = P?.credits || 0;
+  const pct          = Math.round((monthCount / FREE_LIMIT) * 100);
 
   el.innerHTML = `
     <div class="sh">
@@ -147,7 +210,7 @@ async function pgBookings(el) {
         <div class="st-ico" style="background:linear-gradient(135deg,#f59e0b,#d97706)"><i class="fas fa-lock"></i></div>
         الحجوزات الحصرية
       </div>
-      <span class="b b-am">${MY_BOOKINGS.length}/${MAX_BOOKINGS}</span>
+      <span class="b b-am">${monthCount} هذا الشهر</span>
     </div>
 
     <div class="card cp fade-up" style="margin-bottom:14px;background:linear-gradient(135deg,rgba(245,158,11,.07),rgba(245,158,11,.02));border-color:rgba(245,158,11,.25)">
@@ -155,18 +218,19 @@ async function pgBookings(el) {
         <div style="font-size:32px">🔒</div>
         <div style="flex:1">
           <div style="font-size:14px;font-weight:900;color:var(--tx)">نظام الحجز الحصري</div>
-          <div style="font-size:11px;color:var(--tx2);margin-top:3px">احجز مرشحاً لمدة 12 ساعة (ساعة واحدة لوظائف أصحاب العمل) — حصري بينكما</div>
+          <div style="font-size:11px;color:var(--tx2);margin-top:3px">احجز مرشحاً لمدة 12 ساعة حصرياً — ${FREE_LIMIT} مجانية كل شهر</div>
         </div>
         <div style="text-align:center;flex-shrink:0">
-          <div style="font-size:26px;font-weight:900;color:${remaining > 0 ? 'var(--success)' : 'var(--danger)'}">${remaining}</div>
-          <div style="font-size:9px;color:var(--tx3)">متبقي</div>
+          <div style="font-size:26px;font-weight:900;color:${freeLeft > 0 ? 'var(--success)' : 'var(--danger)'}">${freeLeft}</div>
+          <div style="font-size:9px;color:var(--tx3)">مجاني متبقي</div>
         </div>
       </div>
       <div style="background:var(--bgc2);border-radius:8px;height:8px;overflow:hidden">
-        <div style="height:100%;width:${pct}%;background:${pct >= 100 ? 'var(--danger)' : 'var(--acc)'};border-radius:8px;transition:width .4s"></div>
+        <div style="height:100%;width:${Math.min(100,pct)}%;background:${pct >= 100 ? 'var(--danger)' : 'var(--acc)'};border-radius:8px;transition:width .4s"></div>
       </div>
-      <div style="font-size:10px;color:var(--tx3);margin-top:5px">
-        ${MY_BOOKINGS.length} من أصل ${MAX_BOOKINGS} حجوزات مستخدمة
+      <div style="font-size:10px;color:var(--tx3);margin-top:5px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px">
+        <span>${monthCount} من أصل ${FREE_LIMIT} حجوزات مجانية مستخدمة هذا الشهر</span>
+        ${freeLeft === 0 ? `<span style="color:var(--acc);font-weight:700"><i class="fas fa-coins"></i> حجز إضافي: ${BOOKING_COST.toLocaleString('ar-IQ')} IQD (رصيدك: ${credits.toLocaleString('ar-IQ')} IQD)</span>` : ''}
       </div>
     </div>
 
@@ -178,7 +242,10 @@ async function pgBookings(el) {
           <div style="display:flex;align-items:center;gap:12px">
             <div class="av avm" style="background:var(--grad-p);color:#fff;flex-shrink:0">${(b.candidateName || '؟').charAt(0)}</div>
             <div style="flex:1;min-width:0">
-              <div style="font-size:13px;font-weight:800;color:var(--tx)">${san(b.candidateName || '—')}</div>
+              <div style="font-size:13px;font-weight:800;color:var(--tx)">
+                ${san(b.candidateName || '—')}
+                ${b.paid ? `<span style="font-size:9px;padding:2px 6px;background:rgba(245,158,11,.12);color:var(--acc);border-radius:8px;font-weight:700;margin-right:4px">مدفوع</span>` : `<span style="font-size:9px;padding:2px 6px;background:rgba(34,197,94,.1);color:var(--success);border-radius:8px;font-weight:700;margin-right:4px">مجاني</span>`}
+              </div>
               <div style="font-size:11px;color:var(--tx2);margin-top:2px" id="tmr_${b.id}">${bookingCountdown(b.expiresAt)}</div>
               <div style="font-size:10px;color:var(--tx3);margin-top:2px">
                 <i class="fas fa-calendar"></i> حتى ${exp.toLocaleTimeString('ar-IQ',{hour:'2-digit',minute:'2-digit'})}
@@ -197,7 +264,7 @@ async function pgBookings(el) {
 
     <div class="al al-i fade-up del2" style="margin-top:14px">
       <i class="fas fa-info-circle"></i>
-      <span>يُلغى الحجز تلقائياً بعد 12 ساعة. المرشح المحجوز يظهر للمكاتب الأخرى كـ "محجوز" ولا يمكنهم حجزه.</span>
+      <span>يُلغى الحجز تلقائياً بعد 12 ساعة. المرشح المحجوز يظهر للمكاتب الأخرى كـ "محجوز" ولا يمكنهم حجزه. بعد ${FREE_LIMIT} حجوزات شهرياً يُخصم ${BOOKING_COST.toLocaleString('ar-IQ')} IQD لكل حجز.</span>
     </div>`;
 
   // تحديث العدادات كل دقيقة
@@ -207,6 +274,5 @@ async function pgBookings(el) {
       if (el) el.innerHTML = bookingCountdown(b.expiresAt);
     });
   }, 60000);
-  // تنظيف عند تغيير الصفحة (يُعاد تعيينه في goTo)
   window._bookingTimer = timerId;
 }

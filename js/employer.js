@@ -159,12 +159,17 @@ function pgEmployerJobs(el) {
                 <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:4px">
                   <div style="font-size:14px;font-weight:900;color:var(--tx)">${san(j.title)}</div>
                   <span class="b" style="background:rgba(245,158,11,.15);color:var(--acc);border:1px solid rgba(245,158,11,.3);font-size:9px">توظيف مباشر</span>
+                  ${isJobLive(j)
+                    ? `<span class="b b-gr" style="font-size:9px"><i class="fas fa-circle" style="font-size:5px"></i>نشطة</span>`
+                    : `<span class="b b-rd" style="font-size:9px"><i class="fas fa-circle" style="font-size:5px"></i>منتهية</span>`}
                 </div>
                 <div style="font-size:11px;color:var(--tx2)">${san(j.province||'')} • ${j.type==='full'?'دوام كامل':j.type==='part'?'دوام جزئي':'مستقل'}</div>
                 <div style="font-size:11px;color:var(--tx3);margin-top:3px"><i class="fas fa-users"></i> ${j.applicants||0} متقدم • ${ago(j.postedAt)}</div>
+                <div style="margin-top:4px">${jobExpiryLabel(j)}</div>
               </div>
               <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">
                 <button class="btn bp bsm" onclick="empViewJobApps('${j.id}')"><i class="fas fa-users"></i>المتقدمون</button>
+                ${!j.adminPinned && j.expiresAt ? `<button class="btn bsm" style="background:rgba(13,148,136,.12);color:var(--p);border:1px solid rgba(13,148,136,.25)" onclick="extendJob('${j.id}','${san(j.title)}')"><i class="fas fa-redo"></i>تمديد</button>` : ''}
                 <button class="btn bda bsm" onclick="empDeleteJob('${j.id}','${san(j.title)}')"><i class="fas fa-trash"></i>حذف</button>
               </div>
             </div>

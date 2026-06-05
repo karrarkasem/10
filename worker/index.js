@@ -617,8 +617,8 @@ async function handleTgCallback(cb, token, env) {
   const { data, id } = cb;
   try {
     if (data.startsWith('pub:')) {
-      const ok = await publishTgJob(data.slice(4));
-      await tgAnswer(token, id, ok ? '✅ تم النشر على المنصة!' : '❌ فشل النشر، جرّب من لوحة الأدمن');
+      const newId = await publishTgJob(data.slice(4));
+      await tgAnswer(token, id, newId ? '✅ تم النشر على المنصة!' : '❌ فشل النشر، جرّب من لوحة الأدمن');
     }
     if (data.startsWith('rej:')) {
       await deleteTgJob(data.slice(4));
@@ -636,12 +636,12 @@ async function publishTgJob(docId) {
       { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ returnSecureToken: true }) }
     );
     const { idToken } = await authRes.json();
-    if (!idToken) return false;
+    if (!idToken) return null;
 
     const getRes = await fetch(
       `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/telegram_queue/${docId}?key=${FIREBASE_KEY}`
     );
-    if (!getRes.ok) return false;
+    if (!getRes.ok) return null;
     const doc    = await getRes.json();
     const fields = { ...doc.fields };
     fields.status   = { stringValue: 'active' };
@@ -655,12 +655,14 @@ async function publishTgJob(docId) {
         body:    JSON.stringify({ fields }),
       }
     );
-    if (!addRes.ok) return false;
+    if (!addRes.ok) return null;
+    const newDoc = await addRes.json();
+    const newJobId = newDoc.name?.split('/').pop() || null;
     await deleteTgJob(docId);
-    return true;
+    return newJobId; // يرجع الـ ID الجديد للوظيفة
   } catch (e) {
     console.error('publishTgJob:', e);
-    return false;
+    return null;
   }
 }
 
@@ -1312,31 +1314,70 @@ async function processScheduledPosts(env) {
 // Job Discovery System — Google CSE + RSS feeds
 // ═══════════════════════════════════════════════════════════
 
-const DISCOVERY_QUERIES = [
-  'وظائف شاغرة العراق',
-  'مطلوب موظف بغداد',
-  'وظيفة شاغرة الموصل البصرة',
-  'job vacancy Iraq Baghdad 2025',
-  'site:facebook.com وظيفة العراق',
+// ── محلية (عراقية) أولاً ثم إقليمية ──
+const DISCOVERY_QUERIES_LOCAL = [
+  'وظائف شاغرة بغداد 2025',
+  'مطلوب موظف كربلاء النجف البصرة',
+  'وظيفة شاغرة الموصل اربيل 2025',
+  'وظائف عراقية جديدة اليوم',
+  'مطلوب للعمل بغداد براتب',
+  'hiring Baghdad Iraq 2025',
+  'job vacancy Iraq Basra Mosul',
 ];
 
+const DISCOVERY_QUERIES_REGIONAL = [
+  'وظائف شاغرة العراق site:linkedin.com',
+  'Iraq jobs 2025 site:linkedin.com',
+  'وظائف العراق site:bayt.com',
+];
+
+// قائمة مجمّعة — المحلية أولاً دائماً
+const DISCOVERY_QUERIES = [...DISCOVERY_QUERIES_LOCAL, ...DISCOVERY_QUERIES_REGIONAL];
+
 const RSS_FEEDS = [
-  'https://www.bayt.com/en/iraq/jobs/?format=rss',
-  'https://www.wuzzuf.net/search/jobs/?q=&l=iraq&format=rss',
+  // محلية — عراقية
+  { url: 'https://www.tanqeeb.com/jobs/iraq?format=rss',                         priority: 'local'    },
+  { url: 'https://www.bayt.com/en/iraq/jobs/?format=rss',                         priority: 'local'    },
+  { url: 'https://iq.indeed.com/rss?q=وظائف&l=بغداد',                             priority: 'local'    },
+  { url: 'https://iq.indeed.com/rss?q=job&l=Iraq',                                priority: 'local'    },
+  // إقليمية
+  { url: 'https://www.wuzzuf.net/search/jobs/?q=&l=iraq&format=rss',              priority: 'regional' },
+  { url: 'https://www.linkedin.com/jobs/search/?keywords=Iraq&f_TP=1&format=rss', priority: 'regional' },
 ];
 
 async function discoverJobs(env) {
   const items = [];
 
+  // ① محلية: قنوات تيليجرام العراقية (الأولوية القصوى) — تُقرأ من Firestore
+  const tgChannels = await _loadTgChannelsFromFirestore();
+  if (tgChannels.length) {
+    try { items.push(...await discoverViaTelegramChannels(tgChannels)); }
+    catch (e) { console.error('[discovery] Telegram channels error:', e.message); }
+  }
+
+  // ② محلية: Google CSE (عراقية)
   if (env.GOOGLE_CSE_KEY && env.GOOGLE_CSE_ID) {
     try { items.push(...await discoverViaGoogle(env)); }
     catch (e) { console.error('[discovery] Google error:', e.message); }
   }
 
+  // ③ محلية + إقليمية: RSS
   try { items.push(...await discoverViaRSS()); }
   catch (e) { console.error('[discovery] RSS error:', e.message); }
 
-  console.log(`[discovery] Processing ${items.length} raw items`);
+  // ④ إقليمية: LinkedIn
+  try { items.push(...await discoverViaLinkedIn()); }
+  catch (e) { console.error('[discovery] LinkedIn error:', e.message); }
+
+  // ترتيب: المحلية أولاً ثم الإقليمية
+  items.sort((a, b) => {
+    if (a.priority === 'local' && b.priority !== 'local') return -1;
+    if (b.priority === 'local' && a.priority !== 'local') return 1;
+    return 0;
+  });
+
+  console.log(`[discovery] Processing ${items.length} items (${items.filter(i => i.priority === 'local').length} local)`);
+
   let saved = 0;
   for (const item of items) {
     try { if (await parseAndSaveDiscovery(item, env)) saved++; }
@@ -1345,17 +1386,130 @@ async function discoverJobs(env) {
   console.log(`[discovery] Saved ${saved} new jobs to review queue`);
 }
 
+// ── قراءة قنوات المصادر من Firestore config/settings ──
+async function _loadTgChannelsFromFirestore() {
+  try {
+    const res = await fetch(
+      `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/config/settings?key=${FIREBASE_KEY}`,
+      { cf: { cacheTtl: 300 } }
+    );
+    if (!res.ok) return [];
+    const doc = await res.json();
+    const arr = doc.fields?.telegram?.mapValue?.fields?.jobChannels?.arrayValue?.values || [];
+    return arr.map(v => v.stringValue).filter(Boolean);
+  } catch { return []; }
+}
+
+// ── سحب من قنوات تيليجرام العامة عبر t.me/s/ ──
+async function discoverViaTelegramChannels(channels) {
+  const results = [];
+  for (const ch of channels) {
+    try {
+      const handle = ch.replace(/^@/, '').trim();
+      const res = await fetch(`https://t.me/s/${handle}`, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'Accept': 'text/html',
+          'Accept-Language': 'ar,en;q=0.9',
+        },
+        cf: { cacheTtl: 1800 },
+      });
+      if (!res.ok) continue;
+      const html = await res.text();
+
+      // استخراج نصوص الرسائل من HTML
+      const msgMatches = html.matchAll(
+        /<div class="tgme_widget_message_text[^"]*"[^>]*>([\s\S]*?)<\/div>/g
+      );
+      for (const m of msgMatches) {
+        // تنظيف HTML tags
+        const text = m[1]
+          .replace(/<br\s*\/?>/gi, '\n')
+          .replace(/<[^>]+>/g, '')
+          .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#34;/g, '"')
+          .trim();
+        if (text.length < 40) continue;
+        results.push({
+          source:   'telegram_channel',
+          sourceUrl: `https://t.me/${handle}`,
+          rawText:  text.substring(0, 2000),
+          priority: 'local',
+        });
+      }
+    } catch (e) {
+      console.warn(`[telegram channel] ${ch}: ${e.message}`);
+    }
+  }
+  return results;
+}
+
+// ── LinkedIn Jobs — public guest API ──
+async function discoverViaLinkedIn() {
+  const results = [];
+  const searches = [
+    { q: 'وظائف+العراق',    location: 'Iraq' },
+    { q: 'jobs+Iraq+Baghdad', location: 'Iraq' },
+  ];
+  for (const s of searches) {
+    try {
+      const url = `https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords=${s.q}&location=${encodeURIComponent(s.location)}&start=0&count=8`;
+      const res = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1)',
+          'Accept': 'text/html,application/xhtml+xml',
+          'Accept-Language': 'ar,en-US;q=0.9',
+        },
+        cf: { cacheTtl: 3600 },
+      });
+      if (!res.ok) continue;
+      const html  = await res.text();
+      // استخراج عناوين الوظائف من HTML
+      const titles  = [...html.matchAll(/class="base-search-card__title[^"]*"[^>]*>\s*([^<]+)/g)].map(m => m[1].trim());
+      const companies = [...html.matchAll(/class="base-search-card__subtitle[^"]*"[^>]*>\s*([^<]+)/g)].map(m => m[1].trim());
+      const locations = [...html.matchAll(/class="job-search-card__location[^"]*"[^>]*>\s*([^<]+)/g)].map(m => m[1].trim());
+      const links   = [...html.matchAll(/href="(https:\/\/www\.linkedin\.com\/jobs\/view\/[^"?]+)/g)].map(m => m[1]);
+
+      for (let i = 0; i < titles.length; i++) {
+        if (!titles[i]) continue;
+        const rawText = [
+          titles[i],
+          companies[i] ? `الشركة: ${companies[i]}` : '',
+          locations[i] ? `الموقع: ${locations[i]}` : '',
+        ].filter(Boolean).join('\n');
+        results.push({
+          source:    'linkedin',
+          sourceUrl: links[i] || 'https://linkedin.com/jobs',
+          rawText,
+          priority:  'regional',
+        });
+      }
+    } catch { /* skip */ }
+  }
+  return results;
+}
+
 async function discoverViaGoogle(env) {
   const results = [];
-  const selected = [...DISCOVERY_QUERIES].sort(() => Math.random() - 0.5).slice(0, 2);
+
+  // 3 محلية + 1 إقليمية في كل دورة
+  const localQ    = DISCOVERY_QUERIES_LOCAL.sort(() => Math.random() - 0.5).slice(0, 3);
+  const regionalQ = DISCOVERY_QUERIES_REGIONAL.sort(() => Math.random() - 0.5).slice(0, 1);
+  const selected  = [...localQ, ...regionalQ];
+
   for (const q of selected) {
     try {
-      const url = `https://www.googleapis.com/customsearch/v1?key=${env.GOOGLE_CSE_KEY}&cx=${env.GOOGLE_CSE_ID}&q=${encodeURIComponent(q)}&num=10&dateRestrict=d2&gl=iq&hl=ar`;
+      const isLocal = DISCOVERY_QUERIES_LOCAL.includes(q);
+      const url = `https://www.googleapis.com/customsearch/v1?key=${env.GOOGLE_CSE_KEY}&cx=${env.GOOGLE_CSE_ID}&q=${encodeURIComponent(q)}&num=10&dateRestrict=d3&gl=iq&hl=ar`;
       const res  = await fetch(url);
       if (!res.ok) continue;
       const data = await res.json();
       for (const item of data.items || []) {
-        results.push({ source: 'google', sourceUrl: item.link, rawText: `${item.title}\n\n${item.snippet || ''}`.trim() });
+        results.push({
+          source:   'google',
+          sourceUrl: item.link,
+          rawText:  `${item.title}\n\n${item.snippet || ''}`.trim(),
+          priority: isLocal ? 'local' : 'regional',
+        });
       }
     } catch { /* skip */ }
   }
@@ -1364,13 +1518,20 @@ async function discoverViaGoogle(env) {
 
 async function discoverViaRSS() {
   const results = [];
-  for (const feedUrl of RSS_FEEDS) {
+  // المحلية أولاً ثم الإقليمية
+  const sorted = [...RSS_FEEDS].sort((a, b) =>
+    a.priority === 'local' && b.priority !== 'local' ? -1 : 1
+  );
+  for (const feed of sorted) {
     try {
-      const res = await fetch(feedUrl, { headers: { Accept: 'application/rss+xml, text/xml, */*' }, cf: { cacheTtl: 3600 } });
+      const res = await fetch(feed.url, {
+        headers: { Accept: 'application/rss+xml, text/xml, */*', 'User-Agent': 'Mozilla/5.0 (compatible; AfraBot/1.0)' },
+        cf: { cacheTtl: 3600 },
+      });
       if (!res.ok) continue;
       const xml   = await res.text();
       const items = xml.match(/<item[^>]*>([\s\S]*?)<\/item>/gi) || [];
-      for (const item of items.slice(0, 8)) {
+      for (const item of items.slice(0, feed.priority === 'local' ? 10 : 6)) {
         const getTag = tag => {
           const m = item.match(new RegExp(`<${tag}[^>]*>(?:<!\\[CDATA\\[([\\s\\S]*?)\\]\\]>|([^<]*))</${tag}>`, 'i'));
           return (m?.[1] || m?.[2] || '').trim();
@@ -1379,7 +1540,12 @@ async function discoverViaRSS() {
         const desc  = getTag('description').replace(/<[^>]+>/g, '').trim();
         const link  = getTag('link');
         if (!title) continue;
-        results.push({ source: 'rss', sourceUrl: link || feedUrl, rawText: `${title}\n\n${desc}`.substring(0, 2000) });
+        results.push({
+          source:    'rss',
+          sourceUrl: link || feed.url,
+          rawText:   `${title}\n\n${desc}`.substring(0, 2000),
+          priority:  feed.priority,
+        });
       }
     } catch { /* skip */ }
   }
@@ -1432,8 +1598,11 @@ async function parseAndSaveDiscovery(item, env) {
   catch { return false; }
 
   if (parsed.notJob || !parsed.title) return false;
-  const score = Number(parsed.score) || 5;
-  if (score < 4) return false; // Skip very low quality
+  // الوظائف المحلية (عراقية) تحصل على دفعة +2 في الدرجة
+  const baseScore  = Number(parsed.score) || 5;
+  const localBoost = (item.priority === 'local' || parsed.province) ? 2 : 0;
+  const score      = Math.min(10, baseScore + localBoost);
+  if (baseScore < 4) return false; // تجاهل الجودة المنخفضة جداً
 
   // Auth + save
   const authRes = await fetch(
@@ -1536,8 +1705,10 @@ async function handleGetDiscoveries(env) {
 
 // ── POST /discoveries/:id/approve → reuse publishTgJob (telegram_queue → jobs) ──
 async function handleApproveDiscovery(id) {
-  const ok = await publishTgJob(id);
-  return ok ? json({ ok: true }) : json({ error: 'Failed to publish' }, 500);
+  const jobId = await publishTgJob(id);
+  return jobId
+    ? json({ ok: true, jobId })
+    : json({ error: 'Failed to publish' }, 500);
 }
 
 // ── POST /discoveries/:id/reject → reuse deleteTgJob ──

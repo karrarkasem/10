@@ -286,14 +286,15 @@ function switchAuth(m) {
 
 function pickRole(r) {
   SEL_ROLE = r;
-  const rs = document.getElementById('r_seeker');
-  const ro = document.getElementById('r_office');
-  if (rs) rs.classList.toggle('on', r === 'seeker');
-  if (ro) ro.classList.toggle('on', r === 'office');
-  const offF = document.getElementById('officeF');
-  if (offF) offF.style.display = r === 'office' ? 'block' : 'none';
-  const empF = document.getElementById('employerF');
-  if (empF) empF.style.display = r === 'employer' ? 'block' : 'none';
+  const offF  = document.getElementById('officeF');
+  const empF  = document.getElementById('employerF');
+  const badge = document.getElementById('selectedRoleBadge');
+  if (offF)  offF.style.display  = r === 'office'   ? 'block' : 'none';
+  if (empF)  empF.style.display  = r === 'employer' ? 'block' : 'none';
+  if (badge) {
+    const labels = { seeker: '🧑‍💼 باحث عن عمل', office: '🏢 مكتب توظيف', employer: '🏪 صاحب عمل' };
+    badge.textContent = labels[r] || '';
+  }
 }
 
 function togglePw(id, btn) {
@@ -327,6 +328,10 @@ async function doRegister() {
   const pass  = document.getElementById('rp2').value;
   if (!name || !email || !pass) { showErr('rerr', 'أدخل الاسم والبريد وكلمة المرور'); return; }
   if (pass.length < 6) { showErr('rerr', 'كلمة المرور 6 أحرف على الأقل'); return; }
+  if (SEL_ROLE === 'office') {
+    const offName = document.getElementById('ron')?.value.trim();
+    if (!offName) { showErr('rerr', 'أدخل اسم المكتب أو وكالة التوظيف'); return; }
+  }
   if (SEL_ROLE === 'employer') {
     const empName = document.getElementById('remp_name')?.value.trim();
     const empType = document.getElementById('remp_type')?.value;
@@ -413,6 +418,7 @@ async function doGoogleLogin() {
         email: res.user.email,
         photoURL: res.user.photoURL || null,
         role: gRole,
+        phone: '', province: '',
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         status: 'active',
       });
@@ -465,6 +471,7 @@ async function handleGoogleRedirect() {
         email: res.user.email,
         photoURL: res.user.photoURL || null,
         role: gRole,
+        phone: '', province: '',
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         status: 'active',
       });
@@ -617,7 +624,9 @@ if (!DEMO && typeof firebase !== 'undefined') {
         P    = { name: 'زائر', role: 'guest' };
         try {
           const snap = await window.db.collection('jobs').where('status', '==', 'active').orderBy('postedAt', 'desc').limit(50).get();
-          JOBS = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+          const _gNow = Date.now();
+          JOBS = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+            .filter(j => !j.expiresAt || tsMs(j.expiresAt) > _gNow);
         } catch (_) { JOBS = []; }
         bootApp();
         return;
@@ -656,7 +665,9 @@ if (!DEMO && typeof firebase !== 'undefined') {
         const jobsSnap = ROLE === 'admin'
           ? await window.db.collection('jobs').orderBy('postedAt', 'desc').limit(100).get()
           : await window.db.collection('jobs').where('status', '==', 'active').orderBy('postedAt', 'desc').limit(50).get();
-        JOBS = jobsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        const _jNow = Date.now();
+        JOBS = jobsSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+          .filter(j => ROLE === 'admin' || !j.expiresAt || tsMs(j.expiresAt) > _jNow);
 
         if (ROLE === 'seeker') {
           const asnap = await window.db.collection('applications').where('applicantId', '==', user.uid).orderBy('appliedAt', 'desc').get();
@@ -690,6 +701,28 @@ if (!DEMO && typeof firebase !== 'undefined') {
                 });
             } catch (_) { OFFICE_APPS = []; }
           }
+        }
+
+        // حذف وظائف منتهية المدة بلا متقدمين — تلقائي وبصمت
+        if (ROLE === 'office' || ROLE === 'employer' || ROLE === 'admin') {
+          ;(async () => {
+            try {
+              const _q = ROLE === 'admin'
+                ? window.db.collection('jobs').where('status', '==', 'active').limit(200)
+                : window.db.collection('jobs').where('postedBy', '==', user.uid).where('status', '==', 'active');
+              const _snap = await _q.get();
+              const _now  = Date.now();
+              const _del  = _snap.docs.filter(d => {
+                const j = d.data();
+                return j.expiresAt && tsMs(j.expiresAt) < _now && !j.applicants;
+              });
+              await Promise.all(_del.map(d => d.ref.delete().catch(() => {})));
+              if (_del.length) {
+                JOBS = JOBS.filter(j => !_del.some(d => d.id === j.id));
+                if (ROLE === 'admin') notify('🧹 تنظيف', `حُذفت ${_del.length} وظيفة منتهية بلا متقدمين`, 'info');
+              }
+            } catch (_) {}
+          })();
         }
 
         await loadContactCampaigns();

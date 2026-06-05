@@ -128,7 +128,7 @@ function pgOfficeHome(el) {
             { ico:'fa-users',       l:'عرض المتقدمين',     c:'var(--purple)', a:"goTo('candidates')" },
             { ico:'fa-columns',     l:'خط التوظيف Kanban', c:'var(--acc)',    a:"goTo('pipeline')" },
             { ico:'fa-building',    l:'ملف المكتب',        c:'var(--info)',   a:"goTo('profile')" },
-            { ico:'fa-crown',       l:'خطط الاشتراك',      c:'#f59e0b',      a:"showPaymentPlans()" },
+            { ico:'fa-wallet',      l:'شحن الرصيد',         c:'#f59e0b',      a:"showRechargeModal()" },
           ].map(a => `<button class="btn bo" style="justify-content:flex-start;gap:10px;text-align:right" onclick="${a.a}">
             <div style="width:30px;height:30px;border-radius:8px;background:${a.c}18;color:${a.c};display:flex;align-items:center;justify-content:center;flex-shrink:0">
               <i class="fas ${a.ico}"></i>
@@ -197,6 +197,7 @@ function pgOfficeJobs(el) {
         </div>
         <div class="oj-body">
           <button class="btn bp bsm" onclick="goTo('candidates')"><i class="fas fa-users"></i>المتقدمون (${j.applicants||0})</button>
+          ${!j.adminPinned && j.expiresAt ? `<button class="btn bsm" style="background:rgba(13,148,136,.12);color:var(--p);border:1px solid rgba(13,148,136,.25)" onclick="extendJob('${j.id}','${san(j.title)}')"><i class="fas fa-redo"></i>تمديد</button>` : ''}
           <button class="btn bda bsm" onclick="officeToggleJob('${j.id}','${j.status||'active'}','${san(j.title)}')">
             <i class="fas fa-${(j.status||'active')==='paused'?'play':'pause'}"></i>${(j.status||'active')==='paused'?'تفعيل':'إيقاف'}
           </button>
@@ -231,6 +232,77 @@ async function officeDeleteJob(jobId, title) {
     notify('تم الحذف', `وظيفة "${title}" حُذفت`, 'info');
     pgOfficeJobs(document.getElementById('pcon'));
   } catch(e) { notify('خطأ', 'فشل الحذف، حاول مرة أخرى', 'error'); }
+}
+
+// ── تمديد الوظيفة ──
+function extendJob(jobId, title) {
+  const cost = CFG.pricing?.jobPostCost ?? 2500;
+  const bal  = P?.credits || 0;
+  document.getElementById('moApplyB').innerHTML = `
+    <div style="text-align:center;margin-bottom:18px">
+      <div style="width:52px;height:52px;border-radius:50%;background:rgba(13,148,136,.12);color:var(--p);font-size:22px;display:flex;align-items:center;justify-content:center;margin:0 auto 10px"><i class="fas fa-redo"></i></div>
+      <div style="font-size:16px;font-weight:900;color:var(--tx)">تمديد الوظيفة</div>
+      <div style="font-size:12px;color:var(--tx2);margin-top:4px">${san(title)}</div>
+    </div>
+    <div class="fg" style="margin-bottom:14px">
+      <label class="fl">مدة التمديد</label>
+      <select id="extendDur" class="fc">
+        <option value="day">يوم واحد</option>
+        <option value="week" selected>أسبوع</option>
+        <option value="month">شهر</option>
+      </select>
+    </div>
+    <div class="al ${bal >= cost ? 'al-i' : 'al-w'}" style="margin-bottom:14px;font-size:12px">
+      <i class="fas fa-coins"></i>
+      <span>تكلفة التمديد: <strong>${cost.toLocaleString('ar-IQ')} IQD</strong> — رصيدك: <strong>${bal.toLocaleString('ar-IQ')} IQD</strong></span>
+    </div>
+    <div class="mf" style="padding:0;border:none">
+      <button class="btn bo" onclick="cmo('moApply')"><i class="fas fa-times"></i>إلغاء</button>
+      <button class="btn bp" onclick="_doExtendJob('${jobId}')"><i class="fas fa-redo"></i>تمديد</button>
+    </div>`;
+  oMo('moApply');
+}
+
+async function _doExtendJob(jobId) {
+  const dur  = document.getElementById('extendDur')?.value || 'week';
+  const cost = CFG.pricing?.jobPostCost ?? 2500;
+  const bal  = P?.credits || 0;
+
+  if (bal < cost) {
+    cmo('moApply');
+    notify('رصيد غير كافٍ', `التمديد يتطلب ${cost.toLocaleString('ar-IQ')} IQD`, 'warning');
+    showRechargeModal(cost);
+    return;
+  }
+
+  const job = JOBS.find(j => j.id === jobId);
+  if (!job) { cmo('moApply'); return; }
+
+  // التمديد من الوقت الحالي أو من نهاية المدة الحالية (أيهما أكبر)
+  const durMs  = { day: 86400000, week: 604800000, month: 2592000000 }[dur];
+  const base   = job.expiresAt ? Math.max(Date.now(), tsMs(job.expiresAt)) : Date.now();
+  const newExp = new Date(base + durMs).toISOString();
+
+  try {
+    if (!DEMO && window.db && U) {
+      const newBal = bal - cost;
+      await window.db.collection('jobs').doc(jobId).update({ status: 'active', expiresAt: newExp });
+      await window.db.collection('users').doc(U.uid).update({
+        credits: firebase.firestore.FieldValue.increment(-cost),
+      });
+      await window.db.collection('credits_log').add({
+        userId: U.uid, type: 'job_post', amount: -cost,
+        description: `تمديد وظيفة: ${job.title}`,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      }).catch(() => {});
+      P = { ...P, credits: newBal };
+    }
+    job.expiresAt = newExp;
+    job.status    = 'active';
+    cmo('moApply');
+    notify('تم التمديد ✅', `وظيفة "${job.title}" مُمدَّدة بنجاح`, 'success');
+    pgOfficeJobs(document.getElementById('pcon'));
+  } catch(e) { notify('خطأ', 'فشل التمديد، حاول مرة أخرى', 'error'); }
 }
 
 // ── المتقدمون والملفات المنشورة ──
@@ -555,10 +627,39 @@ async function updateCandStatus(appId, status) {
 }
 
 async function _doUpdateStatus(appId, status, extra = {}) {
+  // فحص عمولة التوظيف للمكاتب قبل تأكيد القبول
+  if (status === 'hired' && ROLE === 'office' && !DEMO) {
+    const commCheck = await checkHireCommission();
+    if (!commCheck.ok) {
+      notify('رصيد غير كافٍ', `تأكيد التوظيف يتطلب ${(commCheck.cost||0).toLocaleString('ar-IQ')} IQD عمولة`, 'warning');
+      showRechargeModal(commCheck.cost);
+      return;
+    }
+  }
+
   const s = STAT[status];
   if (!DEMO && window.db && appId && !appId.startsWith('a')) {
     try {
       await window.db.collection('applications').doc(appId).update({ status, ...extra });
+      // خصم عمولة التوظيف بعد التحديث الناجح
+      if (status === 'hired' && ROLE === 'office') {
+        afterHireConfirmed(appId).catch(() => {});
+        const _hApp = OFFICE_APPS.find(a => a.id === appId);
+        const _hJob = _hApp?.jobId ? JOBS.find(j => j.id === _hApp.jobId) : null;
+        if (_hJob && _hJob.status === 'active') {
+          setTimeout(() => confirm2(
+            'إغلاق الوظيفة؟',
+            `تم التوظيف بنجاح 🎉 هل تريد إيقاف وظيفة "${san(_hApp.jobTitle || _hJob.title)}" الآن؟`,
+            async () => {
+              if (!DEMO && window.db) {
+                await window.db.collection('jobs').doc(_hJob.id).update({ status: 'paused' }).catch(() => {});
+                _hJob.status = 'paused';
+                notify('تم ✅', 'تم إيقاف الوظيفة', 'info');
+              }
+            }
+          ), 800);
+        }
+      }
       // إشعار الباحث بتغيير الحالة
       const app = OFFICE_APPS.find(a => a.id === appId);
       if (app?.applicantId) {
@@ -813,47 +914,44 @@ function pgOfficeProfile(el) {
       </div>
     </div>
 
-    <!-- خطط الاشتراك -->
+    <!-- المحفظة والرصيد -->
     <div class="card cp" style="margin-bottom:14px">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">
-        <i class="fas fa-crown" style="color:var(--acc)"></i>
-        <span style="font-size:13px;font-weight:800;color:var(--tx)">خطة الاشتراك</span>
-        <span class="b b-gr" style="font-size:10px">الخطة الحالية: ${PLANS[getUserPlan()]?.name||'مجاني'}</span>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+        <i class="fas fa-wallet" style="color:var(--p)"></i>
+        <span style="font-size:13px;font-weight:800;color:var(--tx)">المحفظة والرصيد</span>
       </div>
-      <p style="font-size:11px;color:var(--tx3);margin-bottom:14px">ارفع مستوى اشتراكك للوصول إلى ميزات متقدمة وزيادة ظهور وظائفك</p>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px">
-        ${Object.entries(PLANS).map(([key, plan]) => {
-          const isCur = getUserPlan() === key;
-          return `
-          <div style="border:2px solid ${isCur ? plan.color : 'var(--br)'};border-radius:14px;padding:14px;
-            background:${isCur ? plan.color+'10' : 'var(--bgc2)'};position:relative;
-            transition:all .2s;min-width:0;overflow:hidden"
-            ${!isCur ? `onmouseenter="this.style.transform='translateY(-3px)';this.style.boxShadow='var(--shl)'" onmouseleave="this.style.transform='';this.style.boxShadow=''"` : ''}>
-            ${isCur ? `<div style="position:absolute;top:-1px;right:50%;transform:translateX(50%);background:${plan.color};color:#fff;font-size:9px;font-weight:800;padding:2px 10px;border-radius:0 0 8px 8px;white-space:nowrap">خطتك الحالية</div>` : ''}
-            <div style="margin-top:${isCur?'10px':'0'}">
-              <i class="fas ${plan.icon}" style="color:${plan.color};font-size:20px;margin-bottom:6px;display:block"></i>
-              <div style="font-size:13px;font-weight:900;color:${plan.color};margin-bottom:4px">${plan.name}</div>
-              <div style="font-size:16px;font-weight:900;color:var(--tx)">
-                ${plan.price === 0 ? 'مجاناً' : plan.price.toLocaleString('ar-IQ')}
-                ${plan.price > 0 ? `<span style="font-size:9px;font-weight:400;color:var(--tx3)"> IQD/شهر</span>` : ''}
-              </div>
-              <div style="font-size:10px;color:var(--tx2);margin:8px 0;display:flex;align-items:center;gap:4px">
-                <i class="fas fa-briefcase" style="color:${plan.color};font-size:9px;flex-shrink:0"></i>
-                ${plan.limit === Infinity ? 'وظائف غير محدودة' : 'حتى ' + plan.limit + ' وظائف'}
-              </div>
-              ${isCur
-                ? `<div class="b b-gr" style="width:100%;justify-content:center;font-size:11px">✓ مفعّلة</div>`
-                : `<button class="btn bsm bfu" style="background:${plan.color};color:#fff;width:100%;font-size:11px"
-                    onclick="showPaymentPlans()">
-                    <i class="fas fa-arrow-up"></i> الترقية
-                  </button>`}
-            </div>
-          </div>`;
-        }).join('')}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+        <div style="background:var(--bgc2);border-radius:12px;padding:14px;text-align:center;border:1px solid var(--br)">
+          <div style="font-size:10px;color:var(--tx3);margin-bottom:4px">رصيدك الحالي</div>
+          <div style="font-size:20px;font-weight:900;color:${(P?.credits||0)>0?'var(--success)':'var(--danger)'}">
+            ${(P?.credits||0).toLocaleString('ar-IQ')} IQD
+          </div>
+        </div>
+        <div style="background:var(--bgc2);border-radius:12px;padding:14px;text-align:center;border:1px solid var(--br)">
+          <div style="font-size:10px;color:var(--tx3);margin-bottom:4px">الفترة التجريبية</div>
+          <div style="font-size:20px;font-weight:900;color:var(--p)">
+            ${Math.max(0,(CFG.pricing?.freeJobsLimit||3)-(P?.freeJobsUsed||0))}
+            <span style="font-size:11px;font-weight:400;color:var(--tx3)"> / ${CFG.pricing?.freeJobsLimit||3}</span>
+          </div>
+          <div style="font-size:9px;color:var(--tx3);margin-top:2px">وظائف مجانية متبقية</div>
+        </div>
       </div>
-      <div class="al al-i" style="margin-top:12px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;font-size:11px;color:var(--tx2)">
+        <div style="background:var(--bgc2);border-radius:8px;padding:8px 10px">
+          <i class="fas fa-briefcase" style="color:var(--p);margin-left:4px"></i>
+          نشر وظيفة: <strong style="color:var(--tx)">${(CFG.pricing?.jobPostCost||2500).toLocaleString('ar-IQ')} IQD</strong>
+        </div>
+        ${ROLE==='office'?`<div style="background:var(--bgc2);border-radius:8px;padding:8px 10px">
+          <i class="fas fa-user-check" style="color:var(--acc);margin-left:4px"></i>
+          عمولة توظيف: <strong style="color:var(--tx)">${(CFG.pricing?.hireCost||10000).toLocaleString('ar-IQ')} IQD</strong>
+        </div>`:'<div></div>'}
+      </div>
+      <button class="btn bfu" style="width:100%" onclick="showRechargeModal()">
+        <i class="fas fa-plus-circle"></i>شحن الرصيد
+      </button>
+      <div class="al al-i" style="margin-top:10px">
         <i class="fas fa-shield-alt"></i>
-        <span style="font-size:12px">الدفع عبر: <strong>ZainCash</strong> • <strong>AsiaHawala</strong> • <strong>FIB</strong></span>
+        <span style="font-size:11px">الدفع عبر: <strong>ZainCash</strong> • <strong>AsiaHawala</strong> • <strong>FIB</strong></span>
       </div>
     </div>
 
@@ -1187,7 +1285,7 @@ async function pgOfficesList(el) {
         <span><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#0d9488;vertical-align:middle;margin-left:4px"></span>محافظتك</span>
         <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#7c3aed;vertical-align:middle;margin-left:4px"></span>قريب (< 80 كم)</span>
         <span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#64748b;vertical-align:middle;margin-left:4px"></span>بقية المحافظات</span>
-        <span style="margin-right:auto"><i class="fas fa-map-pin"></i> ${offices.filter(o=>o.lat&&o.lng).length} مكتب على الخارطة</span>
+        <span style="margin-right:auto" id="mapOfficeCount"><i class="fas fa-map-pin"></i> — مكتب على الخارطة</span>
       </div>
     </div>`;
 
@@ -1330,6 +1428,17 @@ async function submitRating(officeId, officeName) {
   loading('ratingBtn', true);
   if (!DEMO && window.db && U) {
     try {
+      // منع التقييم المتكرر لنفس المكتب
+      const prev = await window.db.collection('ratings')
+        .where('officeId', '==', officeId)
+        .where('userId',   '==', U.uid)
+        .limit(1).get();
+      if (!prev.empty) {
+        loading('ratingBtn', false);
+        cmo('moApply');
+        notify('تنبيه', 'قيّمت هذا المكتب مسبقاً', 'warning');
+        return;
+      }
       await window.db.collection('ratings').add({
         officeId, officeName, rating: stars, note: note || null,
         userId: U.uid, userName: P?.name || 'مستخدم',
@@ -1401,13 +1510,12 @@ async function submitJob() {
     expiresAt:   calcExpiresAt(document.getElementById('jdur')?.value || 'week'),
     adminPinned: false,
   };
-  // فحص حصة الوظائف قبل النشر
-  if (typeof checkJobQuota === 'function') {
-    const quota = await checkJobQuota();
-    if (!quota.ok) {
-      const planLabel = quota.plan === 'free' ? 'المجانية' : 'القياسية';
-      notify('انتهت حصة الوظائف', `وصلت لحد خطتك ${planLabel}. رقّ خطتك لنشر المزيد.`, 'warning');
-      if (typeof showPaymentPlans === 'function') showPaymentPlans();
+  // فحص الرصيد قبل النشر
+  if (ROLE !== 'admin') {
+    const creditCheck = await checkJobPostCredit();
+    if (!creditCheck.ok) {
+      notify('رصيد غير كافٍ', `تحتاج ${(creditCheck.cost||0).toLocaleString('ar-IQ')} IQD لنشر هذه الوظيفة`, 'warning');
+      showRechargeModal(creditCheck.cost);
       return;
     }
   }
@@ -1417,6 +1525,7 @@ async function submitJob() {
     try {
       const ref = await window.db.collection('jobs').add({ ...job, postedAt: firebase.firestore.FieldValue.serverTimestamp() });
       job.id = ref.id;
+      afterJobPosted(ref.id).catch(() => {});
     } catch(e) {
       console.error('submitJob Firestore error:', e);
       loading('addJobBtn', false);
@@ -1545,9 +1654,11 @@ function initOfficesMapInline(filter) {
   const withLoc = allOffices
     .map(o => {
       if (o.lat && o.lng) return o;
-      if (o.province && PROV_COORDS[o.province]) {
-        const [lat, lng] = PROV_COORDS[o.province];
-        return { ...o, lat, lng, _provFallback: true };
+      const prov = o.province?.trim();
+      const provKey = prov && Object.keys(PROV_COORDS).find(k => k.trim() === prov);
+      if (provKey) {
+        const [lat, lng] = PROV_COORDS[provKey];
+        return { ...o, lat, lng, province: provKey, _provFallback: true };
       }
       return null;
     })
@@ -1561,12 +1672,26 @@ function initOfficesMapInline(filter) {
 
   // فلترة حسب الخيار المحدد
   let displayed = withLoc;
+  let nearFallback = false;
   if (filter === 'near' && userProv) {
-    displayed = withLoc.filter(o =>
-      o.province === userProv ||
-      (userCoords && _haversine(userCoords.lat, userCoords.lng, o.lat, o.lng) < 100)
+    const nearList = withLoc.filter(o =>
+      o.province?.trim() === userProv.trim() ||
+      (userCoords && _haversine(userCoords.lat, userCoords.lng, o.lat, o.lng) < 150)
     );
+    if (nearList.length) {
+      displayed = nearList;
+    } else {
+      // لا توجد مكاتب قريبة — نعرض الكل مع إشعار
+      displayed = withLoc;
+      nearFallback = true;
+    }
   }
+
+  // تحديث العداد بالرقم الحقيقي للماركرات المعروضة
+  const cntEl = document.getElementById('mapOfficeCount');
+  if (cntEl) cntEl.innerHTML = `<i class="fas fa-map-pin"></i> ${displayed.length} مكتب على الخارطة`;
+
+  if (nearFallback) notify('لا توجد مكاتب قريبة', 'يعرض جميع المكاتب المتاحة', 'info');
 
   // رسالة فارغة داخل الخريطة إذا لم توجد نقاط
   if (!displayed.length) {

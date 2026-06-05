@@ -163,6 +163,7 @@ async function _buildSeekerCVModal() {
         <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn bp bsm" onclick="upCV();document.getElementById('cvPrev')?.scrollIntoView({behavior:'smooth',block:'nearest'})"><i class="fas fa-eye"></i>معاينة</button>
           <button class="btn ba bsm" onclick="dlCV()"><i class="fas fa-download"></i>تحميل PDF</button>
+          <button class="btn bo bsm" onclick="emailCV()"><i class="fas fa-envelope"></i>إرسال للبريد</button>
           <button class="btn bo bsm" id="saveCvBtn" onclick="saveCV()"><i class="fas fa-save"></i>حفظ</button>
           <button class="btn bsm" id="aiCvBtn"
             style="background:linear-gradient(135deg,var(--purple),#a78bfa);color:#fff;border:none"
@@ -462,6 +463,75 @@ async function dlCV() {
     const name = document.getElementById('cv_n')?.value?.trim() || 'سيرة_ذاتية';
     pdf.save(`${name}_CV.pdf`);
   } catch(e) { notify('خطأ', 'فشل تحميل PDF: ' + e.message, 'error'); }
+}
+
+// ── إرسال السيرة للبريد الإلكتروني ──
+async function emailCV() {
+  const email = document.getElementById('cv_em')?.value?.trim() || U?.email || '';
+  if (!email) {
+    notify('تنبيه', 'أدخل بريدك الإلكتروني في حقل البريد أولاً', 'warning');
+    return;
+  }
+
+  const name       = document.getElementById('cv_n')?.value   || '';
+  const title      = document.getElementById('cv_t')?.value   || '';
+  const phone      = document.getElementById('cv_ph')?.value  || '';
+  const pr         = document.getElementById('cv_pr')?.value  || '';
+  const web        = document.getElementById('cv_web')?.value || '';
+  const sm         = document.getElementById('cv_sum')?.value || '';
+  const skills     = cvSkills.join('، ');
+  const ivScoreVal = localStorage.getItem(`iv_last_score_${U?.uid}`);
+  const validExps  = cvExps.filter(e => e?.title);
+  const validEdus  = cvEdus.filter(e => e?.degree);
+
+  // محتوى نصي منسّق
+  const body = [
+    `السيرة الذاتية — ${name}`,
+    `${'─'.repeat(36)}`,
+    title      ? `المسمى الوظيفي : ${title}` : '',
+    phone      ? `الهاتف         : ${phone}`  : '',
+    email      ? `البريد         : ${email}`  : '',
+    pr         ? `المحافظة       : ${pr}`     : '',
+    web        ? `الموقع         : ${web}`    : '',
+    ivScoreVal ? `درجة المقابلة  : ${ivScoreVal}/100` : '',
+    sm ? `\nالملخص المهني:\n${sm}` : '',
+    validExps.length ? `\nالخبرات العملية:\n${validExps.map(e =>
+      `  • ${e.title}  |  ${e.company||''}  (${e.from||''}–${e.to||''})\n    ${e.desc||''}`
+    ).join('\n')}` : '',
+    validEdus.length ? `\nالتعليم والمؤهلات:\n${validEdus.map(e =>
+      `  • ${e.degree}  —  ${e.institution||''}  ${e.year||''}${e.grade ? '  | ' + e.grade : ''}`
+    ).join('\n')}` : '',
+    skills ? `\nالمهارات:\n  ${skills}` : '',
+    `\n${'─'.repeat(36)}`,
+    'أُرسل من منصة عفراء للتوظيف — afra-iq.com',
+  ].filter(Boolean).join('\n');
+
+  // محاولة EmailJS أولاً (يرسل بريداً حقيقياً)
+  const ejsCfg = (typeof CFG !== 'undefined') && CFG.emailjs;
+  const hasEJS = ejsCfg?.pub && !ejsCfg.pub.startsWith('YOUR') && typeof emailjs !== 'undefined';
+  if (hasEJS) {
+    notify('جارٍ الإرسال...', '', 'info');
+    try {
+      emailjs.init(ejsCfg.pub);
+      await emailjs.send(ejsCfg.svc, ejsCfg.tpl, {
+        to_email : email,
+        subject  : `سيرة ذاتية — ${name}`,
+        message  : body,
+        reply_to : email,
+      });
+      notify('تم الإرسال ✅', `أُرسلت سيرتك الذاتية إلى ${email}`, 'success');
+      return;
+    } catch(e) {
+      console.warn('EmailJS CV send:', e);
+      // نكمل للـ fallback
+    }
+  }
+
+  // Fallback: mailto (يفتح تطبيق البريد المحلي)
+  const subj    = encodeURIComponent(`سيرة ذاتية — ${name}`);
+  const encoded = encodeURIComponent(body.slice(0, 1800)); // حد URL
+  window.open(`mailto:${email}?subject=${subj}&body=${encoded}`, '_blank');
+  notify('تم ✅', 'سيُفتح تطبيق البريد لإرسال سيرتك الذاتية', 'success');
 }
 
 // ── تحسين بـ AI ──

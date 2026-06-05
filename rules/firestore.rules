@@ -260,20 +260,20 @@ service cloud.firestore {
 
 
     // ══════════════════════════════════════
-    // BOOKINGS — الحجوزات الحصرية (مكاتب التوظيف فقط)
+    // BOOKINGS — الحجوزات الحصرية (مكاتب التوظيف وأصحاب العمل)
     // ══════════════════════════════════════
     match /bookings/{bookingId} {
       allow read: if isLoggedIn()
         && (resource.data.officeId == request.auth.uid
             || resource.data.candidateId == request.auth.uid
             || isAdmin());
-      allow create: if isOffice() && isActive()
+      allow create: if isJobPoster() && isActive()
         && request.resource.data.officeId == request.auth.uid
         && validSize(request.resource.data)
         && hasFields(request.resource.data, ['officeId', 'candidateId', 'bookedAt', 'expiresAt', 'status'])
         && request.resource.data.status == 'active';
       allow update: if isAdmin()
-        || (isOffice() && resource.data.officeId == request.auth.uid
+        || (isJobPoster() && resource.data.officeId == request.auth.uid
             && request.resource.data.officeId    == resource.data.officeId
             && request.resource.data.candidateId == resource.data.candidateId);
       allow delete: if isAdmin();
@@ -366,15 +366,30 @@ service cloud.firestore {
 
 
     // ══════════════════════════════════════
-    // PAYMENTS — طلبات الاشتراك
+    // PAYMENTS — طلبات شحن الرصيد
     // ══════════════════════════════════════
     match /payments/{payId} {
       allow read: if isAdmin()
         || (isLoggedIn() && resource.data.userId == request.auth.uid);
       allow create: if isLoggedIn() && isActive()
         && request.resource.data.userId == request.auth.uid
-        && hasFields(request.resource.data, ['userId', 'plan', 'amount', 'status'])
-        && request.resource.data.status == 'pending';
+        && hasFields(request.resource.data, ['userId', 'amount', 'status'])
+        && request.resource.data.status == 'pending'
+        && request.resource.data.amount is int
+        && request.resource.data.amount > 0;
+      allow update, delete: if isAdmin();
+    }
+
+
+    // ══════════════════════════════════════
+    // CREDITS LOG — سجل معاملات الرصيد
+    // ══════════════════════════════════════
+    match /credits_log/{logId} {
+      allow read: if isAdmin()
+        || (isLoggedIn() && resource.data.userId == request.auth.uid);
+      allow create: if isLoggedIn() && isActive()
+        && request.resource.data.userId == request.auth.uid
+        && validSize(request.resource.data);
       allow update, delete: if isAdmin();
     }
 
