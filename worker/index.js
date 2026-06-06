@@ -1400,62 +1400,74 @@ async function _loadTgChannelsFromFirestore() {
   } catch { return []; }
 }
 
-// ── سحب من قنوات تيليجرام عبر Bot API (getUpdates) ──
-// يعمل مع القنوات التي أُضيف فيها البوت كمشرف
-// وأيضاً مع القنوات العامة عبر t.me/s/ كـ fallback
+// ── سحب من قنوات تيليجرام العامة عبر RSSHub ──
+// RSSHub تحوّل أي قناة عامة لـ RSS بدون حجب
 async function discoverViaTelegramChannels(channels, botToken) {
   const results = [];
-  for (const ch of channels) {
-    const handle = ch.startsWith('@') ? ch : '@' + ch.replace(/^@/, '').trim();
 
-    // ── محاولة 1: Bot API getChatHistory (إذا البوت مشرف) ──
-    if (botToken) {
+  for (const ch of channels) {
+    const handle = ch.replace(/^@/, '').trim();
+    if (!handle) continue;
+
+    // جرّب 3 مزودي RSS لقنوات تيليجرام (من الأسرع للأبطأ)
+    const rssProviders = [
+      `https://rsshub.app/telegram/channel/${handle}`,
+      `https://rss.telegram.group/${handle}`,
+      `https://telegram.rss.plus/feed/@${handle}`,
+    ];
+
+    let fetched = false;
+    for (const rssUrl of rssProviders) {
       try {
-        const res = await fetch(
-          `https://api.telegram.org/bot${botToken}/getUpdates?limit=20&timeout=0`,
-          { cf: { cacheTtl: 0 } }
-        );
+        const res = await fetch(rssUrl, {
+          headers: { 'User-Agent': 'Mozilla/5.0', Accept: 'application/rss+xml, text/xml, */*' },
+          cf: { cacheTtl: 1800 },
+        });
+        if (!res.ok) continue;
+        const xml = await res.text();
+        if (!xml.includes('<item') && !xml.includes('<entry')) continue;
+
+        // استخراج الرسائل من RSS
+        const items = xml.match(/<item[^>]*>[\s\S]*?<\/item>|<entry[^>]*>[\s\S]*?<\/entry>/gi) || [];
+        for (const item of items.slice(0, 15)) {
+          const getTag = tag => {
+            const m = item.match(new RegExp(`<${tag}[^>]*>(?:<!\\[CDATA\\[([\\s\\S]*?)\\]\\]>|([^<]*))</${tag}>`, 'i'));
+            return (m?.[1] || m?.[2] || '').replace(/<[^>]+>/g, '').trim();
+          };
+          const title = getTag('title');
+          const desc  = getTag('description') || getTag('content') || getTag('summary');
+          const text  = `${title}\n${desc}`.trim();
+          if (text.length < 40) continue;
+          results.push({
+            source:    'telegram_channel',
+            sourceUrl: `https://t.me/${handle}`,
+            rawText:   text.substring(0, 2000),
+            priority:  'local',
+          });
+        }
+        console.log(`[tg-ch] ${handle} via ${rssUrl}: ${items.length} posts`);
+        fetched = true;
+        break; // نجح — لا حاجة لمزود آخر
+      } catch (e) {
+        console.warn(`[tg-ch] ${handle} RSS failed: ${e.message}`);
+      }
+    }
+
+    // آخر محاولة: Bot API إذا البوت مشرف في القناة
+    if (!fetched && botToken) {
+      try {
+        const res = await fetch(`https://api.telegram.org/bot${botToken}/getUpdates?limit=50&timeout=0`);
         if (res.ok) {
           const data = await res.json();
           const posts = (data.result || [])
-            .filter(u => u.channel_post?.chat?.username === handle.replace('@','') && u.channel_post?.text)
+            .filter(u => u.channel_post?.chat?.username === handle && u.channel_post?.text)
             .map(u => u.channel_post.text);
           for (const text of posts) {
             if (text.length < 40) continue;
-            results.push({ source: 'telegram_channel', sourceUrl: `https://t.me/${handle.replace('@','')}`, rawText: text.substring(0, 2000), priority: 'local' });
+            results.push({ source: 'telegram_channel', sourceUrl: `https://t.me/${handle}`, rawText: text.substring(0, 2000), priority: 'local' });
           }
-          if (posts.length) continue; // نجح — ننتقل للقناة التالية
         }
       } catch (_) {}
-    }
-
-    // ── محاولة 2: t.me/s/ scraping كـ fallback ──
-    try {
-      const handle2 = handle.replace('@', '');
-      const res = await fetch(`https://t.me/s/${handle2}`, {
-        headers: {
-          'User-Agent': 'TelegramBot (https://core.telegram.org/bots, 7.0)',
-          'Accept': 'text/html,application/xhtml+xml',
-          'Accept-Language': 'ar,en;q=0.9',
-          'Cache-Control': 'no-cache',
-        },
-        redirect: 'follow',
-        cf: { cacheTtl: 0 },
-      });
-      if (!res.ok) { console.warn(`[tg-ch] ${handle}: HTTP ${res.status}`); continue; }
-      const html = await res.text();
-      const msgMatches = [...html.matchAll(/<div class="tgme_widget_message_text[^"]*"[^>]*>([\s\S]*?)<\/div>/g)];
-      for (const m of msgMatches) {
-        const text = m[1]
-          .replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '')
-          .replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&#34;/g,'"')
-          .trim();
-        if (text.length < 40) continue;
-        results.push({ source: 'telegram_channel', sourceUrl: `https://t.me/${handle2}`, rawText: text.substring(0, 2000), priority: 'local' });
-      }
-      console.log(`[tg-ch] ${handle}: found ${msgMatches.length} posts`);
-    } catch (e) {
-      console.warn(`[tg-ch] ${handle}: ${e.message}`);
     }
   }
   return results;
