@@ -771,12 +771,19 @@ async function triggerDiscovery(btn) {
   if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-circle-notch spin"></i> جارٍ البحث...'; }
   try {
     await fetch('https://api.afra-iq.com/discover-now', { method: 'POST' });
-    notify('بدأ البحث 🔍', 'قد يستغرق دقيقة أو دقيقتين، ثم حدّث الصفحة', 'info');
+    notify('بدأ البحث 🔍', 'يعمل في الخلفية — حدّث الصفحة بعد دقيقتين لرؤية النتائج', 'info');
   } catch { /* ignore */ }
-  setTimeout(() => {
-    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-sync-alt"></i> ابحث الآن'; }
-    pgAdminDiscoveries(document.getElementById('pcon'));
-  }, 8000);
+  // انتظر 30 ثانية بدل 8 ثوانٍ
+  let secs = 30;
+  const iv = setInterval(() => {
+    secs--;
+    if (btn) btn.innerHTML = `<i class="fas fa-circle-notch spin"></i> ${secs}ث...`;
+    if (secs <= 0) {
+      clearInterval(iv);
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-sync-alt"></i> ابحث الآن'; }
+      pgAdminDiscoveries(document.getElementById('pcon'));
+    }
+  }, 1000);
 }
 
 async function adminJobApps(jobId, title) {

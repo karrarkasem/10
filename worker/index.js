@@ -1351,7 +1351,7 @@ async function discoverJobs(env) {
   // ① محلية: قنوات تيليجرام العراقية (الأولوية القصوى) — تُقرأ من Firestore
   const tgChannels = await _loadTgChannelsFromFirestore();
   if (tgChannels.length) {
-    try { items.push(...await discoverViaTelegramChannels(tgChannels)); }
+    try { items.push(...await discoverViaTelegramChannels(tgChannels, env.TELEGRAM_TOKEN)); }
     catch (e) { console.error('[discovery] Telegram channels error:', e.message); }
   }
 
@@ -1400,44 +1400,62 @@ async function _loadTgChannelsFromFirestore() {
   } catch { return []; }
 }
 
-// ── سحب من قنوات تيليجرام العامة عبر t.me/s/ ──
-async function discoverViaTelegramChannels(channels) {
+// ── سحب من قنوات تيليجرام عبر Bot API (getUpdates) ──
+// يعمل مع القنوات التي أُضيف فيها البوت كمشرف
+// وأيضاً مع القنوات العامة عبر t.me/s/ كـ fallback
+async function discoverViaTelegramChannels(channels, botToken) {
   const results = [];
   for (const ch of channels) {
-    try {
-      const handle = ch.replace(/^@/, '').trim();
-      const res = await fetch(`https://t.me/s/${handle}`, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-          'Accept': 'text/html',
-          'Accept-Language': 'ar,en;q=0.9',
-        },
-        cf: { cacheTtl: 1800 },
-      });
-      if (!res.ok) continue;
-      const html = await res.text();
+    const handle = ch.startsWith('@') ? ch : '@' + ch.replace(/^@/, '').trim();
 
-      // استخراج نصوص الرسائل من HTML
-      const msgMatches = html.matchAll(
-        /<div class="tgme_widget_message_text[^"]*"[^>]*>([\s\S]*?)<\/div>/g
-      );
+    // ── محاولة 1: Bot API getChatHistory (إذا البوت مشرف) ──
+    if (botToken) {
+      try {
+        const res = await fetch(
+          `https://api.telegram.org/bot${botToken}/getUpdates?limit=20&timeout=0`,
+          { cf: { cacheTtl: 0 } }
+        );
+        if (res.ok) {
+          const data = await res.json();
+          const posts = (data.result || [])
+            .filter(u => u.channel_post?.chat?.username === handle.replace('@','') && u.channel_post?.text)
+            .map(u => u.channel_post.text);
+          for (const text of posts) {
+            if (text.length < 40) continue;
+            results.push({ source: 'telegram_channel', sourceUrl: `https://t.me/${handle.replace('@','')}`, rawText: text.substring(0, 2000), priority: 'local' });
+          }
+          if (posts.length) continue; // نجح — ننتقل للقناة التالية
+        }
+      } catch (_) {}
+    }
+
+    // ── محاولة 2: t.me/s/ scraping كـ fallback ──
+    try {
+      const handle2 = handle.replace('@', '');
+      const res = await fetch(`https://t.me/s/${handle2}`, {
+        headers: {
+          'User-Agent': 'TelegramBot (https://core.telegram.org/bots, 7.0)',
+          'Accept': 'text/html,application/xhtml+xml',
+          'Accept-Language': 'ar,en;q=0.9',
+          'Cache-Control': 'no-cache',
+        },
+        redirect: 'follow',
+        cf: { cacheTtl: 0 },
+      });
+      if (!res.ok) { console.warn(`[tg-ch] ${handle}: HTTP ${res.status}`); continue; }
+      const html = await res.text();
+      const msgMatches = [...html.matchAll(/<div class="tgme_widget_message_text[^"]*"[^>]*>([\s\S]*?)<\/div>/g)];
       for (const m of msgMatches) {
-        // تنظيف HTML tags
         const text = m[1]
-          .replace(/<br\s*\/?>/gi, '\n')
-          .replace(/<[^>]+>/g, '')
-          .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#34;/g, '"')
+          .replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '')
+          .replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&#34;/g,'"')
           .trim();
         if (text.length < 40) continue;
-        results.push({
-          source:   'telegram_channel',
-          sourceUrl: `https://t.me/${handle}`,
-          rawText:  text.substring(0, 2000),
-          priority: 'local',
-        });
+        results.push({ source: 'telegram_channel', sourceUrl: `https://t.me/${handle2}`, rawText: text.substring(0, 2000), priority: 'local' });
       }
+      console.log(`[tg-ch] ${handle}: found ${msgMatches.length} posts`);
     } catch (e) {
-      console.warn(`[telegram channel] ${ch}: ${e.message}`);
+      console.warn(`[tg-ch] ${handle}: ${e.message}`);
     }
   }
   return results;
