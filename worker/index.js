@@ -646,6 +646,8 @@ async function publishTgJob(docId) {
     const fields = { ...doc.fields };
     fields.status   = { stringValue: 'active' };
     fields.postedAt = { timestampValue: new Date().toISOString() };
+    // الحفاظ على semanticHash في jobs لمنع إعادة اكتشاف نفس الوظيفة
+    if (doc.fields?.semanticHash) fields.semanticHash = doc.fields.semanticHash;
 
     const addRes = await fetch(
       `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/jobs`,
@@ -1582,6 +1584,7 @@ async function discoverViaRSS() {
   return results;
 }
 
+// ── Hash خام للنص (dedup سريع من نفس المصدر) ──
 function discoveryHash(text) {
   let h = 0;
   for (let i = 0; i < Math.min(text.length, 120); i++) {
@@ -1590,30 +1593,50 @@ function discoveryHash(text) {
   return Math.abs(h).toString(36);
 }
 
+// ── Hash دلالي من البيانات المحللة (dedup قوي عبر المصادر) ──
+function semanticHash(job) {
+  const norm = s => (s || '').trim().toLowerCase()
+    .replace(/\s+/g, ' ')
+    .replace(/[^؀-ۿa-z0-9]/g, '');
+  const key = [
+    norm(job.title   || '').substring(0, 25),
+    norm(job.phone   || '').substring(0, 12),
+    norm(job.company || '').substring(0, 20),
+  ].filter(Boolean).join('|');
+  let h = 0;
+  for (let i = 0; i < key.length; i++) h = (Math.imul(31, h) + key.charCodeAt(i)) | 0;
+  return 'sem_' + Math.abs(h).toString(36);
+}
+
+// ── فحص وجود hash في collection معينة ──
+async function _hashExists(collection, field, value) {
+  try {
+    const res = await fetch(
+      `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents:runQuery?key=${FIREBASE_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          structuredQuery: {
+            from: [{ collectionId: collection }],
+            where: { fieldFilter: { field: { fieldPath: field }, op: 'EQUAL', value: { stringValue: value } } },
+            limit: 1,
+          },
+        }),
+      }
+    );
+    if (!res.ok) return false;
+    const data = await res.json();
+    return (data || []).some(r => r.document);
+  } catch { return false; }
+}
+
 async function parseAndSaveDiscovery(item, env) {
   if (!env.GEMINI_KEY || !item.rawText || item.rawText.length < 30) return false;
 
-  const hash = discoveryHash(item.rawText);
-
-  // Dedup check — skip if already in telegram_queue with this hash
-  const dupCheck = await fetch(
-    `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents:runQuery?key=${FIREBASE_KEY}`,
-    {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        structuredQuery: {
-          from: [{ collectionId: 'telegram_queue' }],
-          where: { fieldFilter: { field: { fieldPath: 'dedupeHash' }, op: 'EQUAL', value: { stringValue: hash } } },
-          limit: 1,
-        },
-      }),
-    }
-  );
-  if (dupCheck.ok) {
-    const dupData = await dupCheck.json();
-    if ((dupData || []).some(r => r.document)) return false;
-  }
+  // ① Dedup سريع بـ hash النص الخام (يمنع نفس المنشور من نفس المصدر)
+  const rawHash = discoveryHash(item.rawText);
+  if (await _hashExists('telegram_queue', 'dedupeHash', rawHash)) return false;
 
   // Parse + score with Gemini
   const result = await callGeminiWithRetry(buildJobParsePrompt(item.rawText, true), env.GEMINI_KEY, 1200);
@@ -1628,6 +1651,14 @@ async function parseAndSaveDiscovery(item, env) {
   catch { return false; }
 
   if (parsed.notJob || !parsed.title) return false;
+
+  // ② Dedup دلالي بعد التحليل — يمنع نفس الوظيفة من مصادر مختلفة
+  const semHash = semanticHash(parsed);
+  // فحص في قائمة الانتظار
+  if (await _hashExists('telegram_queue', 'semanticHash', semHash)) return false;
+  // فحص في الوظائف المنشورة
+  if (await _hashExists('jobs', 'semanticHash', semHash)) return false;
+
   // الوظائف المحلية (عراقية) تحصل على دفعة +2 في الدرجة
   const baseScore  = Number(parsed.score) || 5;
   const localBoost = (item.priority === 'local' || parsed.province) ? 2 : 0;
@@ -1663,7 +1694,8 @@ async function parseAndSaveDiscovery(item, env) {
     score,
     status:       'pending_telegram',
     postedByType: 'discovered',
-    dedupeHash:   hash,
+    dedupeHash:   rawHash,
+    semanticHash: semHash,
     applicants:   0,
     postedAt:     new Date().toISOString(),
   });
