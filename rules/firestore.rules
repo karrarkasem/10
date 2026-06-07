@@ -95,11 +95,10 @@ service cloud.firestore {
         || (isLoggedIn() && resource.data.postedBy == request.auth.uid);
 
       allow create: if isAdmin()
-        // الـ Worker ينشر وظائف تيليجرام باستخدام anonymous auth
+        // الـ Worker ينشر وظائف تيليجرام والمكتشفة باستخدام anonymous auth
         || (request.auth != null
-            && request.resource.data.source == 'telegram'
-            && request.resource.data.postedByType == 'telegram'
-            && request.resource.data.status == 'active')
+            && request.resource.data.status == 'active'
+            && request.resource.data.postedByType in ['telegram', 'discovered'])
         || (isJobPoster() && isActive()
             && request.resource.data.postedBy == request.auth.uid
             && validSize(request.resource.data)
