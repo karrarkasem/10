@@ -503,7 +503,7 @@ async function emailCV() {
     ).join('\n')}` : '',
     skills ? `\nالمهارات:\n  ${skills}` : '',
     `\n${'─'.repeat(36)}`,
-    'أُرسل من منصة عفراء للتوظيف — afraa-iq.com',
+    'أُرسل من منصة عفراء للتوظيف — afra-iq.com',
   ].filter(Boolean).join('\n');
 
   // محاولة EmailJS أولاً (يرسل بريداً حقيقياً)

@@ -154,9 +154,9 @@ ${text.substring(0, 4000)}
 }
 const FIREBASE_KEY   = 'AIzaSyBKlAEuk3QQJBqWqR1zmBdHGwasIW86Y-I';
 const PROJECT_ID     = 'karbala-b4884';
-const SITE_URL       = 'https://afraa-iq.com';
-const OG_IMAGE       = 'https://afraa-iq.com/icons/og-image.svg';
-const TG_FALLBACK_IMG = 'https://afraa-iq.com/icons/icon-512.png';
+const SITE_URL       = 'https://afra-iq.com';
+const OG_IMAGE       = 'https://afra-iq.com/icons/og-image.svg';
+const TG_FALLBACK_IMG = 'https://afra-iq.com/icons/icon-512.png';
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
@@ -282,7 +282,7 @@ table { width:1200px; height:630px; border-collapse:collapse; }
   <td style="width:8px;background-color:#0d9488;"></td>
   <!-- المحتوى الرئيسي -->
   <td style="background-color:#0d1f3c;padding:50px 60px;vertical-align:top;">
-    <div style="color:#0d9488;font-size:20px;font-weight:bold;margin-bottom:16px;">&#9733; عفراء للتوظيف &nbsp;|&nbsp; afraa-iq.com</div>
+    <div style="color:#0d9488;font-size:20px;font-weight:bold;margin-bottom:16px;">&#9733; عفراء للتوظيف &nbsp;|&nbsp; afra-iq.com</div>
     <div style="display:inline-block;background-color:#0d3b3b;color:#0d9488;border:1px solid #0d9488;border-radius:20px;padding:5px 18px;font-size:16px;margin-bottom:24px;">&#128276; وظيفة شاغرة</div>
     <div style="color:#ffffff;font-size:56px;font-weight:bold;line-height:1.15;margin-bottom:12px;max-height:135px;overflow:hidden;">${escapeHtml(job.title)}</div>
     <div style="color:#94a3b8;font-size:26px;margin-bottom:20px;">${escapeHtml(job.company)}</div>
@@ -299,7 +299,7 @@ table { width:1200px; height:630px; border-collapse:collapse; }
 <tr>
   <td colspan="2" style="background-color:#0d2a4a;padding:14px 60px;">
     <table width="100%"><tr>
-      <td style="color:#0d9488;font-size:20px;font-weight:bold;">&#127760; afraa-iq.com</td>
+      <td style="color:#0d9488;font-size:20px;font-weight:bold;">&#127760; afra-iq.com</td>
       <td style="color:#64748b;font-size:16px;text-align:left;">منصة التوظيف الأولى في العراق</td>
     </tr></table>
   </td>
@@ -923,8 +923,8 @@ ${provEnLeft}
 <!-- logo dot -->
 <circle cx="30" cy="291" r="13" fill="${cAcc}" fill-opacity="0.38"/>
 
-<!-- afraa-iq.com (English, left) -->
-<text x="50" y="298" font-family="monospace,sans-serif" font-size="17" font-weight="bold" fill="${cAcc}">afraa-iq.com</text>
+<!-- afra-iq.com (English, left) -->
+<text x="50" y="298" font-family="monospace,sans-serif" font-size="17" font-weight="bold" fill="${cAcc}">afra-iq.com</text>
 
 <!-- عفراء للتوظيف (Arabic, right) -->
 <text x="590" y="298" text-anchor="end" direction="rtl" font-family="Tajawal,Arial,sans-serif" font-size="15" font-weight="bold" fill="${pAcc}">عفراء للتوظيف</text>
@@ -1006,7 +1006,7 @@ function buildSocialText(job, style) {
       ``,
       `🔗 للتقديم: ${jobUrl}`,
       ``,
-      `📲 *عفراء للتوظيف* | afraa-iq.com`,
+      `📲 *عفراء للتوظيف* | afra-iq.com`,
     ].filter(Boolean).join('\n');
   }
 

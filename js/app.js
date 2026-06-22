@@ -18,7 +18,7 @@ const CFG = {
   snapchat:  { accessToken: '', adAccountId: '', autoPost: false },
   youtube:   { apiKey: '', channelId: '' },
   gemini:    { key: '' },
-  general:   { maintenance: false, siteName: 'عفراء للتوظيف', siteUrl: 'https://afraa-iq.com' },
+  general:   { maintenance: false, siteName: 'عفراء للتوظيف', siteUrl: 'https://afra-iq.com' },
   pricing:   { jobPostCost: 2500, hireCost: 10000, freeJobsLimit: 3, bookingCost: 5000, freeBookingsPerMonth: 2 },
   site: {
     email:          'afrahub.iq@gmail.com',
