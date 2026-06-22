@@ -303,6 +303,40 @@
     }
     .btn-outline:hover { border-color: var(--primary); color: var(--primary); transform: translateY(-2px); }
 
+    /* ── WHO CARDS ── */
+    .hero-who-grid {
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 44px;
+    }
+    .who-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 20px 22px;
+      border-radius: 16px;
+      text-decoration: none;
+      border: 2px solid transparent;
+      transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+      min-width: 150px;
+      flex: 1;
+      max-width: 190px;
+      background: rgba(255,255,255,0.04);
+    }
+    .who-card:hover { transform: translateY(-4px); }
+    .who-icon { font-size: 2.2rem; }
+    .who-card strong { font-size: 0.95rem; font-weight: 800; color: #fff; }
+    .who-card span { font-size: 0.78rem; color: var(--text-muted); text-align: center; line-height: 1.4; }
+    .who-teal  { border-color: var(--primary);  background: rgba(13,148,136,0.1); }
+    .who-teal:hover  { box-shadow: 0 8px 24px rgba(13,148,136,0.3); border-color: var(--primary-light); }
+    .who-amber { border-color: var(--accent);   background: rgba(245,158,11,0.1); }
+    .who-amber:hover { box-shadow: 0 8px 24px rgba(245,158,11,0.3); border-color: #fbbf24; }
+    .who-purple{ border-color: var(--purple);   background: rgba(124,58,237,0.1); }
+    .who-purple:hover{ box-shadow: 0 8px 24px rgba(124,58,237,0.3); border-color: #a78bfa; }
+
     .hero-stats {
       display: flex;
       justify-content: center;
@@ -846,12 +880,29 @@
 <section class="hero">
   <div class="hero-content">
     <div class="hero-lamp">✨</div>
-    <h1>ناصع البياض في سوق العمل العراقي</h1>
-    <p>منصة عفراء للتوظيف تربط أصحاب العمل بالكفاءات العراقية في جميع المحافظات بشفافية ونقاء تام — ابحث عن وظيفتك أو وظّف الشخص المناسب اليوم.</p>
-    <div class="hero-btns">
-      <a href="index.html" class="btn-primary">🔍 ابحث عن وظيفة</a>
-      <a href="index.html" class="btn-outline">🏢 أنا صاحب عمل</a>
+    <h1>منصة التوظيف الأولى في العراق</h1>
+    <p>وظائف حقيقية في جميع المحافظات — مجاني للباحثين بالكامل</p>
+
+    <!-- اختر من أنت -->
+    <p style="font-size:1rem;font-weight:700;color:var(--text-muted);margin-bottom:16px;letter-spacing:0.5px;">من أنت؟</p>
+    <div class="hero-who-grid">
+      <a href="index.html" class="who-card who-teal">
+        <span class="who-icon">👤</span>
+        <strong>باحث عن عمل</strong>
+        <span>تصفّح وظائف وتقدّم مجاناً</span>
+      </a>
+      <a href="index.html" class="who-card who-amber">
+        <span class="who-icon">🏢</span>
+        <strong>صاحب عمل / شركة</strong>
+        <span>انشر وظيفتك واستقبل المتقدمين</span>
+      </a>
+      <a href="index.html" class="who-card who-purple">
+        <span class="who-icon">🏛️</span>
+        <strong>مكتب توظيف</strong>
+        <span>أدر وظائفك وعملاءك بكل سهولة</span>
+      </a>
     </div>
+
     <div class="hero-stats">
       <div class="stat-item">
         <span class="stat-num">+500</span>

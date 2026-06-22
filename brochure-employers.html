@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>عفراء للتوظيف — بروشور أصحاب الأعمال والشركات</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --amber:   #f59e0b;
+    --amber-d: #d97706;
+    --amber-l: #fef3c7;
+    --teal:    #0d9488;
+    --purple:  #7c3aed;
+    --dark:    #0f172a;
+    --text:    #1e293b;
+    --muted:   #64748b;
+    --border:  #e2e8f0;
+    --bg:      #f8fafc;
+  }
+
+  body {
+    font-family: 'Cairo', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    font-size: 15px;
+  }
+
+  .page {
+    max-width: 794px;
+    margin: 0 auto;
+    background: #fff;
+    box-shadow: 0 4px 40px rgba(0,0,0,0.08);
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: linear-gradient(135deg, #0f172a 0%, #b45309 100%);
+    color: #fff;
+    padding: 48px 48px 36px;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '🏢';
+    position: absolute;
+    top: -20px; left: 20px;
+    font-size: 160px;
+    opacity: 0.05;
+    line-height: 1;
+  }
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 28px;
+  }
+  .logo-block h1 { font-size: 1.8rem; font-weight: 900; color: #fff; margin-bottom: 4px; }
+  .logo-block p  { font-size: 0.85rem; color: rgba(255,255,255,0.65); }
+  .badge {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+    color: #fff;
+    padding: 8px 18px;
+    border-radius: 40px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .header-title { font-size: 2rem; font-weight: 900; color: #fff; margin-bottom: 10px; line-height: 1.3; }
+  .header-sub   { font-size: 1.05rem; color: rgba(255,255,255,0.78); max-width: 500px; }
+
+  /* ── INTRO STRIP ── */
+  .intro-strip {
+    background: var(--amber);
+    color: #fff;
+    padding: 18px 48px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 1rem;
+    font-weight: 700;
+  }
+  .intro-strip span { font-size: 1.4rem; }
+
+  /* ── BODY ── */
+  .body { padding: 44px 48px; }
+
+  /* ── SECTION ── */
+  .section { margin-bottom: 44px; }
+  .section-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--amber-l);
+    color: var(--amber-d);
+    padding: 6px 16px;
+    border-radius: 40px;
+    font-size: 0.82rem;
+    font-weight: 800;
+    margin-bottom: 16px;
+    letter-spacing: 0.5px;
+  }
+  .section h2 { font-size: 1.35rem; font-weight: 900; color: var(--dark); margin-bottom: 10px; }
+  .section p  { color: var(--muted); font-size: 0.95rem; line-height: 1.8; }
+
+  /* ── PROBLEM/SOLUTION ── */
+  .vs-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 20px;
+  }
+  .vs-card {
+    border-radius: 14px;
+    padding: 22px;
+  }
+  .vs-before {
+    background: #fef2f2;
+    border: 1.5px solid #fecaca;
+  }
+  .vs-after {
+    background: #f0fdf4;
+    border: 1.5px solid #bbf7d0;
+  }
+  .vs-card h4 { font-size: 1rem; font-weight: 800; margin-bottom: 12px; }
+  .vs-before h4 { color: #dc2626; }
+  .vs-after h4  { color: #16a34a; }
+  .vs-card ul   { list-style: none; padding: 0; }
+  .vs-card li   { font-size: 0.88rem; padding: 5px 0; color: var(--text); }
+  .vs-before li::before { content: '✗ '; color: #dc2626; font-weight: 700; }
+  .vs-after  li::before { content: '✓ '; color: #16a34a; font-weight: 700; }
+
+  /* ── BENEFITS ── */
+  .benefits-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 20px;
+  }
+  .benefit-card {
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    background: var(--bg);
+  }
+  .benefit-card:hover { border-color: var(--amber); }
+  .benefit-icon { font-size: 1.8rem; margin-bottom: 10px; display: block; }
+  .benefit-card h3 { font-size: 0.98rem; font-weight: 800; color: var(--dark); margin-bottom: 6px; }
+  .benefit-card p  { font-size: 0.85rem; color: var(--muted); line-height: 1.6; }
+
+  /* ── STEPS ── */
+  .steps { margin-top: 20px; }
+  .step {
+    display: flex;
+    gap: 18px;
+    align-items: flex-start;
+    margin-bottom: 20px;
+  }
+  .step-num {
+    width: 42px; height: 42px;
+    background: var(--amber);
+    color: #fff;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem; font-weight: 900;
+    flex-shrink: 0;
+  }
+  .step-body h4 { font-size: 1rem; font-weight: 800; color: var(--dark); margin-bottom: 4px; }
+  .step-body p  { font-size: 0.88rem; color: var(--muted); }
+
+  /* ── DIVIDER ── */
+  .divider { border: none; border-top: 1.5px solid var(--border); margin: 32px 0; }
+
+  /* ── STATS ROW ── */
+  .stats-row {
+    display: flex;
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    margin-top: 20px;
+  }
+  .stat-box { flex: 1; text-align: center; padding: 20px 16px; border-left: 1.5px solid var(--border); }
+  .stat-box:last-child { border-left: none; }
+  .stat-box .num { font-size: 1.7rem; font-weight: 900; color: var(--amber); display: block; }
+  .stat-box .lbl { font-size: 0.82rem; color: var(--muted); }
+
+  /* ── HIGHLIGHT BOX ── */
+  .highlight-box {
+    background: linear-gradient(135deg, rgba(245,158,11,0.07) 0%, rgba(13,148,136,0.05) 100%);
+    border: 2px solid var(--amber);
+    border-radius: 16px;
+    padding: 28px 32px;
+    margin-top: 20px;
+    display: flex;
+    gap: 24px;
+    align-items: center;
+  }
+  .highlight-box .big-icon { font-size: 3rem; flex-shrink: 0; }
+  .highlight-box h3 { font-size: 1.1rem; font-weight: 900; color: var(--dark); margin-bottom: 8px; }
+  .highlight-box p  { font-size: 0.9rem; color: var(--muted); }
+
+  /* ── COMPARISON TABLE ── */
+  .compare-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    font-size: 0.9rem;
+  }
+  .compare-table th {
+    background: var(--dark);
+    color: #fff;
+    padding: 14px 16px;
+    text-align: center;
+    font-weight: 800;
+  }
+  .compare-table td {
+    padding: 12px 16px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+  }
+  .compare-table tr:nth-child(even) td { background: var(--bg); }
+  .compare-table td:first-child { text-align: right; font-weight: 600; color: var(--text); }
+  .check  { color: #16a34a; font-size: 1.1rem; }
+  .cross  { color: #dc2626; font-size: 1.1rem; }
+  .amber-col { color: var(--amber-d); font-weight: 800; }
+
+  /* ── FOOTER ── */
+  .footer {
+    background: var(--dark);
+    color: rgba(255,255,255,0.7);
+    padding: 28px 48px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .footer .brand { font-size: 1rem; font-weight: 900; color: var(--amber); }
+  .footer .contact-item { font-size: 0.85rem; display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+
+  @media print {
+    body { background: #fff; }
+    .page { box-shadow: none; }
+    .header::before { display: none; }
+  }
+  @media (max-width: 600px) {
+    .header, .body, .footer { padding-right: 24px; padding-left: 24px; }
+    .intro-strip { padding: 14px 24px; }
+    .benefits-grid, .vs-grid { grid-template-columns: 1fr; }
+    .highlight-box { flex-direction: column; }
+    .stats-row { flex-wrap: wrap; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-top">
+      <div class="logo-block">
+        <h1>✨ عفراء للتوظيف</h1>
+        <p>منصة التوظيف الأولى في العراق — afra-iq.com</p>
+      </div>
+      <div class="badge">🏢 لأصحاب الأعمال والشركات</div>
+    </div>
+    <div class="header-title">وظّف الكفاءة المناسبة بسرعة وثقة</div>
+    <p class="header-sub">اعرض شواغرك أمام آلاف الباحثين المؤهلين في جميع أنحاء العراق — بدون وسيط وبدون تعقيد</p>
+  </div>
+
+  <!-- INTRO STRIP -->
+  <div class="intro-strip">
+    <span>⚡</span>
+    <span>وظيفتك تُنشر وتصل للباحثين المناسبين في أقل من 5 دقائق من لحظة نشرها</span>
+  </div>
+
+  <!-- BODY -->
+  <div class="body">
+
+    <!-- المشكلة والحل -->
+    <div class="section">
+      <div class="section-label">💡 لماذا عفراء؟</div>
+      <h2>التوظيف في العراق كان صعباً — حتى الآن</h2>
+      <p>ماذا كنت تواجه قبل عفراء، وكيف تختلف التجربة معنا</p>
+
+      <div class="vs-grid">
+        <div class="vs-card vs-before">
+          <h4>😓 قبل عفراء</h4>
+          <ul>
+            <li>إعلانات في جرائد باهظة التكلفة</li>
+            <li>مئات السير الذاتية غير المناسبة</li>
+            <li>ضياع الوقت في التواصل اليدوي</li>
+            <li>لا رؤية على حالة المتقدمين</li>
+            <li>تكاليف مكاتب توظيف مرتفعة</li>
+          </ul>
+        </div>
+        <div class="vs-card vs-after">
+          <h4>😊 مع عفراء</h4>
+          <ul>
+            <li>نشر فوري وانتشار واسع مجاناً</li>
+            <li>مرشحون مفلترون ومؤهلون فقط</li>
+            <li>لوحة تحكم لإدارة كل شيء</li>
+            <li>تابع الطلبات لحظة بلحظة</li>
+            <li>توفير 70% من تكاليف التوظيف</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- الأرقام -->
+    <div class="section">
+      <div class="section-label">📊 بالأرقام</div>
+      <h2>منصة حقيقية بأرقام حقيقية</h2>
+      <div class="stats-row">
+        <div class="stat-box">
+          <span class="num">+500</span>
+          <span class="lbl">وظيفة نشطة</span>
+        </div>
+        <div class="stat-box">
+          <span class="num">18</span>
+          <span class="lbl">محافظة مغطاة</span>
+        </div>
+        <div class="stat-box">
+          <span class="num">24/7</span>
+          <span class="lbl">متاح دائماً</span>
+        </div>
+        <div class="stat-box">
+          <span class="num">&lt;5 د</span>
+          <span class="lbl">وقت نشر الوظيفة</span>
+        </div>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- مميزات أصحاب الأعمال -->
+    <div class="section">
+      <div class="section-label">🌟 ما يحصل عليه صاحب العمل</div>
+      <h2>كل ما تحتاجه لتوظيف الشخص المناسب</h2>
+      <p>أدوات ذكية وبسيطة تختصر عليك الوقت والجهد والتكلفة</p>
+
+      <div class="benefits-grid">
+        <div class="benefit-card">
+          <span class="benefit-icon">📢</span>
+          <h3>نشر الوظيفة فوراً</h3>
+          <p>أضف تفاصيل الوظيفة والشروط والراتب وانشرها في أقل من 5 دقائق — تصل للباحثين فوراً</p>
+        </div>
+        <div class="benefit-card">
+          <span class="benefit-icon">📱</span>
+          <h3>انتشار على السوشل ميديا</h3>
+          <p>وظيفتك تُبثّ تلقائياً على تيليجرام وفيسبوك بصورة احترافية — مجاناً بدون أي إضافة</p>
+        </div>
+        <div class="benefit-card">
+          <span class="benefit-icon">📂</span>
+          <h3>استقبال ملفات المتقدمين</h3>
+          <p>كل الطلبات تصلك منظّمة في لوحة تحكم واحدة مع السيرة الذاتية ومعلومات التواصل</p>
+        </div>
+        <div class="benefit-card">
+          <span class="benefit-icon">🤖</span>
+          <h3>ترشيح بالذكاء الاصطناعي</h3>
+          <p>المنصة تصنّف المتقدمين حسب مطابقتهم لشروطك وتضع الأفضل في الصدارة تلقائياً</p>
+        </div>
+        <div class="benefit-card">
+          <span class="benefit-icon">🔔</span>
+          <h3>إشعارات فورية للباحثين</h3>
+          <p>الباحثون يُنبَّهون لحظة نشر وظيفتك — مما يزيد عدد التقديمات بشكل كبير</p>
+        </div>
+        <div class="benefit-card">
+          <span class="benefit-icon">📍</span>
+          <h3>استهداف جغرافي دقيق</h3>
+          <p>حدّد المحافظة المطلوبة وستصل وظيفتك للباحثين في تلك المنطقة تحديداً</p>
+        </div>
+        <div class="benefit-card">
+          <span class="benefit-icon">📄</span>
+          <h3>مرشحون بسيرة ذاتية جاهزة</h3>
+          <p>المتقدمون يمتلكون سيراً ذاتية احترافية منشأة عبر المنصة — يوفّر عليك وقت التدقيق</p>
+        </div>
+        <div class="benefit-card">
+          <span class="benefit-icon">💰</span>
+          <h3>توفير التكاليف</h3>
+          <p>لا رسوم مخفية — النشر مجاني وتدفع فقط عند الترقية لباقات إعلانات الأولوية</p>
+        </div>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- مقارنة -->
+    <div class="section">
+      <div class="section-label">⚖️ مقارنة</div>
+      <h2>عفراء مقابل طرق التوظيف التقليدية</h2>
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th style="text-align:right">المعيار</th>
+            <th class="amber-col">عفراء</th>
+            <th>إعلان صحيفة</th>
+            <th>مكتب توظيف</th>
+            <th>سوشل ميديا</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>تكلفة النشر</td>
+            <td class="check amber-col">مجاناً</td>
+            <td>مرتفعة جداً</td>
+            <td>عمولة 15-30%</td>
+            <td class="check">مجاناً</td>
+          </tr>
+          <tr>
+            <td>سرعة الوصول</td>
+            <td class="check amber-col">فوري</td>
+            <td class="cross">أيام</td>
+            <td class="cross">أسابيع</td>
+            <td>ساعات</td>
+          </tr>
+          <tr>
+            <td>فلترة المتقدمين</td>
+            <td class="check amber-col">بالذكاء الاصطناعي</td>
+            <td class="cross">لا يوجد</td>
+            <td>يدوياً</td>
+            <td class="cross">لا يوجد</td>
+          </tr>
+          <tr>
+            <td>تغطية جغرافية</td>
+            <td class="check amber-col">18 محافظة</td>
+            <td>محدودة</td>
+            <td>محدودة</td>
+            <td>غير مستهدفة</td>
+          </tr>
+          <tr>
+            <td>إدارة الطلبات</td>
+            <td class="check amber-col">لوحة تحكم متكاملة</td>
+            <td class="cross">يدوياً</td>
+            <td>بالهاتف</td>
+            <td class="cross">لا يوجد</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <hr class="divider">
+
+    <!-- كيف تبدأ -->
+    <div class="section">
+      <div class="section-label">🚀 ابدأ الآن</div>
+      <h2>كيف تنشر أول وظيفة؟</h2>
+      <p>ثلاث خطوات فقط وتبدأ باستقبال الطلبات</p>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">١</div>
+          <div class="step-body">
+            <h4>سجّل حساب صاحب عمل</h4>
+            <p>أنشئ حسابك على afra-iq.com باختيار نوع "صاحب عمل" — يستغرق التسجيل دقيقة واحدة فقط</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">٢</div>
+          <div class="step-body">
+            <h4>أضف تفاصيل الوظيفة</h4>
+            <p>المسمى الوظيفي، المحافظة، الراتب، الشروط — نموذج بسيط وواضح ينتهي في أقل من 5 دقائق</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">٣</div>
+          <div class="step-body">
+            <h4>استقبل الطلبات وابدأ التوظيف</h4>
+            <p>المتقدمون يصلونك فوراً — راجع ملفاتهم وادعُ المناسبين للمقابلة من لوحة التحكم</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CTA -->
+    <div class="highlight-box">
+      <div class="big-icon">📞</div>
+      <div>
+        <h3>هل لديك أسئلة قبل البدء؟</h3>
+        <p>فريقنا جاهز لمساعدتك في إعداد حسابك وأول وظيفة — نوفر دعماً مباشراً لأصحاب الأعمال الجدد على المنصة.</p>
+        <br>
+        <p><strong style="color:var(--amber)">📧 afrahub.iq@gmail.com</strong> &nbsp;|&nbsp; <strong style="color:var(--amber)">🌐 afra-iq.com</strong></p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div>
+      <div class="brand">✨ عفراء للتوظيف</div>
+      <div style="font-size:0.8rem;margin-top:4px;">وظّف الكفاءة — بسرعة وثقة</div>
+    </div>
+    <div>
+      <div class="contact-item">📧 afrahub.iq@gmail.com</div>
+      <div class="contact-item">🌐 afra-iq.com</div>
+      <div class="contact-item">📍 بغداد، العراق</div>
+    </div>
+    <div style="text-align:left">
+      <div style="font-size:0.78rem;color:rgba(255,255,255,0.4)">للطباعة: اضغط Ctrl+P</div>
+      <div style="font-size:0.78rem;color:rgba(255,255,255,0.4)">اختر "حفظ كـ PDF"</div>
+    </div>
+  </div>
+
+</div>
+
+<div style="text-align:center;padding:20px;color:#94a3b8;font-family:'Cairo',sans-serif;font-size:0.85rem">
+  لطباعة هذا البروشور أو حفظه كـ PDF: اضغط <strong>Ctrl+P</strong> (Windows) أو <strong>Cmd+P</strong> (Mac)
+</div>
+
+</body>
+</html>
