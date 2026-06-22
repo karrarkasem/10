@@ -1,4 +1,4 @@
-// ╔══════════════════════════════════════════════════════╗
+﻿// ╔══════════════════════════════════════════════════════╗
 // ║  عفراء — نظام التواصل الخارجي (Plus + حملات)       ║
 // ╚══════════════════════════════════════════════════════╝
 
@@ -824,7 +824,7 @@ async function adminToggleUserPlus(uid, newVal, name) {
 async function autoPostJob(job) {
   if (!job) return;
   const sal   = job.salary ? `${job.salary.toLocaleString('ar')} IQD` : 'قابل للتفاوض';
-  const jobURL = job.id ? `https://api.afra-iq.com/job/${job.id}` : (CFG.general?.siteUrl || 'https://afra-iq.com');
+  const jobURL = job.id ? `https://api.afraa-iq.com/job/${job.id}` : (CFG.general?.siteUrl || 'https://afraa-iq.com');
   const prov  = job.province || '';
   const TYPE_AR = { full:'دوام كامل', part:'دوام جزئي', remote:'عن بُعد', gig:'مهمة' };
   const type  = TYPE_AR[job.type] || job.type || '';

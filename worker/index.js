@@ -1,4 +1,4 @@
-// ╔══════════════════════════════════════════════════════╗
+﻿// ╔══════════════════════════════════════════════════════╗
 // ║  Afra AI — Cloudflare Worker                         ║
 // ║  1. Gemini Proxy (POST /)                            ║
 // ║  2. WhatsApp OG Preview (GET /job/:id)               ║
@@ -154,9 +154,9 @@ ${text.substring(0, 4000)}
 }
 const FIREBASE_KEY   = 'AIzaSyBKlAEuk3QQJBqWqR1zmBdHGwasIW86Y-I';
 const PROJECT_ID     = 'karbala-b4884';
-const SITE_URL       = 'https://afra-iq.com';
-const OG_IMAGE       = 'https://afra-iq.com/icons/og-image.svg';
-const TG_FALLBACK_IMG = 'https://afra-iq.com/icons/icon-512.png';
+const SITE_URL       = 'https://afraa-iq.com';
+const OG_IMAGE       = 'https://afraa-iq.com/icons/og-image.svg';
+const TG_FALLBACK_IMG = 'https://afraa-iq.com/icons/icon-512.png';
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
@@ -282,7 +282,7 @@ table { width:1200px; height:630px; border-collapse:collapse; }
   <td style="width:8px;background-color:#0d9488;"></td>
   <!-- المحتوى الرئيسي -->
   <td style="background-color:#0d1f3c;padding:50px 60px;vertical-align:top;">
-    <div style="color:#0d9488;font-size:20px;font-weight:bold;margin-bottom:16px;">&#9733; عفراء للتوظيف &nbsp;|&nbsp; afra-iq.com</div>
+    <div style="color:#0d9488;font-size:20px;font-weight:bold;margin-bottom:16px;">&#9733; عفراء للتوظيف &nbsp;|&nbsp; afraa-iq.com</div>
     <div style="display:inline-block;background-color:#0d3b3b;color:#0d9488;border:1px solid #0d9488;border-radius:20px;padding:5px 18px;font-size:16px;margin-bottom:24px;">&#128276; وظيفة شاغرة</div>
     <div style="color:#ffffff;font-size:56px;font-weight:bold;line-height:1.15;margin-bottom:12px;max-height:135px;overflow:hidden;">${escapeHtml(job.title)}</div>
     <div style="color:#94a3b8;font-size:26px;margin-bottom:20px;">${escapeHtml(job.company)}</div>
@@ -299,7 +299,7 @@ table { width:1200px; height:630px; border-collapse:collapse; }
 <tr>
   <td colspan="2" style="background-color:#0d2a4a;padding:14px 60px;">
     <table width="100%"><tr>
-      <td style="color:#0d9488;font-size:20px;font-weight:bold;">&#127760; afra-iq.com</td>
+      <td style="color:#0d9488;font-size:20px;font-weight:bold;">&#127760; afraa-iq.com</td>
       <td style="color:#64748b;font-size:16px;text-align:left;">منصة التوظيف الأولى في العراق</td>
     </tr></table>
   </td>
@@ -635,18 +635,24 @@ async function publishTgJob(docId) {
       `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${FIREBASE_KEY}`,
       { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ returnSecureToken: true }) }
     );
-    const { idToken } = await authRes.json();
-    if (!idToken) return null;
+    const authData = await authRes.json();
+    const idToken  = authData.idToken;
+    if (!idToken) { console.error('publishTgJob: auth failed', JSON.stringify(authData).slice(0,200)); return null; }
 
+    // قراءة الوثيقة باستخدام token (لا بـ API key فقط)
     const getRes = await fetch(
-      `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/telegram_queue/${docId}?key=${FIREBASE_KEY}`
+      `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/telegram_queue/${docId}`,
+      { headers: { 'Authorization': `Bearer ${idToken}` } }
     );
-    if (!getRes.ok) return null;
+    if (!getRes.ok) {
+      const e = await getRes.text().catch(() => '');
+      console.error('publishTgJob: read failed', getRes.status, e.slice(0,200));
+      return null;
+    }
     const doc    = await getRes.json();
     const fields = { ...doc.fields };
     fields.status   = { stringValue: 'active' };
     fields.postedAt = { timestampValue: new Date().toISOString() };
-    // الحفاظ على semanticHash في jobs لمنع إعادة اكتشاف نفس الوظيفة
     if (doc.fields?.semanticHash) fields.semanticHash = doc.fields.semanticHash;
 
     const addRes = await fetch(
@@ -657,13 +663,17 @@ async function publishTgJob(docId) {
         body:    JSON.stringify({ fields }),
       }
     );
-    if (!addRes.ok) return null;
-    const newDoc = await addRes.json();
+    if (!addRes.ok) {
+      const e = await addRes.text().catch(() => '');
+      console.error('publishTgJob: write to jobs failed', addRes.status, e.slice(0,300));
+      return null;
+    }
+    const newDoc   = await addRes.json();
     const newJobId = newDoc.name?.split('/').pop() || null;
     await deleteTgJob(docId);
-    return newJobId; // يرجع الـ ID الجديد للوظيفة
+    return newJobId;
   } catch (e) {
-    console.error('publishTgJob:', e);
+    console.error('publishTgJob exception:', e.message);
     return null;
   }
 }
@@ -913,8 +923,8 @@ ${provEnLeft}
 <!-- logo dot -->
 <circle cx="30" cy="291" r="13" fill="${cAcc}" fill-opacity="0.38"/>
 
-<!-- afra-iq.com (English, left) -->
-<text x="50" y="298" font-family="monospace,sans-serif" font-size="17" font-weight="bold" fill="${cAcc}">afra-iq.com</text>
+<!-- afraa-iq.com (English, left) -->
+<text x="50" y="298" font-family="monospace,sans-serif" font-size="17" font-weight="bold" fill="${cAcc}">afraa-iq.com</text>
 
 <!-- عفراء للتوظيف (Arabic, right) -->
 <text x="590" y="298" text-anchor="end" direction="rtl" font-family="Tajawal,Arial,sans-serif" font-size="15" font-weight="bold" fill="${pAcc}">عفراء للتوظيف</text>
@@ -996,7 +1006,7 @@ function buildSocialText(job, style) {
       ``,
       `🔗 للتقديم: ${jobUrl}`,
       ``,
-      `📲 *عفراء للتوظيف* | afra-iq.com`,
+      `📲 *عفراء للتوظيف* | afraa-iq.com`,
     ].filter(Boolean).join('\n');
   }
 
@@ -1665,7 +1675,7 @@ async function parseAndSaveDiscovery(item, env) {
   const score      = Math.min(10, baseScore + localBoost);
   if (baseScore < 4) return false; // تجاهل الجودة المنخفضة جداً
 
-  // Auth + save
+  // Auth
   const authRes = await fetch(
     `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${FIREBASE_KEY}`,
     { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ returnSecureToken: true }) }
@@ -1673,8 +1683,7 @@ async function parseAndSaveDiscovery(item, env) {
   const { idToken } = await authRes.json();
   if (!idToken) return false;
 
-  // Save to telegram_queue (has correct Firestore rules for anonymous auth)
-  const fields = buildFsFields({
+  const jobData = {
     title:        parsed.title     || '',
     company:      parsed.company   || '',
     province:     parsed.province  || '',
@@ -1692,17 +1701,42 @@ async function parseAndSaveDiscovery(item, env) {
     source:       item.source,
     sourceUrl:    item.sourceUrl   || '',
     score,
-    status:       'pending_telegram',
     postedByType: 'discovered',
     dedupeHash:   rawHash,
     semanticHash: semHash,
     applicants:   0,
     postedAt:     new Date().toISOString(),
-  });
+  };
 
+  // وظائف عالية الجودة (score ≥ 7) → نشر تلقائي فوري على تيليجرام + jobs collection
+  if (score >= 7 && env.TELEGRAM_TOKEN) {
+    const pubRes = await fetch(
+      `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/jobs`,
+      {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+        body:    JSON.stringify({ fields: buildFsFields({ ...jobData, status: 'active' }) }),
+      }
+    );
+    if (pubRes.ok) {
+      const newDoc   = await pubRes.json();
+      const newJobId = newDoc.name?.split('/').pop() || null;
+      const tgChan   = env.TG_CHANNEL_ID || '@afraiq_jobs';
+      const imgUrl   = await generateJobCardImage({ ...jobData, id: newJobId }, env).catch(() => null);
+      await postToTelegram({ ...jobData, id: newJobId }, env.TELEGRAM_TOKEN, tgChan, imgUrl || TG_FALLBACK_IMG);
+      console.log(`[discovery] Auto-published "${jobData.title}" (score ${score}) → Telegram`);
+      return true;
+    }
+  }
+
+  // وظائف متوسطة الجودة (score 4-6) → قائمة انتظار للمراجعة اليدوية
   const saveRes = await fetch(
     `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/telegram_queue`,
-    { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` }, body: JSON.stringify({ fields }) }
+    {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+      body:    JSON.stringify({ fields: buildFsFields({ ...jobData, status: 'pending_telegram' }) }),
+    }
   );
   return saveRes.ok;
 }

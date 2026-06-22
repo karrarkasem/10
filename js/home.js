@@ -1,4 +1,4 @@
-// ╔══════════════════════════════════════════════════════╗
+﻿// ╔══════════════════════════════════════════════════════╗
 // ║  عفراء للتوظيف — home.js                            ║
 // ║  الرئيسية + صفحات الأدمن الأربع                    ║
 // ╚══════════════════════════════════════════════════════╝
@@ -473,7 +473,7 @@ function openSocialPublish(jobId) {
     ``,
     job.desc     ? job.desc.substring(0, 200) + (job.desc.length > 200 ? '...' : '') : '',
     ``,
-    `🔗 afra-iq.com/#job/${job.id}`,
+    `🔗 afraa-iq.com/#job/${job.id}`,
   ].filter(Boolean).join('\n');
 
   const autoPlats = window.SOCIAL_AUTO?.platforms || [];
@@ -570,7 +570,7 @@ async function submitSocialPublish() {
     const body = { jobId: _spJob.id, platforms };
     if (timing === 'scheduled') body.scheduledAt = new Date(schedAt).toISOString();
 
-    const res  = await fetch('https://api.afra-iq.com/social-publish', {
+    const res  = await fetch('https://api.afraa-iq.com/social-publish', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -600,7 +600,7 @@ async function autoPostJob(job) {
   if (!window.SOCIAL_AUTO?.enabled || !window.SOCIAL_AUTO?.platforms?.length) return;
   if (!job?.id) return;
   try {
-    await fetch('https://api.afra-iq.com/social-publish', {
+    await fetch('https://api.afraa-iq.com/social-publish', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ jobId: job.id, platforms: window.SOCIAL_AUTO.platforms }),
@@ -614,7 +614,7 @@ async function autoPostJob(job) {
 
 async function loadDiscoveriesCount() {
   try {
-    const res  = await fetch('https://api.afra-iq.com/discoveries');
+    const res  = await fetch('https://api.afraa-iq.com/discoveries');
     const data = await res.json();
     const cnt  = data.total || 0;
     if (cnt > 0) {
@@ -632,7 +632,7 @@ async function pgAdminDiscoveries(el) {
 
   let jobs = [];
   try {
-    const res  = await fetch('https://api.afra-iq.com/discoveries');
+    const res  = await fetch('https://api.afraa-iq.com/discoveries');
     const data = await res.json();
     jobs = data.jobs || [];
   } catch (e) {
@@ -711,7 +711,7 @@ function _discoveryCard(j, TYPE_AR, SRC_LABEL, SRC_COLOR, scoreColor, scoreLabel
 async function approveDiscovery(id, btn) {
   if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-circle-notch spin"></i>'; }
   try {
-    const res  = await fetch(`https://api.afra-iq.com/discoveries/${id}/approve`, { method: 'POST' });
+    const res  = await fetch(`https://api.afraa-iq.com/discoveries/${id}/approve`, { method: 'POST' });
     const data = await res.json();
     if (data.ok) {
       document.getElementById(`disc_${id}`)?.remove();
@@ -729,12 +729,12 @@ async function approveDiscovery(id, btn) {
 async function approveAndPublishDiscovery(id, btn) {
   if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-circle-notch spin"></i>'; }
   try {
-    const res  = await fetch(`https://api.afra-iq.com/discoveries/${id}/approve`, { method: 'POST' });
+    const res  = await fetch(`https://api.afraa-iq.com/discoveries/${id}/approve`, { method: 'POST' });
     const data = await res.json();
     if (data.ok && data.jobId) {
       // Auto-publish to all configured social platforms
       const plats = window.SOCIAL_AUTO?.platforms || ['tg'];
-      await fetch('https://api.afra-iq.com/social-publish', {
+      await fetch('https://api.afraa-iq.com/social-publish', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ jobId: data.jobId, platforms: plats }),
@@ -754,7 +754,7 @@ async function approveAndPublishDiscovery(id, btn) {
 async function rejectDiscovery(id, btn) {
   if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-circle-notch spin"></i>'; }
   try {
-    const res  = await fetch(`https://api.afra-iq.com/discoveries/${id}/reject`, { method: 'POST' });
+    const res  = await fetch(`https://api.afraa-iq.com/discoveries/${id}/reject`, { method: 'POST' });
     const data = await res.json();
     if (data.ok) {
       document.getElementById(`disc_${id}`)?.remove();
@@ -770,7 +770,7 @@ async function rejectDiscovery(id, btn) {
 async function triggerDiscovery(btn) {
   if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-circle-notch spin"></i> جارٍ البحث...'; }
   try {
-    await fetch('https://api.afra-iq.com/discover-now', { method: 'POST' });
+    await fetch('https://api.afraa-iq.com/discover-now', { method: 'POST' });
     notify('بدأ البحث 🔍', 'يعمل في الخلفية — حدّث الصفحة بعد دقيقتين لرؤية النتائج', 'info');
   } catch { /* ignore */ }
   // انتظر 30 ثانية بدل 8 ثوانٍ
@@ -2594,7 +2594,7 @@ async function aiParseJob() {
   status.textContent = '';
 
   try {
-    const res  = await fetch('https://api.afra-iq.com/parse-job', {
+    const res  = await fetch('https://api.afraa-iq.com/parse-job', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ text }),

@@ -1,4 +1,4 @@
-// ╔══════════════════════════════════════════════════════╗
+﻿// ╔══════════════════════════════════════════════════════╗
 // ║  عفراء للتوظيف — auth.js                            ║
 // ║  تسجيل الدخول / إنشاء حساب / الخروج + Onboarding   ║
 // ╚══════════════════════════════════════════════════════╝
@@ -539,7 +539,7 @@ function fbErr(c) {
     'auth/popup-closed-by-user'  : 'أُغلقت نافذة تسجيل الدخول، حاول مرة أخرى',
     'auth/cancelled-popup-request': 'تم إلغاء تسجيل الدخول',
     'auth/account-exists-with-different-credential': 'البريد مرتبط بطريقة تسجيل دخول أخرى',
-    'auth/unauthorized-domain'   : 'النطاق غير مصرح به في Firebase — أضف afra-iq.com إلى الدومينات المصرح بها',
+    'auth/unauthorized-domain'   : 'النطاق غير مصرح به في Firebase — أضف afraa-iq.com إلى الدومينات المصرح بها',
     'auth/operation-not-allowed' : 'تسجيل الدخول بـ Google غير مفعّل في Firebase',
     'auth/popup-blocked'         : 'النافذة المنبثقة محجوبة — سيتم التحويل إلى Google...',
     'auth/internal-error'        : 'خطأ داخلي، تحقق من إعدادات Firebase أو حاول مجدداً',

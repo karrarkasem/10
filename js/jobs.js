@@ -1,4 +1,4 @@
-// ╔══════════════════════════════════════════════════════╗
+﻿// ╔══════════════════════════════════════════════════════╗
 // ║  عفراء للتوظيف — jobs.js                            ║
 // ║  صفحة الوظائف + التفاصيل + التقديم + المحفوظات     ║
 // ╚══════════════════════════════════════════════════════╝
@@ -640,7 +640,7 @@ async function submitApply(quizScore = null, quizFeedback = '') {
 
 // رابط الوظيفة المخصص — يمر عبر Worker لإنشاء بطاقة OG احترافية لواتساب
 function _getJobShareURL(jobId) {
-  return `https://api.afra-iq.com/job/${jobId}`;
+  return `https://api.afraa-iq.com/job/${jobId}`;
 }
 
 function _buildShareText(j, long = false) {
@@ -686,7 +686,7 @@ function shareJobGeneral(id) {
 
 // ── مشاركة المنصة نفسها ──
 function sharePlatform() {
-  const base  = 'https://afra-iq.com';
+  const base  = 'https://afraa-iq.com';
   const text  = `✨ عفراء للتوظيف — منصة التوظيف الأولى في العراق!\n\nآلاف الوظائف في 18 محافظة، تقدّم بنقرة واحدة وتابع طلبك لحظة بلحظة.\nذكاء اصطناعي يساعدك في المقابلة والسيرة الذاتية.\n\n${base}`;
   const short = `عفراء للتوظيف — منصة التوظيف الأولى في العراق ✨ ${base}`;
   _openSharePanel({ title: 'عفراء للتوظيف', text: short, longText: text, url: base });
