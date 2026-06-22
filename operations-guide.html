@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>دليل العمل الميداني — منصة عفراء للتوظيف</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --teal:   #0d9488; --teal-l: #ccfbf1; --teal-d: #0a7870;
+    --amber:  #f59e0b; --amber-l:#fef3c7;
+    --purple: #7c3aed; --purple-l:#ede9fe;
+    --green:  #16a34a; --green-l:#dcfce7;
+    --red:    #dc2626; --red-l:  #fee2e2;
+    --blue:   #2563eb; --blue-l: #dbeafe;
+    --dark:   #0f172a; --text: #1e293b;
+    --muted:  #64748b; --border: #e2e8f0; --bg: #f8fafc;
+  }
+  body { font-family:'Cairo',sans-serif; background:var(--bg); color:var(--text); font-size:14.5px; line-height:1.75; }
+  .page { max-width:920px; margin:0 auto; background:#fff; box-shadow:0 4px 40px rgba(0,0,0,0.08); }
+
+  /* HEADER */
+  .header { background:linear-gradient(135deg,#0f172a,#1e3a5f); padding:44px 52px 36px; color:#fff; border-bottom:4px solid var(--blue); }
+  .header-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; }
+  .header h1 { font-size:1.5rem; font-weight:900; color:#60a5fa; margin-bottom:4px; }
+  .header p  { font-size:0.82rem; color:rgba(255,255,255,0.5); }
+  .header-title { font-size:1.8rem; font-weight:900; color:#fff; margin-bottom:8px; line-height:1.3; }
+  .header-sub   { font-size:0.98rem; color:rgba(255,255,255,0.7); }
+  .badge-int { background:rgba(96,165,250,0.2); border:1px solid #60a5fa; color:#93c5fd; padding:6px 16px; border-radius:40px; font-size:0.78rem; font-weight:800; white-space:nowrap; }
+
+  .body { padding:48px 52px; }
+  .divider { border:none; border-top:1.5px solid var(--border); margin:40px 0; }
+
+  /* SECTION */
+  .section { margin-bottom:48px; }
+  .section-label { display:inline-flex; align-items:center; gap:8px; padding:6px 16px; border-radius:40px; font-size:0.8rem; font-weight:800; margin-bottom:14px; letter-spacing:0.5px; }
+  .lbl-blue   { background:var(--blue-l);   color:#1d4ed8; }
+  .lbl-teal   { background:var(--teal-l);   color:var(--teal-d); }
+  .lbl-amber  { background:var(--amber-l);  color:#92400e; }
+  .lbl-purple { background:var(--purple-l); color:#5b21b6; }
+  .lbl-green  { background:var(--green-l);  color:#14532d; }
+  .lbl-red    { background:var(--red-l);    color:#991b1b; }
+  .section h2 { font-size:1.25rem; font-weight:900; color:var(--dark); margin-bottom:8px; }
+  .section > p { color:var(--muted); font-size:0.92rem; margin-bottom:20px; }
+
+  /* FUNNEL */
+  .funnel { margin-top:16px; }
+  .funnel-step {
+    display:flex; gap:0; margin-bottom:8px; position:relative;
+  }
+  .funnel-step::after {
+    content:'↓';
+    position:absolute; bottom:-18px; right:50%; transform:translateX(50%);
+    color:var(--teal); font-size:1.2rem; font-weight:900; z-index:1;
+  }
+  .funnel-step:last-child::after { display:none; }
+  .f-num {
+    background:var(--dark); color:#fff;
+    width:48px; min-height:60px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.1rem; font-weight:900; flex-shrink:0;
+    border-radius:12px 0 0 12px;
+  }
+  .f-body {
+    flex:1; border:1.5px solid var(--border); border-right:none;
+    padding:14px 20px; border-radius:0 12px 12px 0;
+    background:var(--bg);
+    display:flex; align-items:center; justify-content:space-between; gap:16px;
+  }
+  .f-title { font-size:0.95rem; font-weight:800; color:var(--dark); margin-bottom:3px; }
+  .f-sub   { font-size:0.82rem; color:var(--muted); }
+  .f-time  { font-size:0.78rem; font-weight:800; color:var(--teal); white-space:nowrap; background:var(--teal-l); padding:4px 10px; border-radius:20px; }
+
+  /* APPROACH CARDS */
+  .approach-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:16px; }
+  .approach-card { border-radius:14px; overflow:hidden; border:1.5px solid var(--border); }
+  .approach-head { padding:16px 22px; color:#fff; display:flex; align-items:center; gap:10px; }
+  .approach-icon { font-size:1.6rem; }
+  .approach-name { font-size:1rem; font-weight:900; }
+  .approach-sub  { font-size:0.78rem; opacity:0.75; }
+  .approach-body { padding:20px 22px; }
+  .approach-body ul { list-style:none; padding:0; }
+  .approach-body li { font-size:0.87rem; color:var(--text); padding:6px 0; display:flex; gap:8px; align-items:flex-start; border-bottom:1px solid var(--border); }
+  .approach-body li:last-child { border-bottom:none; }
+  .approach-body li::before { content:'←'; color:var(--teal); font-weight:900; flex-shrink:0; }
+  .head-purple { background:linear-gradient(135deg,var(--purple),#5b21b6); }
+  .head-amber  { background:linear-gradient(135deg,var(--amber),var(--amber)); color:#78350f; }
+  .head-amber .approach-name, .head-amber .approach-sub { color:#78350f; }
+
+  /* SCRIPT BOXES */
+  .script-box {
+    border-radius:12px; border:1.5px solid var(--border);
+    overflow:hidden; margin-bottom:16px;
+  }
+  .script-head {
+    padding:12px 20px; font-size:0.88rem; font-weight:800;
+    display:flex; align-items:center; gap:8px;
+    background:var(--dark); color:#fff;
+  }
+  .script-body {
+    padding:20px 24px; background:#fafafa;
+    font-size:0.88rem; line-height:1.9;
+    color:var(--text); white-space:pre-wrap;
+    font-family:'Cairo',sans-serif;
+    border-right:4px solid var(--teal);
+  }
+  .script-body strong { color:var(--teal); }
+  .script-note { padding:10px 20px; background:var(--teal-l); font-size:0.8rem; color:var(--teal-d); font-weight:600; }
+
+  /* PROCESS STEPS */
+  .process { margin-top:16px; }
+  .proc-step {
+    display:flex; gap:20px; align-items:flex-start;
+    margin-bottom:24px; padding-bottom:24px;
+    border-bottom:1.5px dashed var(--border);
+  }
+  .proc-step:last-child { border-bottom:none; margin-bottom:0; padding-bottom:0; }
+  .proc-num {
+    width:44px; height:44px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:1rem; font-weight:900; flex-shrink:0; color:#fff;
+  }
+  .proc-content h4 { font-size:0.98rem; font-weight:800; color:var(--dark); margin-bottom:6px; }
+  .proc-content p  { font-size:0.87rem; color:var(--muted); margin-bottom:8px; }
+  .proc-tip {
+    background:var(--teal-l); border-right:3px solid var(--teal);
+    padding:8px 14px; border-radius:0 8px 8px 0;
+    font-size:0.82rem; color:var(--teal-d); font-weight:600;
+  }
+
+  /* OBJECTIONS */
+  .obj-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:16px; }
+  .obj-card { border-radius:12px; overflow:hidden; border:1.5px solid var(--border); }
+  .obj-q { background:var(--red-l); padding:12px 16px; font-size:0.87rem; font-weight:800; color:var(--red); display:flex; gap:8px; align-items:flex-start; }
+  .obj-a { padding:14px 16px; font-size:0.85rem; color:var(--text); background:#fff; }
+  .obj-a strong { color:var(--green); }
+
+  /* TRACKING TABLE */
+  .track-table { width:100%; border-collapse:collapse; margin-top:16px; font-size:0.87rem; }
+  .track-table th { background:var(--dark); color:#fff; padding:11px 14px; font-weight:800; text-align:right; }
+  .track-table td { padding:10px 14px; border-bottom:1px solid var(--border); vertical-align:top; }
+  .track-table tr:nth-child(even) td { background:var(--bg); }
+  .status-new      { background:#dbeafe; color:#1e40af; padding:3px 10px; border-radius:20px; font-size:0.75rem; font-weight:800; }
+  .status-contact  { background:var(--amber-l); color:#92400e; padding:3px 10px; border-radius:20px; font-size:0.75rem; font-weight:800; }
+  .status-demo     { background:var(--purple-l); color:#5b21b6; padding:3px 10px; border-radius:20px; font-size:0.75rem; font-weight:800; }
+  .status-signed   { background:var(--green-l); color:#14532d; padding:3px 10px; border-radius:20px; font-size:0.75rem; font-weight:800; }
+  .status-active   { background:var(--teal-l); color:var(--teal-d); padding:3px 10px; border-radius:20px; font-size:0.75rem; font-weight:800; }
+
+  /* CHECKLIST */
+  .checklist { margin-top:16px; display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .check-item {
+    display:flex; gap:10px; align-items:flex-start;
+    border:1.5px solid var(--border); border-radius:10px; padding:12px 14px;
+    background:var(--bg);
+  }
+  .check-box {
+    width:22px; height:22px; border:2px solid var(--border); border-radius:5px;
+    flex-shrink:0; margin-top:1px;
+  }
+  .check-item p { font-size:0.85rem; color:var(--text); }
+
+  /* KPI */
+  .kpi-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-top:16px; }
+  .kpi-card { border:1.5px solid var(--border); border-radius:12px; padding:18px; text-align:center; background:var(--bg); }
+  .kpi-num  { font-size:1.8rem; font-weight:900; display:block; margin-bottom:4px; }
+  .kpi-lbl  { font-size:0.78rem; color:var(--muted); }
+  .kpi-period { font-size:0.72rem; color:var(--muted); margin-top:2px; }
+
+  /* SUMMARY */
+  .summary { background:linear-gradient(135deg,#0f172a,#1e3a5f); color:#fff; border-radius:16px; padding:32px 36px; }
+  .summary h3 { font-size:1.15rem; font-weight:900; color:#60a5fa; margin-bottom:20px; }
+  .summary-cols { display:grid; grid-template-columns:1fr 1fr 1fr; gap:24px; }
+  .sum-col h4 { font-size:0.85rem; font-weight:800; color:rgba(255,255,255,0.6); margin-bottom:12px; text-transform:uppercase; letter-spacing:0.5px; }
+  .sum-col ul { list-style:none; }
+  .sum-col li { font-size:0.85rem; color:rgba(255,255,255,0.8); padding:5px 0; display:flex; gap:8px; }
+  .sum-col li::before { content:'✓'; color:#34d399; font-weight:900; flex-shrink:0; }
+
+  /* FOOTER */
+  .footer { background:var(--dark); color:rgba(255,255,255,0.5); padding:18px 52px; display:flex; justify-content:space-between; font-size:0.8rem; flex-wrap:wrap; gap:10px; }
+  .footer .brand { color:#60a5fa; font-weight:800; }
+
+  @media print { body { background:#fff; } .page { box-shadow:none; } }
+  @media (max-width:680px) {
+    .header,.body,.footer { padding-right:22px; padding-left:22px; }
+    .approach-grid,.obj-grid,.checklist,.kpi-grid,.summary-cols { grid-template-columns:1fr; }
+    .header-top { flex-direction:column; gap:10px; }
+    .f-body { flex-direction:column; align-items:flex-start; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-top">
+    <div>
+      <h1>✨ عفراء للتوظيف</h1>
+      <p>afra-iq.com — وثيقة داخلية تشغيلية</p>
+    </div>
+    <div class="badge-int">📋 دليل العمل الميداني</div>
+  </div>
+  <div class="header-title">كيف نتعامل مع العملاء ونحوّلهم لمشتركين</div>
+  <p class="header-sub">من أول اتصال — حتى التوقيع — حتى التحصيل — حتى التجديد</p>
+</div>
+
+<div class="body">
+
+  <!-- مسار العميل -->
+  <div class="section">
+    <div class="section-label lbl-blue">🗺️ الصورة الكاملة</div>
+    <h2>مسار العميل من الصفر حتى الدفع</h2>
+    <p>كل عميل يمر بهذه المراحل — مهمتنا تسريع كل مرحلة وتقليص الاحتكاك</p>
+
+    <div class="funnel">
+      <div class="funnel-step">
+        <div class="f-num" style="background:var(--blue)">١</div>
+        <div class="f-body">
+          <div>
+            <div class="f-title">الاكتشاف — أول تواصل</div>
+            <div class="f-sub">نحن نتصل بهم أو هم يجدوننا عبر السوشل ميديا / واتساب / الإحالة</div>
+          </div>
+          <span class="f-time">اليوم 1</span>
+        </div>
+      </div>
+      <div class="funnel-step">
+        <div class="f-num" style="background:var(--purple)">٢</div>
+        <div class="f-body">
+          <div>
+            <div class="f-title">العرض التوضيحي (Demo)</div>
+            <div class="f-sub">نريهم المنصة مباشرة — لوحة التحكم، النشر، استقبال الطلبات</div>
+          </div>
+          <span class="f-time">اليوم 2-3</span>
+        </div>
+      </div>
+      <div class="funnel-step">
+        <div class="f-num" style="background:var(--amber)">٣</div>
+        <div class="f-body">
+          <div>
+            <div class="f-title">فترة التجربة المجانية (Trial)</div>
+            <div class="f-sub">نسجّلهم مجاناً ويجربون النشر — ينشرون أول وظيفة مجاناً</div>
+          </div>
+          <span class="f-time">أسبوع 1-2</span>
+        </div>
+      </div>
+      <div class="funnel-step">
+        <div class="f-num" style="background:var(--teal)">٤</div>
+        <div class="f-body">
+          <div>
+            <div class="f-title">متابعة النتائج</div>
+            <div class="f-sub">نبعث له تقرير: كم شخصاً رأى إعلانه؟ كم تقدّم؟ — الأرقام تقنع</div>
+          </div>
+          <span class="f-time">نهاية الأسبوع 2</span>
+        </div>
+      </div>
+      <div class="funnel-step">
+        <div class="f-num" style="background:var(--green)">٥</div>
+        <div class="f-body">
+          <div>
+            <div class="f-title">التحويل للمدفوع + التوقيع</div>
+            <div class="f-sub">نعرض الباقة المناسبة مع العقد — الأرقام الحقيقية تُغني عن الإقناع</div>
+          </div>
+          <span class="f-time">الأسبوع 3</span>
+        </div>
+      </div>
+      <div class="funnel-step">
+        <div class="f-num" style="background:var(--dark)">٦</div>
+        <div class="f-body">
+          <div>
+            <div class="f-title">الخدمة المستمرة والتجديد</div>
+            <div class="f-sub">متابعة شهرية — دعم فني — عرض الترقية — تأمين التجديد السنوي</div>
+          </div>
+          <span class="f-time">كل شهر</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- كيف نتواصل -->
+  <div class="section">
+    <div class="section-label lbl-purple">📞 التواصل الأول</div>
+    <h2>كيف نتواصل مع كل نوع من العملاء؟</h2>
+    <p>لكل نوع أسلوب تواصل مختلف — المكتب غير الشركة</p>
+
+    <div class="approach-grid">
+      <div class="approach-card">
+        <div class="approach-head head-purple">
+          <span class="approach-icon">🏛️</span>
+          <div>
+            <div class="approach-name">مكاتب التوظيف</div>
+            <div class="approach-sub">عادةً أفراد أو مكاتب صغيرة — القرار سريع</div>
+          </div>
+        </div>
+        <div class="approach-body">
+          <ul>
+            <li>ابحث عنهم في فيسبوك وتيليجرام (مجموعات توظيف)</li>
+            <li>أرسل رسالة واتساب مباشرة — لا تتصل أولاً</li>
+            <li>قدّم نفسك كشريك لا بائع — "نريد نساعد مكتبك ينمو"</li>
+            <li>أرسل بروشور المكاتب فوراً مع الرسالة</li>
+            <li>ادعُه لزيارة المنصة وتسجيل مجاني بدون إلزام</li>
+            <li>تابع بعد 48 ساعة إذا لم يرد</li>
+          </ul>
+        </div>
+      </div>
+      <div class="approach-card">
+        <div class="approach-head" style="background:linear-gradient(135deg,#b45309,var(--amber));">
+          <span class="approach-icon">🏢</span>
+          <div>
+            <div class="approach-name" style="color:#fff">أصحاب الأعمال والشركات</div>
+            <div class="approach-sub" style="color:rgba(255,255,255,0.75)">قرار أبطأ — يحتاج إثبات قيمة</div>
+          </div>
+        </div>
+        <div class="approach-body">
+          <ul>
+            <li>ابحث عن شركات تنشر وظائف في السوشل ميديا — هي العميل المثالي</li>
+            <li>تواصل مع مدير HR أو صاحب العمل مباشرة (لا receptionist)</li>
+            <li>ابدأ بـ "عندنا 500+ باحث في [محافظتهم] — نقدر نوفرلك الموظف"</li>
+            <li>أرسل بروشور أصحاب الأعمال + اقتراح بنشر أول وظيفة مجاناً</li>
+            <li>عرض Demo على زووم أو بالحضور الشخصي</li>
+            <li>المتابعة أسبوعية لا يومية — الشركات أبطأ في القرار</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- رسائل التواصل -->
+  <div class="section">
+    <div class="section-label lbl-teal">💬 نصوص التواصل</div>
+    <h2>رسائل جاهزة للاستخدام الفوري</h2>
+    <p>انسخ هذه الرسائل وعدّل الاسم فقط — مجرّبة ومصممة لتحصل على رد</p>
+
+    <div class="script-box">
+      <div class="script-head">📱 رسالة واتساب — مكتب التوظيف (أول تواصل)</div>
+      <div class="script-body">السلام عليكم ورحمة الله <strong>[اسم المكتب]</strong> 🌟
+
+أنا من فريق منصة عفراء للتوظيف — منصة عراقية متخصصة بربط مكاتب التوظيف بآلاف الباحثين عن عمل في جميع المحافظات.
+
+رأينا مكتبكم ونعتقد إن عندكم فرصة كبيرة للوصول لعملاء أكثر عبر منصتنا.
+
+✅ التسجيل مجاني بالكامل
+✅ وظائفكم تنشر تلقائياً على تيليجرام وفيسبوك
+✅ لوحة تحكم احترافية لإدارة الطلبات
+
+أرسلت لكم بروشور مختصر — هل يمكن نتكلم 10 دقائق هذا الأسبوع؟ 🤝</div>
+      <div class="script-note">✓ أرفق معها ملف brochure-offices.pdf — حوّله من الموقع بـ Ctrl+P</div>
+    </div>
+
+    <div class="script-box">
+      <div class="script-head">📱 رسالة واتساب — صاحب عمل / شركة (أول تواصل)</div>
+      <div class="script-body">السلام عليكم ورحمة الله <strong>[اسم الشركة / المسؤول]</strong>
+
+أنا من منصة عفراء للتوظيف العراقية — عندنا +500 باحث عن عمل في <strong>[اسم المحافظة]</strong> وحدها.
+
+شفنا إنكم بحاجة لموظفين — نقدر نوصل إعلان وظيفتكم لهم خلال ساعات، مع نشر تلقائي على قنوات تيليجرام وفيسبوك.
+
+🎁 عرض خاص: أول وظيفة مجاناً بالكامل لتجربة المنصة
+
+هل تسمح بدقيقتين أشرح لك كيف؟ 📞</div>
+      <div class="script-note">✓ أرفق معها brochure-employers.pdf</div>
+    </div>
+
+    <div class="script-box">
+      <div class="script-head">📧 رسالة بريد إلكتروني — للشركات الكبيرة (رسمية)</div>
+      <div class="script-body">الموضوع: شراكة توظيف — منصة عفراء للتوظيف العراقية
+
+تحية طيبة وبعد،
+
+يسعدنا التواصل مع <strong>[اسم الشركة]</strong>، ونود تعريفكم بمنصة عفراء للتوظيف — المنصة الرقمية العراقية المتخصصة في ربط أصحاب العمل بالكفاءات في جميع المحافظات.
+
+<strong>ما يميّزنا:</strong>
+• قاعدة باحثين نشطة في 18 محافظة عراقية
+• نشر وظائفكم على تيليجرام وفيسبوك تلقائياً
+• لوحة تحكم لمراجعة الطلبات واختيار المرشحين
+• أدوات ترشيح بالذكاء الاصطناعي
+
+نرحب بتنظيم جلسة تعريفية (Demo) مناسبة لوقتكم.
+
+مع التقدير،
+فريق عفراء للتوظيف
+📧 afrahub.iq@gmail.com | 🌐 afra-iq.com</div>
+      <div class="script-note">✓ أرفق معها brochure-employers.pdf وcontract.pdf</div>
+    </div>
+
+    <div class="script-box">
+      <div class="script-head">🔄 رسالة المتابعة — بعد أسبوع بدون رد</div>
+      <div class="script-body">السلام عليكم <strong>[الاسم]</strong>،
+
+أتمنى تكونون بخير 😊
+
+أرسلت لكم رسالة الأسبوع الماضي عن منصة عفراء — أردت فقط أسألكم هل لديكم أي استفسار؟
+
+لدينا هذا الأسبوع <strong>[X وظيفة جديدة في محافظتكم]</strong> تحتاج مكاتب توظيف موثّقة — أودّ إدراجكم إذا كنتم مهتمين.
+
+يكفي تردون بـ "نعم" وأكمل البقية أنا 🙂</div>
+      <div class="script-note">✓ استخدم رقماً حقيقياً من الموقع — يضيف مصداقية</div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- عملية التأهيل -->
+  <div class="section">
+    <div class="section-label lbl-green">⚙️ عملية الإعداد</div>
+    <h2>خطوات إعداد العميل بعد الموافقة</h2>
+    <p>بعد موافقة العميل على التجربة أو الاشتراك — إليك الخطوات الدقيقة</p>
+
+    <div class="process">
+      <div class="proc-step">
+        <div class="proc-num" style="background:var(--blue)">١</div>
+        <div class="proc-content">
+          <h4>تسجيل الحساب على المنصة</h4>
+          <p>وجّهه لـ afra-iq.com وساعده يختار نوع "مكتب توظيف" أو "صاحب عمل" عند التسجيل. إذا احتاج مساعدة سجّل معه عبر مشاركة الشاشة.</p>
+          <div class="proc-tip">💡 الأفضل: اجلس معه شخصياً أو على زووم في أول تسجيل — يوفّر وقتاً ويبني الثقة</div>
+        </div>
+      </div>
+      <div class="proc-step">
+        <div class="proc-num" style="background:var(--purple)">٢</div>
+        <div class="proc-content">
+          <h4>إكمال بيانات الملف التجاري</h4>
+          <p>اسم المكتب، رقم الهاتف، المحافظة، التخصصات، الشعار. كلما اكتمل الملف، زاد ظهوره في نتائج البحث.</p>
+          <div class="proc-tip">💡 أرسل له قائمة بالبيانات المطلوبة مسبقاً ليجهّزها قبل الجلسة</div>
+        </div>
+      </div>
+      <div class="proc-step">
+        <div class="proc-num" style="background:var(--amber)">٣</div>
+        <div class="proc-content">
+          <h4>نشر أول وظيفة تجريبية</h4>
+          <p>أضف معه أول وظيفة حقيقية — اشرح له كيف يملأ الحقول (المسمى، المحافظة، الراتب، الشروط). انشرها ووضّح له أنها ستظهر على تيليجرام وفيسبوك.</p>
+          <div class="proc-tip">💡 خذ لقطة شاشة للوظيفة بعد النشر وأرسلها له — يحفّزه يكمل</div>
+        </div>
+      </div>
+      <div class="proc-step">
+        <div class="proc-num" style="background:var(--teal)">٤</div>
+        <div class="proc-content">
+          <h4>متابعة ومشاركة النتائج بعد أسبوع</h4>
+          <p>أرسل له: "وظيفتك رآها X شخص وتقدّم لها Y" — هذه الأرقام هي أقوى أداة إقناع. الناجحون يتحولون لمشتركين تلقائياً.</p>
+          <div class="proc-tip">💡 حتى لو الأرقام متواضعة — قارنها بالنشر التقليدي على فيسبوك</div>
+        </div>
+      </div>
+      <div class="proc-step">
+        <div class="proc-num" style="background:var(--green)">٥</div>
+        <div class="proc-content">
+          <h4>عرض الباقة المدفوعة + توقيع العقد</h4>
+          <p>بعد رؤية النتائج، قدّم الباقة الاحترافية (75,000 د.ع/شهر) مع مزايا إضافية: شارة التوثيق، الأولوية في البحث، الدعم المخصص. وقّعا العقد معاً.</p>
+          <div class="proc-tip">💡 العقد السنوي بخصم 20% = 720,000 بدل 900,000 د.ع — كثيرون يفضّلون الدفع مرة واحدة</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- الاعتراضات -->
+  <div class="section">
+    <div class="section-label lbl-red">🛡️ الاعتراضات الشائعة</div>
+    <h2>ردود جاهزة على كل اعتراض</h2>
+    <p>العميل دائماً عنده أسئلة — هذه الردود تُغلق 90% من الاعتراضات</p>
+
+    <div class="obj-grid">
+      <div class="obj-card">
+        <div class="obj-q">❓ "المنصة جديدة — ما عندها باحثين كافيين بعد"</div>
+        <div class="obj-a"><strong>ردّ:</strong> بالضبط لهذا السبب نحن نقدم التجربة المجانية — جرّب بدون أي التزام. وقناتنا على تيليجرام بها [X] مشترك الآن ويزيدون يومياً.</div>
+      </div>
+      <div class="obj-card">
+        <div class="obj-q">❓ "السعر غالي — عندنا فيسبوك مجاناً"</div>
+        <div class="obj-a"><strong>ردّ:</strong> فيسبوك يوصل الجميع، عفراء توصل الباحثين عن عمل فقط. 75,000 د.ع = 2,500 د.ع يومياً — أقل من كوب شاي مقابل نتائج حقيقية.</div>
+      </div>
+      <div class="obj-card">
+        <div class="obj-q">❓ "جرّبنا مواقع قبل وما نفعت"</div>
+        <div class="obj-a"><strong>ردّ:</strong> عفراء مختلفة — متخصصة بالعراق، عربية بالكامل، مع نشر تلقائي على قنوات وطنية. اعطنا شهراً واحداً وقارن النتائج بنفسك.</div>
+      </div>
+      <div class="obj-card">
+        <div class="obj-q">❓ "ما عندي وقت أتعلم منصة جديدة"</div>
+        <div class="obj-a"><strong>ردّ:</strong> نحن نسجّلك ونضيف أول وظيفة معك في 10 دقائق — وأي وقت تحتاج مساعدة نحن موجودين. الواجهة عربية وبسيطة جداً.</div>
+      </div>
+      <div class="obj-card">
+        <div class="obj-q">❓ "كيف أثق بكم؟ منصة غير معروفة"</div>
+        <div class="obj-a"><strong>ردّ:</strong> لا نطلب منك شيئاً قبل ما تجرّب — التسجيل مجاني، أول وظيفة مجانية، ترى النتائج بعيونك قبل أي دفع. الثقة تُبنى بالنتائج.</div>
+      </div>
+      <div class="obj-card">
+        <div class="obj-q">❓ "هل يمكن الإلغاء في أي وقت؟"</div>
+        <div class="obj-a"><strong>ردّ:</strong> نعم بالكامل — العقد ينص على إشعار 15 يوماً للإلغاء دون أي غرامات. لا نريد عميلاً غير راضٍ — نريد شراكة مبنية على النتائج.</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- تتبع العملاء -->
+  <div class="section">
+    <div class="section-label lbl-amber">📋 تتبع العملاء</div>
+    <h2>جدول متابعة العملاء — نموذج للاستخدام</h2>
+    <p>تتبّع كل عميل في جدول — لا تعتمد على الذاكرة</p>
+
+    <table class="track-table">
+      <thead>
+        <tr>
+          <th>اسم المكتب / الشركة</th>
+          <th>المحافظة</th>
+          <th>النوع</th>
+          <th>الحالة</th>
+          <th>آخر تواصل</th>
+          <th>الإجراء التالي</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>مكتب النخبة للتوظيف</td>
+          <td>بغداد</td>
+          <td>مكتب</td>
+          <td><span class="status-demo">Demo</span></td>
+          <td>22/06/2026</td>
+          <td>متابعة بعد 3 أيام</td>
+        </tr>
+        <tr>
+          <td>شركة رافدان للتجارة</td>
+          <td>كربلاء</td>
+          <td>شركة</td>
+          <td><span class="status-contact">تواصل أولي</span></td>
+          <td>21/06/2026</td>
+          <td>إرسال بروشور</td>
+        </tr>
+        <tr>
+          <td>مكتب الفرص الذهبية</td>
+          <td>النجف</td>
+          <td>مكتب</td>
+          <td><span class="status-signed">موقّع ✓</span></td>
+          <td>18/06/2026</td>
+          <td>تجديد يوليو 2026</td>
+        </tr>
+        <tr>
+          <td>مجمّع نور الطبي</td>
+          <td>البصرة</td>
+          <td>شركة</td>
+          <td><span class="status-active">نشط ✓</span></td>
+          <td>15/06/2026</td>
+          <td>إرسال تقرير شهري</td>
+        </tr>
+        <tr>
+          <td>مكتب الأمل للتوظيف</td>
+          <td>الموصل</td>
+          <td>مكتب</td>
+          <td><span class="status-new">جديد</span></td>
+          <td>—</td>
+          <td>إرسال رسالة أولى</td>
+        </tr>
+      </tbody>
+    </table>
+    <p style="margin-top:12px;font-size:0.8rem;color:var(--muted)">* انسخ هذا النموذج في Excel أو Google Sheets وأضف عمود "رقم الهاتف" و"قيمة العقد"</p>
+  </div>
+
+  <hr class="divider">
+
+  <!-- KPIs -->
+  <div class="section">
+    <div class="section-label lbl-green">📊 مؤشرات النجاح الشهرية</div>
+    <h2>كيف تعرف أن العمل سائر بالاتجاه الصحيح؟</h2>
+
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <span class="kpi-num" style="color:var(--blue)">10</span>
+        <div class="kpi-lbl">تواصل أولي جديد</div>
+        <div class="kpi-period">/ أسبوع</div>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-num" style="color:var(--purple)">3</span>
+        <div class="kpi-lbl">Demo ناجح</div>
+        <div class="kpi-period">/ أسبوع</div>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-num" style="color:var(--amber)">1</span>
+        <div class="kpi-lbl">عقد موقّع</div>
+        <div class="kpi-period">/ أسبوع</div>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-num" style="color:var(--green)">90%</span>
+        <div class="kpi-lbl">معدل تجديد العقد</div>
+        <div class="kpi-period">الهدف السنوي</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- قائمة المهام اليومية -->
+  <div class="section">
+    <div class="section-label lbl-teal">✅ المهام اليومية</div>
+    <h2>ما تفعله كل يوم لتنمية العملاء</h2>
+
+    <div class="checklist">
+      <div class="check-item"><div class="check-box"></div><p>أرسل 3-5 رسائل واتساب لمكاتب جديدة</p></div>
+      <div class="check-item"><div class="check-box"></div><p>تابع عميلاً واحداً في مرحلة Demo</p></div>
+      <div class="check-item"><div class="check-box"></div><p>أرسل تقارير النتائج للعملاء النشطين</p></div>
+      <div class="check-item"><div class="check-box"></div><p>نشر محتوى يومي على سوشل ميديا (وظيفة / نصيحة)</div></div>
+      <div class="check-item"><div class="check-box"></div><p>تحقّق من قناة تيليجرام والرد على الاستفسارات</p></div>
+      <div class="check-item"><div class="check-box"></div><p>راجع جدول المتابعة وحدّث حالة كل عميل</p></div>
+      <div class="check-item"><div class="check-box"></div><p>ابحث عن مكاتب / شركات جديدة في فيسبوك</p></div>
+      <div class="check-item"><div class="check-box"></div><p>تحقق من أي عقد يقترب موعد تجديده</p></div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- الخلاصة -->
+  <div class="summary">
+    <h3>🗝️ المعادلة البسيطة للنجاح</h3>
+    <div class="summary-cols">
+      <div class="sum-col">
+        <h4>الأسبوع الأول</h4>
+        <ul>
+          <li>تواصل مع 20 مكتب في محافظتك</li>
+          <li>سجّل 5 منهم تجربة مجانية</li>
+          <li>ساعدهم ينشرون أول وظيفة</li>
+        </ul>
+      </div>
+      <div class="sum-col">
+        <h4>الأسبوع الثاني</h4>
+        <ul>
+          <li>أرسل لكل مكتب أرقام وظيفته</li>
+          <li>اعرض الباقة المدفوعة على 2-3 منهم</li>
+          <li>وقّع أول عقد شهري</li>
+        </ul>
+      </div>
+      <div class="sum-col">
+        <h4>الشهر الأول</h4>
+        <ul>
+          <li>5 مكاتب مدفوعة = 375,000 د.ع</li>
+          <li>طلب من كل مكتب يُحيلك لمكتب آخر</li>
+          <li>ابدأ استهداف الشركات بالتوازي</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <div class="brand">✨ عفراء للتوظيف — afra-iq.com</div>
+  <div>دليل العمل الميداني — وثيقة داخلية</div>
+  <div>للطباعة: Ctrl+P</div>
+</div>
+
+</div>
+</body>
+</html>
