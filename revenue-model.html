@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>نموذج الأرباح — منصة عفراء للتوظيف</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --teal:   #0d9488;
+    --teal-l: #ccfbf1;
+    --teal-d: #0a7870;
+    --amber:  #f59e0b;
+    --amber-l:#fef3c7;
+    --purple: #7c3aed;
+    --purple-l:#ede9fe;
+    --green:  #16a34a;
+    --green-l:#dcfce7;
+    --red:    #dc2626;
+    --dark:   #0f172a;
+    --text:   #1e293b;
+    --muted:  #64748b;
+    --border: #e2e8f0;
+    --bg:     #f8fafc;
+  }
+  body { font-family:'Cairo',sans-serif; background:var(--bg); color:var(--text); font-size:15px; line-height:1.7; }
+  .page { max-width:900px; margin:0 auto; background:#fff; box-shadow:0 4px 40px rgba(0,0,0,0.08); }
+
+  /* HEADER */
+  .header {
+    background:linear-gradient(135deg,#0f172a 0%,#134e4a 100%);
+    padding:44px 52px 36px;
+    color:#fff;
+    border-bottom:4px solid var(--teal);
+  }
+  .header-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; }
+  .header h1  { font-size:1.6rem; font-weight:900; color:var(--teal); margin-bottom:4px; }
+  .header p   { font-size:0.85rem; color:rgba(255,255,255,0.55); }
+  .header-title { font-size:1.9rem; font-weight:900; color:#fff; margin-bottom:8px; line-height:1.3; }
+  .header-sub   { font-size:1rem; color:rgba(255,255,255,0.7); }
+  .confidential {
+    background:rgba(245,158,11,0.2);
+    border:1px solid var(--amber);
+    color:var(--amber);
+    padding:6px 16px;
+    border-radius:40px;
+    font-size:0.78rem;
+    font-weight:800;
+    white-space:nowrap;
+  }
+
+  /* BODY */
+  .body { padding:48px 52px; }
+
+  /* SECTION */
+  .section { margin-bottom:52px; }
+  .section-label {
+    display:inline-flex; align-items:center; gap:8px;
+    padding:6px 16px; border-radius:40px;
+    font-size:0.8rem; font-weight:800; margin-bottom:14px; letter-spacing:0.5px;
+  }
+  .lbl-teal   { background:var(--teal-l);   color:var(--teal-d); }
+  .lbl-amber  { background:var(--amber-l);  color:#92400e; }
+  .lbl-purple { background:var(--purple-l); color:#5b21b6; }
+  .lbl-green  { background:var(--green-l);  color:#14532d; }
+  .section h2 { font-size:1.3rem; font-weight:900; color:var(--dark); margin-bottom:8px; }
+  .section > p { color:var(--muted); font-size:0.93rem; margin-bottom:20px; }
+
+  .divider { border:none; border-top:1.5px solid var(--border); margin:36px 0; }
+
+  /* INTRO CARDS */
+  .intro-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:0; }
+  .intro-card {
+    border-radius:14px; padding:22px; text-align:center;
+    border:1.5px solid var(--border); background:var(--bg);
+  }
+  .intro-card .ic-icon { font-size:2rem; margin-bottom:10px; display:block; }
+  .intro-card h3 { font-size:0.95rem; font-weight:800; color:var(--dark); margin-bottom:6px; }
+  .intro-card p  { font-size:0.82rem; color:var(--muted); }
+  .ic-teal   { border-color:var(--teal);   background:rgba(13,148,136,0.04); }
+  .ic-amber  { border-color:var(--amber);  background:rgba(245,158,11,0.04); }
+  .ic-purple { border-color:var(--purple); background:rgba(124,58,237,0.04); }
+
+  /* REVENUE STREAMS */
+  .stream-card {
+    border:1.5px solid var(--border);
+    border-radius:16px;
+    overflow:hidden;
+    margin-bottom:20px;
+  }
+  .stream-header {
+    display:flex; align-items:center; gap:14px;
+    padding:18px 24px;
+    background:var(--dark);
+    color:#fff;
+  }
+  .stream-num {
+    width:36px; height:36px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:1rem; font-weight:900; flex-shrink:0;
+  }
+  .stream-title { font-size:1.05rem; font-weight:800; }
+  .stream-sub   { font-size:0.82rem; color:rgba(255,255,255,0.55); margin-top:2px; }
+  .stream-body  { padding:24px; }
+
+  /* TIERS */
+  .tiers-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:16px; }
+  .tier {
+    border-radius:12px; padding:18px;
+    border:1.5px solid var(--border);
+    background:var(--bg);
+    position:relative;
+  }
+  .tier.recommended {
+    border-color:var(--teal);
+    background:rgba(13,148,136,0.04);
+  }
+  .tier.recommended::before {
+    content:'الأكثر طلباً';
+    position:absolute; top:-12px; right:50%; transform:translateX(50%);
+    background:var(--teal); color:#fff;
+    padding:3px 12px; border-radius:20px;
+    font-size:0.7rem; font-weight:800;
+    white-space:nowrap;
+  }
+  .tier-name  { font-size:0.88rem; font-weight:800; color:var(--dark); margin-bottom:4px; }
+  .tier-price { font-size:1.4rem; font-weight:900; color:var(--teal); line-height:1.2; margin-bottom:4px; }
+  .tier-period{ font-size:0.75rem; color:var(--muted); margin-bottom:12px; }
+  .tier-features { list-style:none; padding:0; }
+  .tier-features li { font-size:0.8rem; color:var(--text); padding:4px 0; display:flex; align-items:flex-start; gap:6px; }
+  .tier-features li::before { content:'✓'; color:var(--green); font-weight:900; flex-shrink:0; }
+  .tier.amber .tier-price { color:var(--amber); }
+  .tier.amber.recommended { border-color:var(--amber); background:rgba(245,158,11,0.04); }
+  .tier.amber.recommended::before { background:var(--amber); }
+  .tier.purple .tier-price { color:var(--purple); }
+
+  /* COMMISSION ROW */
+  .commission-row {
+    display:flex; gap:16px; margin-top:16px; flex-wrap:wrap;
+  }
+  .comm-card {
+    flex:1; min-width:200px;
+    border:1.5px solid var(--border);
+    border-radius:12px; padding:18px;
+    background:var(--bg);
+    display:flex; align-items:center; gap:14px;
+  }
+  .comm-icon { font-size:2rem; flex-shrink:0; }
+  .comm-label { font-size:0.82rem; color:var(--muted); margin-bottom:4px; }
+  .comm-val   { font-size:1.1rem; font-weight:900; color:var(--dark); }
+
+  /* PROJECTION TABLE */
+  .proj-table {
+    width:100%; border-collapse:collapse; margin-top:16px;
+    font-size:0.88rem;
+  }
+  .proj-table th {
+    background:var(--dark); color:#fff;
+    padding:12px 16px; text-align:center; font-weight:800;
+  }
+  .proj-table th:first-child { text-align:right; }
+  .proj-table td {
+    padding:11px 16px; text-align:center;
+    border-bottom:1px solid var(--border);
+  }
+  .proj-table td:first-child { text-align:right; font-weight:600; color:var(--text); }
+  .proj-table tr:nth-child(even) td { background:var(--bg); }
+  .proj-table .total-row td {
+    background:rgba(13,148,136,0.08);
+    font-weight:900; color:var(--teal);
+    font-size:0.95rem;
+    border-top:2px solid var(--teal);
+  }
+  .proj-table .total-row td:first-child { color:var(--dark); }
+
+  /* PHASES */
+  .phases-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-top:16px; }
+  .phase-card {
+    border-radius:14px; padding:22px;
+    border:1.5px solid var(--border);
+  }
+  .phase-num  { font-size:0.75rem; font-weight:800; color:var(--muted); margin-bottom:8px; }
+  .phase-name { font-size:1rem; font-weight:900; color:var(--dark); margin-bottom:10px; }
+  .phase-period{ font-size:0.8rem; color:var(--muted); margin-bottom:14px; padding-bottom:12px; border-bottom:1px solid var(--border); }
+  .phase-items { list-style:none; padding:0; }
+  .phase-items li { font-size:0.82rem; color:var(--text); padding:4px 0; display:flex; gap:6px; align-items:flex-start; }
+  .phase-items li::before { content:'←'; color:var(--teal); font-weight:900; flex-shrink:0; }
+  .phase-income { margin-top:14px; padding-top:12px; border-top:1px solid var(--border); }
+  .phase-income .lbl { font-size:0.75rem; color:var(--muted); }
+  .phase-income .val { font-size:1.1rem; font-weight:900; color:var(--green); }
+  .ph1 { border-color:var(--teal); }
+  .ph2 { border-color:var(--amber); }
+  .ph3 { border-color:var(--purple); }
+
+  /* RULES */
+  .rules-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:16px; }
+  .rule-card {
+    display:flex; gap:14px; align-items:flex-start;
+    border:1.5px solid var(--border); border-radius:12px; padding:16px;
+    background:var(--bg);
+  }
+  .rule-icon { font-size:1.6rem; flex-shrink:0; }
+  .rule-body h4 { font-size:0.9rem; font-weight:800; color:var(--dark); margin-bottom:4px; }
+  .rule-body p  { font-size:0.82rem; color:var(--muted); }
+
+  /* SUMMARY BOX */
+  .summary-box {
+    background:linear-gradient(135deg,#0f172a,#134e4a);
+    color:#fff; border-radius:16px; padding:32px 36px; margin-top:0;
+  }
+  .summary-box h3 { font-size:1.2rem; font-weight:900; color:var(--teal); margin-bottom:20px; }
+  .summary-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:20px; }
+  .summary-item .s-num { font-size:1.6rem; font-weight:900; color:#fff; display:block; }
+  .summary-item .s-lbl { font-size:0.78rem; color:rgba(255,255,255,0.55); }
+
+  /* FOOTER */
+  .footer {
+    background:var(--dark); color:rgba(255,255,255,0.5);
+    padding:20px 52px; display:flex;
+    justify-content:space-between; align-items:center;
+    font-size:0.8rem; flex-wrap:wrap; gap:12px;
+  }
+  .footer .brand { color:var(--teal); font-weight:800; font-size:0.9rem; }
+
+  @media print {
+    body { background:#fff; }
+    .page { box-shadow:none; }
+    .section { page-break-inside:avoid; }
+  }
+  @media (max-width:680px) {
+    .header,.body,.footer { padding-right:24px; padding-left:24px; }
+    .intro-grid,.tiers-grid,.phases-grid,.summary-grid { grid-template-columns:1fr; }
+    .rules-grid { grid-template-columns:1fr; }
+    .header-top { flex-direction:column; gap:10px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-top">
+    <div>
+      <h1>✨ عفراء للتوظيف</h1>
+      <p>afra-iq.com — وثيقة داخلية</p>
+    </div>
+    <div class="confidential">🔒 داخلي — غير مخصص للنشر</div>
+  </div>
+  <div class="header-title">نموذج جني الأرباح</div>
+  <p class="header-sub">خارطة طريق مالية واضحة — من أين تأتي الأرباح وكيف تنمو مع الوقت</p>
+</div>
+
+<div class="body">
+
+  <!-- المبدأ الأساسي -->
+  <div class="section">
+    <div class="section-label lbl-teal">🎯 المبدأ الأساسي</div>
+    <h2>قاعدة الذهب: الباحثون مجانيون دائماً</h2>
+    <p>كلما زاد عدد الباحثين، زادت قيمة المنصة للمكاتب وأصحاب الأعمال — والذين يدفعون. هذه المعادلة هي أساس كل منصات التوظيف الناجحة عالمياً (LinkedIn، Indeed، Bayt).</p>
+
+    <div class="intro-grid">
+      <div class="intro-card ic-teal">
+        <span class="ic-icon">👤</span>
+        <h3>الباحثون عن عمل</h3>
+        <p>مجانيون بالكامل إلى الأبد — هم المنتج الذي نبيعه للطرف الثاني</p>
+      </div>
+      <div class="intro-card ic-amber">
+        <span class="ic-icon">🏢</span>
+        <h3>أصحاب الأعمال</h3>
+        <p>يدفعون مقابل الوصول للكفاءات — إعلانات + ترشيح + نشر</p>
+      </div>
+      <div class="intro-card ic-purple">
+        <span class="ic-icon">🏛️</span>
+        <h3>مكاتب التوظيف</h3>
+        <p>يدفعون اشتراكاً شهرياً مقابل أدوات إدارة متكاملة + التوثيق</p>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- مصدر الربح 1 -->
+  <div class="section">
+    <div class="section-label lbl-purple">💼 المصدر الأول</div>
+    <h2>اشتراكات مكاتب التوظيف</h2>
+    <p>المكاتب تحتاج أدوات مستمرة للإدارة — الاشتراك الشهري هو أكثر مصادر الدخل استقراراً وتكراراً</p>
+
+    <div class="stream-card">
+      <div class="stream-header">
+        <div class="stream-num" style="background:var(--purple)">١</div>
+        <div>
+          <div class="stream-title">الباقات الشهرية للمكاتب</div>
+          <div class="stream-sub">دخل متكرر شهري · مستقر · يزيد مع نمو قاعدة المكاتب</div>
+        </div>
+      </div>
+      <div class="stream-body">
+        <div class="tiers-grid">
+          <div class="tier">
+            <div class="tier-name">الباقة المجانية</div>
+            <div class="tier-price">0</div>
+            <div class="tier-period">د.ع / شهر — للتجربة</div>
+            <ul class="tier-features">
+              <li>3 وظائف فقط شهرياً</li>
+              <li>بدون شارة التوثيق</li>
+              <li>بدون نشر سوشل ميديا</li>
+              <li>دعم عام فقط</li>
+            </ul>
+          </div>
+          <div class="tier recommended">
+            <div class="tier-name">الباقة الاحترافية</div>
+            <div class="tier-price">75,000</div>
+            <div class="tier-period">د.ع / شهر (~50$)</div>
+            <ul class="tier-features">
+              <li>وظائف غير محدودة</li>
+              <li>شارة المكتب الموثّق ✓</li>
+              <li>نشر تلقائي سوشل ميديا</li>
+              <li>لوحة تحكم كاملة</li>
+              <li>دعم أولوية</li>
+            </ul>
+          </div>
+          <div class="tier purple">
+            <div class="tier-name">باقة النخبة</div>
+            <div class="tier-price">150,000</div>
+            <div class="tier-period">د.ع / شهر (~100$)</div>
+            <ul class="tier-features">
+              <li>كل مميزات الاحترافية</li>
+              <li>ظهور أولوية في البحث</li>
+              <li>إعلان مميّز شهرياً</li>
+              <li>تقارير إحصائية تفصيلية</li>
+              <li>مدير حساب مخصص</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- مصدر الربح 2 -->
+  <div class="section">
+    <div class="section-label lbl-amber">🏢 المصدر الثاني</div>
+    <h2>خدمات أصحاب الأعمال والشركات</h2>
+    <p>الشركات التي توظّف مباشرة (بدون مكتب وسيط) تدفع مقابل الوصول السريع للكفاءات</p>
+
+    <div class="stream-card">
+      <div class="stream-header">
+        <div class="stream-num" style="background:var(--amber)">٢</div>
+        <div>
+          <div class="stream-title">إعلانات الوظائف للشركات</div>
+          <div class="stream-sub">دفع عند الحاجة · مرن · مناسب للشركات غير المنتظمة</div>
+        </div>
+      </div>
+      <div class="stream-body">
+        <div class="tiers-grid">
+          <div class="tier">
+            <div class="tier-name">إعلان أساسي</div>
+            <div class="tier-price">25,000</div>
+            <div class="tier-period">د.ع / إعلان واحد</div>
+            <ul class="tier-features">
+              <li>نشر 30 يوماً</li>
+              <li>استقبال الطلبات</li>
+              <li>نشر على سوشل ميديا مرة</li>
+            </ul>
+          </div>
+          <div class="tier recommended amber">
+            <div class="tier-name">إعلان مميّز</div>
+            <div class="tier-price">50,000</div>
+            <div class="tier-period">د.ع / إعلان واحد</div>
+            <ul class="tier-features">
+              <li>ظهور في أعلى القائمة</li>
+              <li>نشر سوشل ميديا 3 مرات</li>
+              <li>شارة "عاجل" أو "مميّز"</li>
+              <li>60 يوم نشر</li>
+            </ul>
+          </div>
+          <div class="tier amber">
+            <div class="tier-name">باقة الشركات</div>
+            <div class="tier-price">120,000</div>
+            <div class="tier-period">د.ع / شهر (5 إعلانات)</div>
+            <ul class="tier-features">
+              <li>5 إعلانات مميزة شهرياً</li>
+              <li>نشر سوشل ميديا غير محدود</li>
+              <li>أولوية في ترشيح الـ AI</li>
+              <li>تقارير المتقدمين</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- مصدر الربح 3 -->
+  <div class="section">
+    <div class="section-label lbl-green">🤝 المصدر الثالث</div>
+    <h2>عمولة التوظيف الناجح</h2>
+    <p>نسبة مئوية من أول راتب عند توظيف مرشح من المنصة — مكافأة على النجاح الفعلي</p>
+
+    <div class="stream-card">
+      <div class="stream-header">
+        <div class="stream-num" style="background:var(--green)">٣</div>
+        <div>
+          <div class="stream-title">عمولة التوظيف الناجح (Success Fee)</div>
+          <div class="stream-sub">دخل متغير · يزيد كلما ازداد عدد التوظيفات الناجحة</div>
+        </div>
+      </div>
+      <div class="stream-body">
+        <div class="commission-row">
+          <div class="comm-card">
+            <div class="comm-icon">👤</div>
+            <div>
+              <div class="comm-label">وظائف الموظفين العاديين</div>
+              <div class="comm-val">5% من الراتب الأول</div>
+            </div>
+          </div>
+          <div class="comm-card">
+            <div class="comm-icon">👔</div>
+            <div>
+              <div class="comm-label">وظائف المدراء والمتخصصين</div>
+              <div class="comm-val">8% من الراتب الأول</div>
+            </div>
+          </div>
+          <div class="comm-card">
+            <div class="comm-icon">🏗️</div>
+            <div>
+              <div class="comm-label">عقود مشاريع (Project Hire)</div>
+              <div class="comm-val">10% من قيمة العقد</div>
+            </div>
+          </div>
+        </div>
+        <p style="margin-top:14px;font-size:0.82rem;color:var(--muted)">
+          ⚠️ هذا النموذج يستلزم متابعة وتأكيد — يُطبَّق في المرحلة الثانية بعد بناء الثقة مع الشركات الكبيرة
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- مصدر الربح 4 -->
+  <div class="section">
+    <div class="section-label lbl-teal">⭐ المصدر الرابع</div>
+    <h2>خدمات الباحثين المميزة (اختياري)</h2>
+    <p>مصدر إضافي — الباحثون يبقون مجانيين أساساً لكن يمكنهم الترقية لخدمات إضافية</p>
+
+    <div class="stream-card">
+      <div class="stream-header">
+        <div class="stream-num" style="background:var(--teal)">٤</div>
+        <div>
+          <div class="stream-title">خدمات الباحثين المدفوعة (Premium Seeker)</div>
+          <div class="stream-sub">اختياري بالكامل · لا يؤثر على الاستخدام المجاني</div>
+        </div>
+      </div>
+      <div class="stream-body">
+        <div class="commission-row">
+          <div class="comm-card">
+            <div class="comm-icon">📄</div>
+            <div>
+              <div class="comm-label">سيرة ذاتية احترافية مميزة</div>
+              <div class="comm-val">10,000 — 20,000 د.ع</div>
+            </div>
+          </div>
+          <div class="comm-card">
+            <div class="comm-icon">🤖</div>
+            <div>
+              <div class="comm-label">جلسة تدريب مقابلة AI مكثّفة</div>
+              <div class="comm-val">15,000 د.ع / جلسة</div>
+            </div>
+          </div>
+          <div class="comm-card">
+            <div class="comm-icon">🔒</div>
+            <div>
+              <div class="comm-label">حجز وظيفة حصري VIP</div>
+              <div class="comm-val">5,000 — 10,000 د.ع</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- التوقعات المالية -->
+  <div class="section">
+    <div class="section-label lbl-green">📊 التوقعات المالية</div>
+    <h2>سيناريو الدخل الشهري — بعد 6 أشهر من الانطلاق</h2>
+    <p>أرقام واقعية ومحافظة بناءً على حجم السوق العراقي وعدد المكاتب المستهدفة</p>
+
+    <table class="proj-table">
+      <thead>
+        <tr>
+          <th>مصدر الدخل</th>
+          <th>الكمية المتوقعة</th>
+          <th>السعر</th>
+          <th>الدخل الشهري</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>مكاتب — الباقة الاحترافية</td>
+          <td>20 مكتب</td>
+          <td>75,000 د.ع</td>
+          <td style="color:var(--purple);font-weight:800">1,500,000 د.ع</td>
+        </tr>
+        <tr>
+          <td>مكاتب — باقة النخبة</td>
+          <td>5 مكاتب</td>
+          <td>150,000 د.ع</td>
+          <td style="color:var(--purple);font-weight:800">750,000 د.ع</td>
+        </tr>
+        <tr>
+          <td>شركات — إعلانات مميزة</td>
+          <td>15 إعلان</td>
+          <td>50,000 د.ع</td>
+          <td style="color:var(--amber);font-weight:800">750,000 د.ع</td>
+        </tr>
+        <tr>
+          <td>شركات — باقات شهرية</td>
+          <td>5 شركات</td>
+          <td>120,000 د.ع</td>
+          <td style="color:var(--amber);font-weight:800">600,000 د.ع</td>
+        </tr>
+        <tr>
+          <td>عمولة توظيف ناجح</td>
+          <td>10 حالة</td>
+          <td>~50,000 د.ع متوسط</td>
+          <td style="color:var(--green);font-weight:800">500,000 د.ع</td>
+        </tr>
+        <tr>
+          <td>خدمات الباحثين المميزة</td>
+          <td>30 عملية</td>
+          <td>~12,000 د.ع</td>
+          <td style="color:var(--teal);font-weight:800">360,000 د.ع</td>
+        </tr>
+        <tr class="total-row">
+          <td>إجمالي الدخل الشهري</td>
+          <td colspan="2">—</td>
+          <td>4,460,000 د.ع (~3,000$)</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p style="margin-top:14px;font-size:0.8rem;color:var(--muted)">
+      * الأرقام تقديرية ومحافظة — الواقع قد يكون أعلى مع النمو الطبيعي للمنصة
+    </p>
+  </div>
+
+  <hr class="divider">
+
+  <!-- مراحل النمو -->
+  <div class="section">
+    <div class="section-label lbl-amber">🚀 مراحل النمو</div>
+    <h2>خارطة الطريق المالية — ثلاث مراحل</h2>
+    <p>كيف تتدرج الأرباح مع الوقت والنمو</p>
+
+    <div class="phases-grid">
+      <div class="phase-card ph1">
+        <div class="phase-num">المرحلة الأولى</div>
+        <div class="phase-name">بناء القاعدة</div>
+        <div class="phase-period">الأشهر 1-3</div>
+        <ul class="phase-items">
+          <li>استهداف 10 مكاتب بالباقة المجانية أولاً</li>
+          <li>إقناع 3-5 شركات بالنشر المجاني</li>
+          <li>بناء قاعدة باحثين وثقة</li>
+          <li>تنشيط قناة تيليجرام يومياً</li>
+        </ul>
+        <div class="phase-income">
+          <div class="lbl">دخل متوقع شهرياً</div>
+          <div class="val">0 — 500,000 د.ع</div>
+        </div>
+      </div>
+      <div class="phase-card ph2">
+        <div class="phase-num">المرحلة الثانية</div>
+        <div class="phase-name">التحويل للمدفوع</div>
+        <div class="phase-period">الأشهر 4-9</div>
+        <ul class="phase-items">
+          <li>تحويل المكاتب المجانية للمدفوعة</li>
+          <li>تعاقد مع 10+ شركات مباشرة</li>
+          <li>تطبيق عمولة التوظيف الناجح</li>
+          <li>إطلاق باقات الباحثين المميزة</li>
+        </ul>
+        <div class="phase-income">
+          <div class="lbl">دخل متوقع شهرياً</div>
+          <div class="val">1,000,000 — 3,000,000 د.ع</div>
+        </div>
+      </div>
+      <div class="phase-card ph3">
+        <div class="phase-num">المرحلة الثالثة</div>
+        <div class="phase-name">التوسع والنضج</div>
+        <div class="phase-period">الشهر 10+</div>
+        <ul class="phase-items">
+          <li>50+ مكتب موثّق على المنصة</li>
+          <li>عقود سنوية مع كبريات الشركات</li>
+          <li>التوسع لمحافظات جديدة</li>
+          <li>خدمات تدريب وتطوير مهني</li>
+        </ul>
+        <div class="phase-income">
+          <div class="lbl">دخل متوقع شهرياً</div>
+          <div class="val">5,000,000+ د.ع (~3,500$)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- قواعد ذهبية -->
+  <div class="section">
+    <div class="section-label lbl-teal">💡 قواعد ذهبية</div>
+    <h2>مبادئ لا تُكسر في نموذج الأرباح</h2>
+
+    <div class="rules-grid">
+      <div class="rule-card">
+        <div class="rule-icon">🆓</div>
+        <div class="rule-body">
+          <h4>الباحثون مجانيون دائماً</h4>
+          <p>أي رسوم على الباحثين = انهيار القاعدة الجماهيرية = انهيار قيمة المنصة للمكاتب</p>
+        </div>
+      </div>
+      <div class="rule-card">
+        <div class="rule-icon">🎯</div>
+        <div class="rule-body">
+          <h4>ابدأ بالعلاقات قبل المال</h4>
+          <p>المكاتب الأولى تأتي بالمجان وتتحول تلقائياً عندما يروا النتائج الفعلية</p>
+        </div>
+      </div>
+      <div class="rule-card">
+        <div class="rule-icon">📈</div>
+        <div class="rule-body">
+          <h4>الاشتراك الشهري أكثر استقراراً</h4>
+          <p>10 مكاتب بـ 75,000 د.ع = 750,000 د.ع ثابت شهرياً — أفضل من الإعلانات المتقطعة</p>
+        </div>
+      </div>
+      <div class="rule-card">
+        <div class="rule-icon">🤝</div>
+        <div class="rule-body">
+          <h4>العقد السنوي بخصم 20%</h4>
+          <p>ادفع سنة بدل شهر واحصل على خصم — يضمن دخلاً مستقراً ويكافئ الولاء</p>
+        </div>
+      </div>
+      <div class="rule-card">
+        <div class="rule-icon">🏆</div>
+        <div class="rule-body">
+          <h4>الجودة قبل الكمية</h4>
+          <p>5 مكاتب موثّقة راضية تجلب 15 مكتباً آخر بالتوصية — التسويق الشفهي هو الأقوى</p>
+        </div>
+      </div>
+      <div class="rule-card">
+        <div class="rule-icon">📊</div>
+        <div class="rule-body">
+          <h4>اعرض النتائج لا الوعود</h4>
+          <p>أخبر المكتب بعدد المتقدمين الفعليين لوظائفه — الأرقام أقنع من أي بروشور</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ملخص -->
+  <div class="summary-box">
+    <h3>📌 ملخص نموذج الأرباح</h3>
+    <div class="summary-grid">
+      <div class="summary-item">
+        <span class="s-num">4</span>
+        <span class="s-lbl">مصادر دخل متنوعة</span>
+      </div>
+      <div class="summary-item">
+        <span class="s-num">3,000$</span>
+        <span class="s-lbl">دخل شهري متوقع (6 أشهر)</span>
+      </div>
+      <div class="summary-item">
+        <span class="s-num">0$</span>
+        <span class="s-lbl">تكلفة على الباحثين</span>
+      </div>
+      <div class="summary-item">
+        <span class="s-num">50$</span>
+        <span class="s-lbl">أقل اشتراك شهري للمكاتب</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <div class="brand">✨ عفراء للتوظيف — afra-iq.com</div>
+  <div>وثيقة داخلية — نموذج جني الأرباح</div>
+  <div style="font-size:0.75rem">للطباعة: Ctrl+P</div>
+</div>
+
+</div>
+</body>
+</html>
