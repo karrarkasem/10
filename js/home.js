@@ -64,6 +64,27 @@ function pgSeekerHome(el) {
       </div>
     </div>
 
+    ${MY_APPS.length === 0 ? `
+    <div class="nxt-steps fade-up del05">
+      <div class="nxt-hd"><i class="fas fa-rocket"></i> ابدأ في 3 خطوات بسيطة</div>
+      <div class="nxt-row">
+        <div class="nxt-step ${pct >= 60 ? 'done' : 'active'}" onclick="goTo('profile')">
+          <div class="nxt-num">${pct >= 60 ? '<i class=\\"fas fa-check\\"></i>' : '1'}</div>
+          <div class="nxt-lbl">أكمل<br>ملفك</div>
+        </div>
+        <div class="nxt-arr"><i class="fas fa-chevron-left"></i></div>
+        <div class="nxt-step ${pct >= 60 ? 'active' : ''}" onclick="goTo('jobs')">
+          <div class="nxt-num">2</div>
+          <div class="nxt-lbl">ابحث عن<br>وظيفة</div>
+        </div>
+        <div class="nxt-arr"><i class="fas fa-chevron-left"></i></div>
+        <div class="nxt-step" onclick="goTo('jobs')">
+          <div class="nxt-num">3</div>
+          <div class="nxt-lbl">قدّم<br>طلبك</div>
+        </div>
+      </div>
+    </div>` : ''}
+
     ${pct < 80 ? `
     <div class="comp-card fade-up del1">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">

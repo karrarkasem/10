@@ -33,6 +33,28 @@ function pgEmployerHome(el) {
       </div>
     </div>
 
+    <!-- خطوات البدء — تظهر فقط للشركة الجديدة بدون وظائف -->
+    ${myJobs.length === 0 ? `
+    <div class="nxt-steps fade-up del05">
+      <div class="nxt-hd"><i class="fas fa-rocket"></i> ابدأ توظيفك في 3 خطوات</div>
+      <div class="nxt-row">
+        <div class="nxt-step ${pct >= 70 ? 'done' : 'active'}" onclick="goTo('emp_profile')">
+          <div class="nxt-num">${pct >= 70 ? '<i class=\\"fas fa-check\\"></i>' : '1'}</div>
+          <div class="nxt-lbl">أكمل<br>ملف الشركة</div>
+        </div>
+        <div class="nxt-arr"><i class="fas fa-chevron-left"></i></div>
+        <div class="nxt-step ${pct >= 70 ? 'active' : ''}" onclick="openAddJob()">
+          <div class="nxt-num">2</div>
+          <div class="nxt-lbl">انشر<br>وظيفة</div>
+        </div>
+        <div class="nxt-arr"><i class="fas fa-chevron-left"></i></div>
+        <div class="nxt-step" onclick="goTo('emp_apps')">
+          <div class="nxt-num">3</div>
+          <div class="nxt-lbl">راجع<br>المتقدمين</div>
+        </div>
+      </div>
+    </div>` : ''}
+
     <!-- اكتمال الملف -->
     ${pct < 90 ? `
     <div class="comp-card fade-up del1">

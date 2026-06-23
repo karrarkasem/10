@@ -352,49 +352,49 @@ function toggleTheme() {
 // قائمة التنقل
 // ═══════════════════════════════════════════════
 const NAV_EMPLOYER = [
-  { id:'emp_home',        icon:'fa-tachometer-alt', label:'لوحة التحكم',    btm:true  },
-  { id:'emp_jobs',        icon:'fa-briefcase',       label:'وظائفي',          btm:true  },
-  { id:'emp_apps',        icon:'fa-users',           label:'المتقدمون',       btm:true  },
-  { id:'emp_seekers',     icon:'fa-address-card',    label:'ملفات الباحثين', btm:false },
-  { id:'seekers_catalog', icon:'fa-th-list',         label:'كتالوج الباحثين', btm:false },
-  { id:'emp_profile',     icon:'fa-building',        label:'ملف الشركة',     btm:true  },
+  { id:'emp_home',        icon:'fa-tachometer-alt', label:'الرئيسية',         btm:true  },
+  { id:'emp_jobs',        icon:'fa-briefcase',      label:'وظائفي',           btm:true  },
+  { id:'emp_apps',        icon:'fa-users',          label:'المتقدمون',        btm:true  },
+  { id:'emp_seekers',     icon:'fa-address-card',   label:'الباحثون',         btm:false },
+  { id:'seekers_catalog', icon:'fa-th-list',        label:'دليل الباحثين',   btm:false },
+  { id:'emp_profile',     icon:'fa-building',       label:'ملف الشركة',      btm:true  },
 ];
 const NAV_GUEST = [
   { id:'jobs',    icon:'fa-briefcase', label:'الوظائف',         btm:true  },
   { id:'offices', icon:'fa-building',  label:'مكاتب التوظيف', btm:true  },
 ];
 const NAV_SEEKER = [
-  { id:'home',              icon:'fa-home',           label:'الرئيسية',         btm:true  },
-  { id:'jobs',              icon:'fa-briefcase',       label:'الوظائف',           btm:true  },
-  { id:'myapps',            icon:'fa-clipboard-list',  label:'طلباتي',            btm:true  },
-  { id:'employers_catalog', icon:'fa-building',        label:'الشركات والمكاتب', btm:false },
-  { id:'offices',           icon:'fa-id-badge',        label:'مكاتب التوظيف',   btm:false },
-  { id:'cv',                icon:'fa-file-alt',        label:'سيرتي الذاتية',    btm:false },
-  { id:'interview',         icon:'fa-comments',        label:'مقابلة ذكية',      btm:false },
-  { id:'profile',           icon:'fa-user-circle',     label:'حسابي',             btm:true  },
+  { id:'home',              icon:'fa-home',          label:'الرئيسية',       btm:true  },
+  { id:'jobs',              icon:'fa-briefcase',     label:'الوظائف',         btm:true  },
+  { id:'myapps',            icon:'fa-clipboard-list',label:'طلباتي',          btm:true  },
+  { id:'offices',           icon:'fa-id-badge',      label:'مكاتب التوظيف', btm:false },
+  { id:'employers_catalog', icon:'fa-building',      label:'الشركات',         btm:false },
+  { id:'cv',                icon:'fa-file-alt',      label:'سيرتي الذاتية',  btm:false },
+  { id:'interview',         icon:'fa-comments',      label:'تدريب المقابلة', btm:false },
+  { id:'profile',           icon:'fa-user-circle',   label:'حسابي',           btm:true  },
 ];
 const NAV_OFFICE = [
-  { id:'home',            icon:'fa-tachometer-alt', label:'لوحة التحكم',      btm:true  },
+  { id:'home',            icon:'fa-tachometer-alt', label:'الرئيسية',          btm:true  },
   { id:'myjobs',          icon:'fa-briefcase',      label:'وظائفي',            btm:true  },
   { id:'candidates',      icon:'fa-users',          label:'المتقدمون',         btm:true  },
-  { id:'managed_seekers', icon:'fa-id-card',        label:'باحثون مُدارون',    btm:false },
-  { id:'seekers_catalog', icon:'fa-th-list',        label:'كتالوج الباحثين',  btm:false },
+  { id:'managed_seekers', icon:'fa-id-card',        label:'عملاء مكتبي',      btm:false },
+  { id:'seekers_catalog', icon:'fa-th-list',        label:'دليل الباحثين',    btm:false },
   { id:'bookings',        icon:'fa-lock',           label:'الحجوزات',          btm:false },
-  { id:'pipeline',        icon:'fa-columns',        label:'خط التوظيف',       btm:false },
+  { id:'pipeline',        icon:'fa-columns',        label:'مراحل التوظيف',    btm:false },
   { id:'profile',         icon:'fa-building',       label:'ملف المكتب',       btm:true  },
 ];
 const NAV_ADMIN = [
-  { id:'home',              icon:'fa-tachometer-alt',    label:'لوحة التحكم',       btm:true  },
-  { id:'alljobs',           icon:'fa-briefcase',          label:'الوظائف',            btm:false },
-  { id:'alloffices',        icon:'fa-building',           label:'المكاتب',            btm:false },
-  { id:'allusers',          icon:'fa-users',              label:'المستخدمون',         btm:false },
-  { id:'seekers_catalog',   icon:'fa-th-list',            label:'كتالوج الباحثين',   btm:false },
-  { id:'employers_catalog', icon:'fa-building',           label:'كتالوج الشركات',    btm:false },
-  { id:'admin_seekers',     icon:'fa-user-tie',           label:'الموظفون المُدارون', btm:false },
-  { id:'payments',          icon:'fa-credit-card',        label:'الاشتراكات',         btm:false },
-  { id:'campaigns',         icon:'fa-bullhorn',           label:'حملات التواصل',     btm:false },
-  { id:'import',            icon:'fa-cloud-download-alt', label:'استيراد وظائف',     btm:false },
-  { id:'settings',          icon:'fa-cog',                label:'الإعدادات',          btm:true  },
+  { id:'home',              icon:'fa-tachometer-alt',    label:'لوحة التحكم',     btm:true  },
+  { id:'alljobs',           icon:'fa-briefcase',          label:'الوظائف',          btm:false },
+  { id:'alloffices',        icon:'fa-building',           label:'المكاتب',          btm:false },
+  { id:'allusers',          icon:'fa-users',              label:'المستخدمون',       btm:false },
+  { id:'seekers_catalog',   icon:'fa-th-list',            label:'دليل الباحثين',   btm:false },
+  { id:'employers_catalog', icon:'fa-building',           label:'دليل الشركات',    btm:false },
+  { id:'admin_seekers',     icon:'fa-user-tie',           label:'موظفو المكاتب',   btm:false },
+  { id:'payments',          icon:'fa-credit-card',        label:'الاشتراكات',       btm:false },
+  { id:'campaigns',         icon:'fa-bullhorn',           label:'حملات التواصل',   btm:false },
+  { id:'import',            icon:'fa-cloud-download-alt', label:'استيراد وظائف',   btm:false },
+  { id:'settings',          icon:'fa-cog',                label:'الإعدادات',        btm:true  },
 ];
 
 function getNav() {

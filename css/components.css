@@ -307,6 +307,20 @@
 .comp-actions { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 .comp-tip    { font-size:11px; color:var(--tx2); display:flex; align-items:center; gap:4px; }
 
+/* ── Next Steps Strip ── */
+.nxt-steps   { background:var(--bgc); border:1px solid var(--br); border-radius:var(--r); padding:16px 18px; margin-bottom:16px; box-shadow:var(--sh); }
+.nxt-hd      { font-size:12px; font-weight:800; color:var(--tx2); margin-bottom:12px; display:flex; align-items:center; gap:6px; }
+.nxt-row     { display:flex; align-items:center; gap:8px; overflow-x:auto; padding-bottom:2px; }
+.nxt-step    { display:flex; flex-direction:column; align-items:center; gap:5px; cursor:pointer; flex-shrink:0; min-width:70px; transition:transform .18s; }
+.nxt-step:hover { transform:translateY(-2px); }
+.nxt-num     { width:36px; height:36px; border-radius:50%; background:var(--br); border:2px solid var(--br); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:900; color:var(--tx2); transition:all .2s; }
+.nxt-step.done .nxt-num  { background:linear-gradient(135deg,#22c55e,#4ade80); border-color:#22c55e; color:#fff; }
+.nxt-step.active .nxt-num { background:linear-gradient(135deg,var(--p),var(--pl)); border-color:var(--p); color:#fff; box-shadow:0 0 0 3px rgba(13,148,136,.18); }
+.nxt-lbl     { font-size:10.5px; font-weight:700; color:var(--tx2); text-align:center; line-height:1.3; }
+.nxt-step.done .nxt-lbl  { color:var(--success); }
+.nxt-step.active .nxt-lbl { color:var(--p); }
+.nxt-arr     { color:var(--tx3); font-size:11px; flex-shrink:0; }
+
 /* ── Category Grid ── */
 .cat-grid   { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:20px; }
 @media (max-width:480px) { .cat-grid { grid-template-columns:repeat(2,1fr); } }

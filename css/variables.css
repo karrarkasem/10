@@ -89,6 +89,7 @@ img { max-width: 100%; }
 .fade-up   { animation: fadeUp   .38s cubic-bezier(.4,0,.2,1) both; }
 .fade-in   { animation: fadeIn   .28s ease both; }
 .scale-in  { animation: scaleIn  .32s cubic-bezier(.4,0,.2,1) both; }
+.del05 { animation-delay:.03s; }
 .del1 { animation-delay:.06s; }
 .del2 { animation-delay:.12s; }
 .del3 { animation-delay:.18s; }

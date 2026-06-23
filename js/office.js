@@ -59,6 +59,28 @@ function pgOfficeHome(el) {
       </div>
     </div>
 
+    <!-- خطوات البدء — تظهر فقط للمكتب الجديد بدون وظائف -->
+    ${JOBS.filter(j => j.postedBy === U?.uid).length === 0 ? `
+    <div class="nxt-steps fade-up del05">
+      <div class="nxt-hd"><i class="fas fa-rocket"></i> ابدأ مكتبك في 3 خطوات</div>
+      <div class="nxt-row">
+        <div class="nxt-step ${pct >= 70 ? 'done' : 'active'}" onclick="goTo('profile')">
+          <div class="nxt-num">${pct >= 70 ? '<i class=\\"fas fa-check\\"></i>' : '1'}</div>
+          <div class="nxt-lbl">أكمل<br>ملف المكتب</div>
+        </div>
+        <div class="nxt-arr"><i class="fas fa-chevron-left"></i></div>
+        <div class="nxt-step ${pct >= 70 ? 'active' : ''}" onclick="openAddJob()">
+          <div class="nxt-num">2</div>
+          <div class="nxt-lbl">انشر<br>وظيفة</div>
+        </div>
+        <div class="nxt-arr"><i class="fas fa-chevron-left"></i></div>
+        <div class="nxt-step" onclick="goTo('candidates')">
+          <div class="nxt-num">3</div>
+          <div class="nxt-lbl">راجع<br>المتقدمين</div>
+        </div>
+      </div>
+    </div>` : ''}
+
     <!-- اكتمال الملف -->
     ${pct < 90 ? `
     <div class="comp-card fade-up del1">
