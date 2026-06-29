@@ -2315,7 +2315,7 @@ function pgAdminImport(el) {
 
     <div class="tabs fade-up" style="margin-bottom:18px">
       <button class="tb2 on" onclick="swImportTab('manual',this)"><i class="fas fa-paste"></i>استيراد يدوي</button>
-      <button class="tb2"    onclick="swImportTab('telegram',this)"><i class="fab fa-telegram"></i>بوت تلغرام</button>
+      <button class="tb2"    onclick="swImportTab('telegram',this)"><i class="fas fa-robot"></i>الاكتشاف التلقائي</button>
     </div>
 
     <!-- ══ الاستيراد اليدوي ══ -->
@@ -2467,11 +2467,31 @@ function pgAdminImport(el) {
       <div id="importHistory" class="fade-up"></div>
     </div>
 
-    <!-- ══ بوت تلغرام ══ -->
+    <!-- ══ قائمة الاكتشاف التلقائي ══ -->
     <div id="importTabTelegram" style="display:none">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-        <div style="font-size:12px;color:var(--tx3)">الوظائف التي حللها البوت وتنتظر موافقتك — وافق عليها لتظهر في المنصة</div>
-        <button class="btn bg bsm" onclick="loadTelegramQueue()"><i class="fas fa-sync"></i>تحديث</button>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+        <div style="font-size:12px;color:var(--tx3)">وظائف اكتشفها الذكاء الاصطناعي من مصادر متعددة — وافق على كل وظيفة لتظهر في المنصة</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn bg bsm" onclick="triggerDiscovery(this)"><i class="fas fa-sync-alt"></i> ابحث الآن</button>
+          <button class="btn bg bsm" onclick="loadTelegramQueue()"><i class="fas fa-redo"></i> تحديث</button>
+        </div>
+      </div>
+      <!-- فلتر المصدر -->
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+        <button class="btn bsm src-filter on" onclick="filterQueue('all',this)"
+          style="font-size:11px;border-radius:99px;padding:4px 12px">الكل</button>
+        <button class="btn bsm src-filter" onclick="filterQueue('telegram_channel',this)"
+          style="font-size:11px;border-radius:99px;padding:4px 12px;background:#229ed911;color:#229ed9;border-color:#229ed9">
+          <i class="fab fa-telegram"></i> تيليجرام</button>
+        <button class="btn bsm src-filter" onclick="filterQueue('google',this)"
+          style="font-size:11px;border-radius:99px;padding:4px 12px;background:#4285f411;color:#4285f4;border-color:#4285f4">
+          <i class="fab fa-google"></i> جوجل</button>
+        <button class="btn bsm src-filter" onclick="filterQueue('rss',this)"
+          style="font-size:11px;border-radius:99px;padding:4px 12px;background:#f9731611;color:#f97316;border-color:#f97316">
+          <i class="fas fa-rss"></i> RSS</button>
+        <button class="btn bsm src-filter" onclick="filterQueue('linkedin',this)"
+          style="font-size:11px;border-radius:99px;padding:4px 12px;background:#0a66c211;color:#0a66c2;border-color:#0a66c2">
+          <i class="fab fa-linkedin"></i> LinkedIn</button>
       </div>
       <div id="tgQueueList">
         <div class="es"><div class="es-ico"><i class="fas fa-circle-notch spin" style="color:var(--p)"></i></div><div class="es-desc">جارٍ التحميل...</div></div>
@@ -2490,49 +2510,103 @@ function swImportTab(tab, btn) {
   if (tab === 'telegram') loadTelegramQueue();
 }
 
+let _tgQueueAll = []; // كاش لدعم الفلتر بدون إعادة تحميل
+
+function filterQueue(src, btn) {
+  document.querySelectorAll('.src-filter').forEach(b => {
+    b.classList.remove('on');
+    b.style.fontWeight = '700';
+  });
+  btn.classList.add('on');
+  const el = document.getElementById('tgQueueList');
+  if (!el) return;
+  const list = src === 'all' ? _tgQueueAll : _tgQueueAll.filter(j => j.source === src);
+  if (!list.length) {
+    el.innerHTML = emptyState('🔍', 'لا توجد وظائف من هذا المصدر', 'جرّب مصدراً آخر أو اضغط "ابحث الآن"');
+    return;
+  }
+  el.innerHTML = list.map(j => _tgQueueCard(j)).join('');
+}
+
 async function loadTelegramQueue() {
   const el = document.getElementById('tgQueueList');
   if (!el) return;
   el.innerHTML = `<div class="es"><div class="es-ico"><i class="fas fa-circle-notch spin" style="color:var(--p)"></i></div><div class="es-desc">جارٍ التحميل...</div></div>`;
 
   if (DEMO || !window.db) {
-    el.innerHTML = emptyState('🤖', 'لا توجد وظائف معلقة', 'وظائف البوت ستظهر هنا بعد تحليلها');
+    el.innerHTML = emptyState('🤖', 'لا توجد وظائف معلقة', 'وظائف الاستكشاف ستظهر هنا بعد تحليلها');
     return;
   }
 
   try {
     const snap = await window.db.collection('telegram_queue').orderBy('postedAt', 'desc').get();
-    const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    _tgQueueAll = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-    if (!list.length) {
-      el.innerHTML = emptyState('🤖', 'لا توجد وظائف معلقة', 'عندما يحلل البوت وظيفة ستظهر هنا للمراجعة');
+    // تحديث عداد الفلاتر
+    const counts = {};
+    _tgQueueAll.forEach(j => { counts[j.source] = (counts[j.source] || 0) + 1; });
+    document.querySelectorAll('.src-filter').forEach(b => {
+      const src = b.getAttribute('onclick')?.match(/'([^']+)'/)?.[1];
+      if (src && src !== 'all') {
+        const c = counts[src] || 0;
+        if (c > 0 && !b.querySelector('.src-cnt')) {
+          b.innerHTML += ` <span class="src-cnt" style="background:currentColor;color:#fff;border-radius:99px;padding:1px 5px;font-size:9px;opacity:.85">${c}</span>`;
+        }
+      }
+    });
+
+    if (!_tgQueueAll.length) {
+      el.innerHTML = emptyState('🤖', 'لا توجد وظائف معلقة', 'اضغط "ابحث الآن" لبدء الاستكشاف التلقائي');
       return;
     }
 
-    el.innerHTML = list.map(j => _tgQueueCard(j)).join('');
+    el.innerHTML = _tgQueueAll.map(j => _tgQueueCard(j)).join('');
   } catch (e) {
     el.innerHTML = `<div class="al al-e"><i class="fas fa-exclamation-circle"></i> فشل التحميل: ${e.message}</div>`;
   }
 }
 
+// مصادر الاستكشاف — أيقونة ولون وتسمية لكل مصدر
+function _sourceInfo(src) {
+  const map = {
+    telegram_channel: { icon: 'fab fa-telegram',     color: '#229ed9', label: 'تيليجرام'   },
+    google:           { icon: 'fab fa-google',        color: '#4285f4', label: 'جوجل'       },
+    rss:              { icon: 'fas fa-rss',           color: '#f97316', label: 'RSS'         },
+    linkedin:         { icon: 'fab fa-linkedin',      color: '#0a66c2', label: 'LinkedIn'    },
+    manual:           { icon: 'fas fa-user-edit',     color: '#7c3aed', label: 'يدوي'        },
+    telegram:         { icon: 'fab fa-telegram',      color: '#229ed9', label: 'تيليجرام'   },
+  };
+  return map[src] || { icon: 'fas fa-globe', color: '#64748b', label: src || 'غير معروف' };
+}
+
 function _tgQueueCard(j) {
   const TYPE_AR = { full:'دوام كامل', part:'دوام جزئي', remote:'عن بُعد', gig:'مهمة' };
-  const sal = j.salary ? `${Number(j.salary).toLocaleString()} ${j.currency || 'IQD'}` : 'قابل للتفاوض';
+  const sal  = j.salary ? `${Number(j.salary).toLocaleString()} ${j.currency || 'IQD'}` : 'قابل للتفاوض';
   const init = (j.company || j.title || 'و').charAt(0);
+  const src  = _sourceInfo(j.source);
+  const scoreColor = (j.score >= 7) ? '#22c55e' : (j.score >= 5) ? '#f59e0b' : '#94a3b8';
 
-  return `<div class="card" style="margin-bottom:12px;border-right:4px solid #229ed9" id="tgcard_${j.id}">
+  return `<div class="card" style="margin-bottom:12px;border-right:4px solid ${src.color}" id="tgcard_${j.id}">
     <div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap">
-      <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#229ed9,#0088cc);color:#fff;font-size:18px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <div style="width:44px;height:44px;border-radius:12px;background:${src.color};color:#fff;font-size:18px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0">
         ${init}
       </div>
       <div style="flex:1;min-width:0">
-        <div style="font-size:14px;font-weight:900;color:var(--tx);margin-bottom:4px">${san(j.title || '—')}</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">
+          <span style="font-size:14px;font-weight:900;color:var(--tx)">${san(j.title || '—')}</span>
+          <!-- شارة المصدر -->
+          <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;background:${src.color}22;color:${src.color};display:inline-flex;align-items:center;gap:4px">
+            <i class="${src.icon}"></i>${src.label}
+          </span>
+          ${j.score ? `<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;background:${scoreColor}22;color:${scoreColor}">★ ${j.score}/10</span>` : ''}
+        </div>
         <div style="font-size:11px;color:var(--tx3);display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px">
           ${j.company  ? `<span><i class="fas fa-building" style="color:var(--p)"></i> ${san(j.company)}</span>`  : ''}
           ${j.province ? `<span><i class="fas fa-map-marker-alt" style="color:var(--danger)"></i> ${san(j.province)}</span>` : ''}
           <span><i class="fas fa-briefcase" style="color:var(--acc)"></i> ${TYPE_AR[j.type] || j.type || '—'}</span>
           <span><i class="fas fa-money-bill-wave" style="color:var(--success)"></i> ${sal}</span>
           ${j.phone ? `<span><i class="fas fa-phone"></i> ${san(j.phone)}</span>` : ''}
+          ${j.sourceUrl ? `<a href="${san(j.sourceUrl)}" target="_blank" style="color:${src.color};text-decoration:none;font-size:10px"><i class="fas fa-external-link-alt"></i> المصدر الأصلي</a>` : ''}
         </div>
         ${j.desc ? `<div style="font-size:11px;color:var(--tx2);line-height:1.6;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${san(j.desc)}</div>` : ''}
       </div>
@@ -2558,18 +2632,18 @@ async function approveTgJob(docId) {
 
     const data = snap.data();
     delete data.status;
+    const srcLabel = _sourceInfo(data.source).label;
     const ref = await window.db.collection('jobs').add({
       ...data,
-      title:       data.title    || 'وظيفة من تيليجرام',
+      title:       data.title    || 'وظيفة مكتشفة',
       company:     data.company  || 'غير محدد',
-      desc:        data.desc     || 'تم الاستيراد تلقائياً من بوت تيليجرام',
+      desc:        data.desc     || `تم الاكتشاف تلقائياً من ${srcLabel}`,
       province:    data.province || '',
       postedBy:    U?.uid || 'admin',
-      postedByType:'telegram',
+      postedByType:'discovered',
       status:      'active',
       postedAt:    firebase.firestore.FieldValue.serverTimestamp(),
       applicants:  0,
-      source:      'telegram',
     });
     await window.db.collection('telegram_queue').doc(docId).delete();
 
