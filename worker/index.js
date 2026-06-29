@@ -1394,58 +1394,31 @@ const DISCOVERY_QUERIES_REGIONAL = [
 // قائمة مجمّعة — المحلية أولاً دائماً
 const DISCOVERY_QUERIES = [...DISCOVERY_QUERIES_LOCAL, ...DISCOVERY_QUERIES_REGIONAL];
 
-// قنوات تيليجرام العراقية الافتراضية — hub.slarker.me يعمل (20 منشور مؤكد)
+// قنوات تيليجرام العراقية الافتراضية — كلها مؤكدة فعّالة عبر t.me/s/
 const DEFAULT_TG_CHANNELS = [
   'afraiq_jobs',
-  'wazaeef_iraq',
   'iraq_jobs2',
-  'jobs_iq',
   'tanqeeb_jobs',
 ];
 
-// لا يوجد RSS يعمل من Cloudflare Workers — نستخدم HTML scraping مثل LinkedIn
-const RSS_FEEDS = [];
-
 // ── اختبار مصادر الاستيراد — للتشخيص فقط ──
 async function testDiscoverySources(env) {
-  const report = { rss: [], telegram: [], google: null, linkedin: null };
+  const report = { telegram: [], google: null, linkedin: null };
 
-  // اختبار مواقع التوظيف (HTML)
-  const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125.0.0.0 Safari/537.36';
-  const jobSiteUrls = [
-    { url: 'https://www.akhtaboot.com/en/jobs/iraq', name: 'akhtaboot' },
-    { url: 'https://tanqeeb.com/jobs?country=IQ',    name: 'tanqeeb'   },
-    { url: 'https://www.naukrigulf.com/jobs-in-iraq', name: 'naukrigulf'},
-  ];
-  for (const site of jobSiteUrls) {
-    try {
-      const res = await fetch(site.url, { headers: { 'User-Agent': UA }, signal: AbortSignal.timeout(8000) });
-      const html = res.ok ? await res.text() : '';
-      const jobHints = (html.match(/job-title|designation-title|jb-title/gi) || []).length;
-      report.rss.push({ name: site.name, url: site.url.substring(0, 60), status: res.status, job_hints: jobHints });
-    } catch (e) {
-      report.rss.push({ name: site.name, url: site.url.substring(0, 60), error: e.message });
-    }
-  }
-
-  // اختبار Telegram RSS
+  // اختبار قنوات Telegram عبر t.me/s/ (المصدر الأساسي الآن)
   const tgChannels = await _loadTgChannelsFromFirestore();
-  for (const ch of tgChannels.slice(0, 2)) {
+  for (const ch of tgChannels) {
     const handle = ch.replace(/^@/, '');
-    const providers = [
-      `https://rsshub.app/telegram/channel/${handle}`,
-      `https://hub.slarker.me/telegram/channel/${handle}`,
-    ];
-    for (const url of providers) {
-      try {
-        const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
-        const xml = res.ok ? await res.text() : '';
-        const count = (xml.match(/<item/gi) || []).length;
-        report.telegram.push({ channel: handle, provider: url.split('/')[2], status: res.status, items: count });
-        if (count > 0) break;
-      } catch (e) {
-        report.telegram.push({ channel: handle, provider: url.split('/')[2], error: e.message });
-      }
+    try {
+      const res = await fetch(`https://t.me/s/${handle}`, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125.0.0.0 Safari/537.36' },
+        signal: AbortSignal.timeout(8000),
+      });
+      const html  = res.ok ? await res.text() : '';
+      const count = (html.match(/tgme_widget_message_text/gi) || []).length;
+      report.telegram.push({ channel: handle, provider: 't.me/s', status: res.status, items: count });
+    } catch (e) {
+      report.telegram.push({ channel: handle, provider: 't.me/s', error: e.message });
     }
   }
 
@@ -1492,11 +1465,7 @@ async function discoverJobs(env) {
     catch (e) { console.error('[discovery] Google error:', e.message); }
   }
 
-  // ③ إقليمية: مواقع توظيف (HTML scraping — بديل RSS المكسور)
-  try { items.push(...await discoverViaJobSites()); }
-  catch (e) { console.error('[discovery] JobSites error:', e.message); }
-
-  // ④ إقليمية: LinkedIn
+  // ③ إقليمية: LinkedIn
   try { items.push(...await discoverViaLinkedIn()); }
   catch (e) { console.error('[discovery] LinkedIn error:', e.message); }
 
@@ -1607,44 +1576,35 @@ async function fetchJobContent(url, maxLen = 4000) {
 // للتوافق مع الكود القديم
 const fetchPageText = (url, maxLen) => fetchJobContent(url, maxLen);
 
-// ── سحب من قنوات تيليجرام العامة عبر RSSHub ──
-// RSSHub تحوّل أي قناة عامة لـ RSS بدون حجب
+// ── سحب من قنوات تيليجرام العامة عبر t.me/s/ (معاينة عامة، مؤكد العمل) ──
 async function discoverViaTelegramChannels(channels, botToken) {
   const results = [];
 
   for (const ch of channels) {
     const handle = ch.replace(/^@/, '').trim();
     if (!handle) continue;
-
-    // hub.slarker.me مؤكد العمل — يأتي أولاً
-    const rssProviders = [
-      `https://hub.slarker.me/telegram/channel/${handle}`,
-      `https://rsshub.app/telegram/channel/${handle}`,
-      `https://rsshub.rssforever.com/telegram/channel/${handle}`,
-      `https://rss.telegram.group/${handle}`,
-    ];
-
     let fetched = false;
-    for (const rssUrl of rssProviders) {
-      try {
-        const res = await fetch(rssUrl, {
-          headers: { 'User-Agent': 'Mozilla/5.0', Accept: 'application/rss+xml, text/xml, */*' },
-          cf: { cacheTtl: 1800 },
-        });
-        if (!res.ok) continue;
-        const xml = await res.text();
-        if (!xml.includes('<item') && !xml.includes('<entry')) continue;
 
-        // استخراج الرسائل من RSS
-        const items = xml.match(/<item[^>]*>[\s\S]*?<\/item>|<entry[^>]*>[\s\S]*?<\/entry>/gi) || [];
-        for (const item of items.slice(0, 15)) {
-          const getTag = tag => {
-            const m = item.match(new RegExp(`<${tag}[^>]*>(?:<!\\[CDATA\\[([\\s\\S]*?)\\]\\]>|([^<]*))</${tag}>`, 'i'));
-            return (m?.[1] || m?.[2] || '').replace(/<[^>]+>/g, '').trim();
-          };
-          const title = getTag('title');
-          const desc  = getTag('description') || getTag('content') || getTag('summary');
-          const text  = `${title}\n${desc}`.trim();
+    // ① t.me/s/{channel} — صفحة المعاينة العامة، تعمل بدون أي مزود خارجي
+    try {
+      const res = await fetch(`https://t.me/s/${handle}`, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+          'Accept': 'text/html',
+          'Accept-Language': 'ar,en-US;q=0.9',
+        },
+        signal: AbortSignal.timeout(8000),
+        cf: { cacheTtl: 900 },
+      });
+      if (res.ok) {
+        const html = await res.text();
+        const msgs = [...html.matchAll(/<div class="tgme_widget_message_text[^"]*"[^>]*>([\s\S]*?)<\/div>/g)];
+        for (const [, raw] of msgs.slice(-20)) {
+          const text = raw
+            .replace(/<br\s*\/?>/gi, '\n')
+            .replace(/<[^>]+>/g, ' ')
+            .replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+            .replace(/[ \t]+/g, ' ').trim();
           if (text.length < 40) continue;
           results.push({
             source:    'telegram_channel',
@@ -1653,15 +1613,45 @@ async function discoverViaTelegramChannels(channels, botToken) {
             priority:  'local',
           });
         }
-        console.log(`[tg-ch] ${handle} via ${rssUrl}: ${items.length} posts`);
-        fetched = true;
-        break; // نجح — لا حاجة لمزود آخر
-      } catch (e) {
-        console.warn(`[tg-ch] ${handle} RSS failed: ${e.message}`);
+        if (msgs.length) { fetched = true; console.log(`[tg-ch] ${handle} via t.me/s/: ${msgs.length} posts`); }
+      }
+    } catch (e) { console.warn(`[tg-ch] ${handle} t.me/s/ failed: ${e.message}`); }
+
+    // ② Fallback: RSSHub إذا t.me/s/ فشل
+    if (!fetched) {
+      const rssProviders = [
+        `https://hub.slarker.me/telegram/channel/${handle}`,
+        `https://rsshub.app/telegram/channel/${handle}`,
+      ];
+      for (const rssUrl of rssProviders) {
+        try {
+          const res = await fetch(rssUrl, {
+            headers: { 'User-Agent': 'Mozilla/5.0', Accept: 'application/rss+xml, text/xml, */*' },
+            signal: AbortSignal.timeout(7000),
+            cf: { cacheTtl: 1800 },
+          });
+          if (!res.ok) continue;
+          const xml = await res.text();
+          if (!xml.includes('<item') && !xml.includes('<entry')) continue;
+          const items = xml.match(/<item[^>]*>[\s\S]*?<\/item>|<entry[^>]*>[\s\S]*?<\/entry>/gi) || [];
+          for (const item of items.slice(0, 15)) {
+            const getTag = tag => {
+              const m = item.match(new RegExp(`<${tag}[^>]*>(?:<!\\[CDATA\\[([\\s\\S]*?)\\]\\]>|([^<]*))</${tag}>`, 'i'));
+              return (m?.[1] || m?.[2] || '').replace(/<[^>]+>/g, '').trim();
+            };
+            const title = getTag('title');
+            const desc  = getTag('description') || getTag('content') || getTag('summary');
+            const text  = `${title}\n${desc}`.trim();
+            if (text.length < 40) continue;
+            results.push({ source: 'telegram_channel', sourceUrl: `https://t.me/${handle}`, rawText: text.substring(0, 2000), priority: 'local' });
+          }
+          fetched = true;
+          break;
+        } catch (e) { console.warn(`[tg-ch] ${handle} RSS failed: ${e.message}`); }
       }
     }
 
-    // آخر محاولة: Bot API إذا البوت مشرف في القناة
+    // ③ آخر محاولة: Bot API إذا البوت مشرف في القناة
     if (!fetched && botToken) {
       try {
         const res = await fetch(`https://api.telegram.org/bot${botToken}/getUpdates?limit=50&timeout=0`);
@@ -1683,79 +1673,8 @@ async function discoverViaTelegramChannels(channels, botToken) {
 
 // ── LinkedIn Jobs — public guest API ──
 // ── HTML Scraping لمواقع التوظيف (بديل RSS المحجوب) ──
-async function discoverViaJobSites() {
-  const results = [];
-  const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36';
-  const hdrs = { 'User-Agent': UA, 'Accept': 'text/html', 'Accept-Language': 'ar,en-US;q=0.9' };
-
-  const sites = [
-    // Akhtaboot — يستخدم Next.js، نجلب __NEXT_DATA__ JSON المدمج في HTML
-    {
-      url:  'https://www.akhtaboot.com/en/jobs/iraq',
-      src:  'akhtaboot',
-      pri:  'regional',
-      parse: html => {
-        const jobs = [];
-        try {
-          const m = html.match(/<script[^>]+id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
-          if (m) {
-            const data = JSON.parse(m[1]);
-            const props = data?.props?.pageProps;
-            const list  = props?.jobs || props?.data?.jobs || props?.results || [];
-            for (const j of list.slice(0, 15)) {
-              const title   = j.title || j.job_title || j.name || '';
-              const company = j.company_name || j.company?.name || j.employer?.name || '';
-              const loc     = j.location || j.city || j.country || '';
-              if (title) jobs.push([title, company && `الشركة: ${company}`, loc && `الموقع: ${loc}`].filter(Boolean).join('\n'));
-            }
-          }
-        } catch { /* JSON parse failed */ }
-        return jobs;
-      },
-    },
-    // Tanqeeb — يستخدم React، نبحث عن JSON مدمج
-    {
-      url:  'https://tanqeeb.com/jobs?country=IQ&sort=new',
-      src:  'tanqeeb',
-      pri:  'regional',
-      parse: html => {
-        const jobs = [];
-        try {
-          // Tanqeeb يضع بيانات في window.__data__ أو data-react-props
-          const m = html.match(/window\.__(?:data|state|props)__\s*=\s*(\{[\s\S]*?\});/) ||
-                    html.match(/data-react-props="([^"]+)"/);
-          if (m) {
-            const raw  = m[1].startsWith('{') ? m[1] : m[1].replace(/&quot;/g, '"');
-            const data = JSON.parse(raw);
-            const list = data?.jobs || data?.data || [];
-            for (const j of list.slice(0, 15)) {
-              const title = j.title || j.job_title || '';
-              if (title) jobs.push(title);
-            }
-          }
-        } catch { /* skip */ }
-        return jobs;
-      },
-    },
-  ];
-
-  await Promise.allSettled(sites.map(async site => {
-    try {
-      const res = await fetch(site.url, { headers: hdrs, signal: AbortSignal.timeout(8000), cf: { cacheTtl: 3600 } });
-      if (!res.ok) return;
-      const html = await res.text();
-      const jobs  = site.parse(html).filter(t => t && t.length > 10);
-      for (const rawText of jobs) {
-        results.push({ source: site.src, sourceUrl: site.url, rawText, priority: site.pri });
-      }
-      console.log(`[sites] ${site.src}: ${jobs.length} jobs`);
-    } catch (e) {
-      console.warn(`[sites] ${site.src} failed: ${e.message}`);
-    }
-  }));
-
-  return results;
-}
+// Akhtaboot وTanqeeb لا يحتويان وظائف عراقية حقيقية (شامي/خليجي + محجوب بـ JS challenge)
+// المصادر الموثوقة: تيليجرام (t.me/s/) + LinkedIn + Google CSE (عند ضبط المفاتيح)
 
 async function discoverViaLinkedIn() {
   const results = [];
