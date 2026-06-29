@@ -171,6 +171,18 @@ export default {
       return handleTelegram(request, env);
     }
 
+    // ── GET /setup-webhook → يضبط webhook URL عند البوت تلقائياً ──
+    if (request.method === 'GET' && url.pathname === '/setup-webhook') {
+      return handleSetupWebhook(request, env);
+    }
+
+    // ── GET /webhook-info → يعرض معلومات الـ webhook الحالي ──
+    if (request.method === 'GET' && url.pathname === '/webhook-info') {
+      if (!env.TELEGRAM_TOKEN) return json({ error: 'TELEGRAM_TOKEN not set' }, 400);
+      const r = await fetch(`https://api.telegram.org/bot${env.TELEGRAM_TOKEN}/getWebhookInfo`);
+      return new Response(await r.text(), { headers: { 'Content-Type': 'application/json', ...CORS } });
+    }
+
     // ── POST /parse-job → AI Job Parser ──
     if (request.method === 'POST' && url.pathname === '/parse-job') {
       return handleParseJob(request, env);
@@ -462,6 +474,23 @@ async function handleGemini(request, env) {
 // ═══════════════════════════════════════════════
 // Telegram Bot — استقبال منشورات القنوات
 // ═══════════════════════════════════════════════
+// ── ضبط webhook البوت تلقائياً ──
+async function handleSetupWebhook(request, env) {
+  if (!env.TELEGRAM_TOKEN) return json({ error: 'TELEGRAM_TOKEN not set in Cloudflare secrets' }, 400);
+  const workerUrl = new URL(request.url).origin;
+  const webhookUrl = `${workerUrl}/telegram`;
+  const res  = await fetch(
+    `https://api.telegram.org/bot${env.TELEGRAM_TOKEN}/setWebhook`,
+    {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ url: webhookUrl, allowed_updates: ['message', 'callback_query', 'channel_post'] }),
+    }
+  );
+  const data = await res.json();
+  return json({ webhook_url: webhookUrl, telegram_response: data });
+}
+
 async function handleTelegram(request, env) {
   let update;
   try { update = await request.json(); }
@@ -469,11 +498,27 @@ async function handleTelegram(request, env) {
 
   const token     = env.TELEGRAM_TOKEN;
   const adminChat = env.TELEGRAM_ADMIN_CHAT;
-  if (!token || !adminChat) return new Response('ok');
+  if (!token) return new Response('ok');
 
+  // دعم الرسائل العادية والرسائل المُعاد توجيهها (نص أو صورة بكابشن)
   const msg = update.message || update.channel_post;
-  if (msg?.text && msg.text.length >= 60) {
-    await processTgJob(msg.text, token, adminChat, env);
+  if (msg) {
+    // النص يكون في text (رسالة نصية) أو caption (صورة/فيديو مع نص)
+    const text = (msg.text || msg.caption || '').trim();
+
+    // تجاهل الرسائل من البوت نفسه
+    if (msg.from?.is_bot && !msg.forward_from && !msg.forward_from_chat) {
+      return new Response('ok');
+    }
+
+    if (text.length >= 30) {
+      // استخدم adminChat من السيكرت أو من الرسالة نفسها (مرسلة من الأدمن)
+      const chatId = adminChat || String(msg.chat?.id || '');
+      if (chatId) await processTgJob(text, token, chatId, env);
+    } else if (text.length > 0 && adminChat) {
+      // نص قصير جداً
+      await tgSend(token, adminChat, `⚠️ النص قصير جداً (${text.length} حرف).\nأرسل نص الإعلان كاملاً أو عدّل التوجيه.`);
+    }
   }
 
   if (update.callback_query) {

@@ -1757,12 +1757,18 @@ async function pgAdminSettings(el) {
             style="direction:ltr;font-size:12px">${(c.telegram.jobChannels||[]).join('\n')}</textarea>
           <div class="fh">قنوات تيليجرام عامة يسحب منها النظام إعلانات الوظائف تلقائياً — كل قناة في سطر</div>
         </div>
-        <div style="display:flex;gap:8px;margin-top:8px">
+        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
           <button class="btn bsm" style="background:#0088cc;color:#fff;border:none" onclick="testTelegram()">
-            <i class="fas fa-paper-plane"></i>اختبار الإرسال للأدمن
+            <i class="fas fa-paper-plane"></i>اختبار الأدمن
           </button>
           <button class="btn bsm" style="background:#229ed9;color:#fff;border:none" onclick="testTelegramChannel()">
-            <i class="fas fa-broadcast-tower"></i>اختبار نشر القناة
+            <i class="fas fa-broadcast-tower"></i>اختبار القناة
+          </button>
+          <button class="btn bsm" style="background:#075e54;color:#fff;border:none" onclick="setupTgWebhook(this)">
+            <i class="fas fa-plug"></i>ضبط Webhook
+          </button>
+          <button class="btn bsm" style="background:#1e3a5f;color:#fff;border:none" onclick="checkTgWebhook()">
+            <i class="fas fa-info-circle"></i>حالة Webhook
           </button>
         </div>
       `,'tgAutoPost', c.telegram.autoPost)}
@@ -2143,6 +2149,36 @@ async function testTelegramChannel() {
     if (data.ok) notify('تم ✅', 'وصل المنشور التجريبي للقناة', 'success');
     else notify('خطأ', data.description || 'تأكد أن البوت مشرف في القناة', 'error');
   } catch(e) { notify('خطأ', 'تعذّر الاتصال بـ Telegram', 'error'); }
+}
+
+async function setupTgWebhook(btn) {
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-circle-notch spin"></i>'; }
+  try {
+    const res  = await fetch(`${window.WORKER_URL}/setup-webhook`);
+    const data = await res.json();
+    if (data.telegram_response?.ok) {
+      notify('تم ضبط Webhook ✅', `البوت سيستقبل الرسائل على:\n${data.webhook_url}`, 'success');
+    } else {
+      notify('خطأ', data.telegram_response?.description || data.error || 'فشل الضبط', 'error');
+    }
+  } catch(e) { notify('خطأ', e.message, 'error'); }
+  finally { if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-plug"></i>ضبط Webhook'; } }
+}
+
+async function checkTgWebhook() {
+  try {
+    const res  = await fetch(`${window.WORKER_URL}/webhook-info`);
+    const data = await res.json();
+    const r    = data.result || data;
+    const url  = r.url || 'غير مضبوط';
+    const pend = r.pending_update_count ?? '?';
+    const err  = r.last_error_message || '';
+    notify(
+      url.includes('workers.dev') ? 'Webhook نشط ✅' : 'Webhook غير مضبوط ⚠️',
+      `URL: ${url}\nطلبات معلقة: ${pend}${err ? '\nآخر خطأ: ' + err : ''}`,
+      url.includes('workers.dev') ? 'success' : 'warning'
+    );
+  } catch(e) { notify('خطأ', e.message, 'error'); }
 }
 
 async function testFacebook() {
