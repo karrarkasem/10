@@ -1853,7 +1853,7 @@ async function importJobFromText() {
 
 async function _parseJobText(text) {
   // استخدم الـ Worker مباشرة — المفتاح محفوظ هناك بأمان
-  const res = await fetch('https://api.afra-iq.com/parse-job', {
+  const res = await fetch(`${window.WORKER_URL}/parse-job`, {
     method:  'POST',
     headers: { 'Content-Type': 'application/json' },
     body:    JSON.stringify({ text }),

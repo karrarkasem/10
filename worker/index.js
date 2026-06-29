@@ -232,9 +232,9 @@ export default {
 
   async scheduled(event, env, ctx) {
     ctx.waitUntil(processScheduledPosts(env));
-    // Run job discovery every 6 hours (at 00:00, 06:00, 12:00, 18:00 UTC)
-    const h = new Date(event.scheduledTime || Date.now()).getUTCHours();
-    if (h % 6 === 0) ctx.waitUntil(discoverJobs(env));
+    // Run job discovery every hour (at minute 0 of every hour)
+    const now = new Date(event.scheduledTime || Date.now());
+    if (now.getUTCMinutes() === 0) ctx.waitUntil(discoverJobs(env));
   },
 };
 
@@ -1329,32 +1329,40 @@ async function processScheduledPosts(env) {
 // ── محلية (عراقية) أولاً ثم إقليمية ──
 const DISCOVERY_QUERIES_LOCAL = [
   'وظائف شاغرة بغداد 2025',
-  'مطلوب موظف كربلاء النجف البصرة',
-  'وظيفة شاغرة الموصل اربيل 2025',
+  'مطلوب موظف بغداد براتب',
+  'وظيفة شاغرة كربلاء النجف',
+  'مطلوب موظف البصرة الموصل',
+  'وظيفة شاغرة اربيل السليمانية',
   'وظائف عراقية جديدة اليوم',
-  'مطلوب للعمل بغداد براتب',
-  'hiring Baghdad Iraq 2025',
+  'مطلوب سكرتيرة محاسب مهندس بغداد',
+  'وظائف شاغرة ديالى الانبار كركوك',
+  'hiring Baghdad Iraq',
   'job vacancy Iraq Basra Mosul',
 ];
 
 const DISCOVERY_QUERIES_REGIONAL = [
-  'وظائف شاغرة العراق site:linkedin.com',
-  'Iraq jobs 2025 site:linkedin.com',
   'وظائف العراق site:bayt.com',
+  'Iraq jobs site:akhtaboot.com',
+  'وظائف العراق site:naukrigulf.com',
 ];
 
 // قائمة مجمّعة — المحلية أولاً دائماً
 const DISCOVERY_QUERIES = [...DISCOVERY_QUERIES_LOCAL, ...DISCOVERY_QUERIES_REGIONAL];
 
+// قنوات تيليجرام العراقية الافتراضية (تعمل بدون ضبط Firestore)
+const DEFAULT_TG_CHANNELS = [
+  'afraiq_jobs',
+];
+
 const RSS_FEEDS = [
-  // محلية — عراقية
-  { url: 'https://www.tanqeeb.com/jobs/iraq?format=rss',                         priority: 'local'    },
-  { url: 'https://www.bayt.com/en/iraq/jobs/?format=rss',                         priority: 'local'    },
-  { url: 'https://iq.indeed.com/rss?q=وظائف&l=بغداد',                             priority: 'local'    },
-  { url: 'https://iq.indeed.com/rss?q=job&l=Iraq',                                priority: 'local'    },
-  // إقليمية
-  { url: 'https://www.wuzzuf.net/search/jobs/?q=&l=iraq&format=rss',              priority: 'regional' },
-  { url: 'https://www.linkedin.com/jobs/search/?keywords=Iraq&f_TP=1&format=rss', priority: 'regional' },
+  // محلية — Indeed العراق (يدعم RSS حقاً)
+  { url: 'https://iq.indeed.com/rss?q=%D9%88%D8%B8%D8%A7%D8%A6%D9%81&l=%D8%A8%D8%BA%D8%AF%D8%A7%D8%AF',           priority: 'local'    },
+  { url: 'https://iq.indeed.com/rss?q=%D9%85%D8%B7%D9%84%D9%88%D8%A8+%D9%85%D9%88%D8%B8%D9%81&l=%D8%A8%D8%BA%D8%AF%D8%A7%D8%AF', priority: 'local'    },
+  { url: 'https://iq.indeed.com/rss?q=job&l=Iraq',                                                                   priority: 'local'    },
+  // إقليمية — مواقع تدعم RSS فعلاً
+  { url: 'https://www.bayt.com/en/iraq/jobs/?format=rss',                                                             priority: 'regional' },
+  { url: 'https://www.akhtaboot.com/en/jobs/iraq?format=rss',                                                         priority: 'regional' },
+  { url: 'https://www.naukrigulf.com/iraq-jobs?format=rss',                                                           priority: 'regional' },
 ];
 
 async function discoverJobs(env) {
@@ -1398,18 +1406,43 @@ async function discoverJobs(env) {
   console.log(`[discovery] Saved ${saved} new jobs to review queue`);
 }
 
-// ── قراءة قنوات المصادر من Firestore config/settings ──
+// ── قراءة قنوات المصادر من Firestore config/settings (مع fallback للقنوات الافتراضية) ──
 async function _loadTgChannelsFromFirestore() {
   try {
     const res = await fetch(
       `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/config/settings?key=${FIREBASE_KEY}`,
       { cf: { cacheTtl: 300 } }
     );
-    if (!res.ok) return [];
-    const doc = await res.json();
-    const arr = doc.fields?.telegram?.mapValue?.fields?.jobChannels?.arrayValue?.values || [];
-    return arr.map(v => v.stringValue).filter(Boolean);
-  } catch { return []; }
+    if (res.ok) {
+      const doc = await res.json();
+      const arr = doc.fields?.telegram?.mapValue?.fields?.jobChannels?.arrayValue?.values || [];
+      const configured = arr.map(v => v.stringValue).filter(Boolean);
+      if (configured.length) return configured;
+    }
+  } catch { /* skip */ }
+  return DEFAULT_TG_CHANNELS;
+}
+
+// ── جلب محتوى صفحة ويب لاستخراج نص الوظيفة ──
+async function fetchPageText(url, maxLen = 3000) {
+  try {
+    const res = await fetch(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; AfraBot/1.0)', Accept: 'text/html' },
+      signal: AbortSignal.timeout(6000),
+      cf: { cacheTtl: 3600 },
+    });
+    if (!res.ok) return null;
+    const html = await res.text();
+    // استخراج النص من article أو main أو body
+    const bodyMatch = html.match(/<(?:article|main|div[^>]*(?:job|content|detail)[^>]*)>([\s\S]*?)<\/(?:article|main|div)>/i);
+    const raw = (bodyMatch?.[1] || html)
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    return raw.substring(0, maxLen) || null;
+  } catch { return null; }
 }
 
 // ── سحب من قنوات تيليجرام العامة عبر RSSHub ──
@@ -1534,23 +1567,30 @@ async function discoverViaGoogle(env) {
   const results = [];
 
   // 3 محلية + 1 إقليمية في كل دورة
-  const localQ    = DISCOVERY_QUERIES_LOCAL.sort(() => Math.random() - 0.5).slice(0, 3);
-  const regionalQ = DISCOVERY_QUERIES_REGIONAL.sort(() => Math.random() - 0.5).slice(0, 1);
+  const localQ    = [...DISCOVERY_QUERIES_LOCAL].sort(() => Math.random() - 0.5).slice(0, 3);
+  const regionalQ = [...DISCOVERY_QUERIES_REGIONAL].sort(() => Math.random() - 0.5).slice(0, 1);
   const selected  = [...localQ, ...regionalQ];
 
   for (const q of selected) {
     try {
       const isLocal = DISCOVERY_QUERIES_LOCAL.includes(q);
-      const url = `https://www.googleapis.com/customsearch/v1?key=${env.GOOGLE_CSE_KEY}&cx=${env.GOOGLE_CSE_ID}&q=${encodeURIComponent(q)}&num=10&dateRestrict=d3&gl=iq&hl=ar`;
+      const url = `https://www.googleapis.com/customsearch/v1?key=${env.GOOGLE_CSE_KEY}&cx=${env.GOOGLE_CSE_ID}&q=${encodeURIComponent(q)}&num=10&dateRestrict=d7&gl=iq&hl=ar`;
       const res  = await fetch(url);
       if (!res.ok) continue;
       const data = await res.json();
       for (const item of data.items || []) {
+        const snippet = (item.snippet || '').trim();
+        // إذا الـ snippet قصير (<120 حرف) نجلب محتوى الصفحة الكاملة
+        let rawText = `${item.title}\n\n${snippet}`;
+        if (snippet.length < 120 && item.link) {
+          const pageText = await fetchPageText(item.link);
+          if (pageText && pageText.length > 100) rawText = `${item.title}\n\n${pageText}`;
+        }
         results.push({
-          source:   'google',
+          source:    'google',
           sourceUrl: item.link,
-          rawText:  `${item.title}\n\n${item.snippet || ''}`.trim(),
-          priority: isLocal ? 'local' : 'regional',
+          rawText:   rawText.trim().substring(0, 3000),
+          priority:  isLocal ? 'local' : 'regional',
         });
       }
     } catch { /* skip */ }
@@ -1673,7 +1713,9 @@ async function parseAndSaveDiscovery(item, env) {
   const baseScore  = Number(parsed.score) || 5;
   const localBoost = (item.priority === 'local' || parsed.province) ? 2 : 0;
   const score      = Math.min(10, baseScore + localBoost);
-  if (baseScore < 4) return false; // تجاهل الجودة المنخفضة جداً
+  // عتبة الجودة: محلية ≥ 3، إقليمية ≥ 4
+  const minScore = (item.priority === 'local') ? 3 : 4;
+  if (baseScore < minScore) return false;
 
   // Auth
   const authRes = await fetch(
