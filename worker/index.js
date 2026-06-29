@@ -1403,36 +1403,28 @@ const DEFAULT_TG_CHANNELS = [
   'tanqeeb_jobs',
 ];
 
-// RSS من مصادر تعمل مع Cloudflare Workers
-const RSS_FEEDS = [
-  // Bayt.com — يدعم RSS حقيقي
-  { url: 'https://www.bayt.com/en/iraq/jobs/rss/',                                    priority: 'regional' },
-  { url: 'https://www.bayt.com/en/iraq/jobs/search/?q=وظائف&format=rss',              priority: 'regional' },
-  // Akhtaboot
-  { url: 'https://www.akhtaboot.com/rss/jobs?country=IQ',                             priority: 'regional' },
-  // Wezara — موقع عراقي للوظائف
-  { url: 'https://wezara.com/feed/',                                                   priority: 'local'    },
-  // Indeed عالمي (ليس IQ subdomain المحجوب)
-  { url: 'https://www.indeed.com/rss?q=وظائف+بغداد&l=Baghdad%2C+Iraq&radius=100',    priority: 'local'    },
-  { url: 'https://www.indeed.com/rss?q=jobs+iraq&l=Iraq',                             priority: 'local'    },
-];
+// لا يوجد RSS يعمل من Cloudflare Workers — نستخدم HTML scraping مثل LinkedIn
+const RSS_FEEDS = [];
 
 // ── اختبار مصادر الاستيراد — للتشخيص فقط ──
 async function testDiscoverySources(env) {
   const report = { rss: [], telegram: [], google: null, linkedin: null };
 
-  // اختبار RSS
-  for (const feed of RSS_FEEDS) {
+  // اختبار مواقع التوظيف (HTML)
+  const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125.0.0.0 Safari/537.36';
+  const jobSiteUrls = [
+    { url: 'https://www.akhtaboot.com/en/jobs/iraq', name: 'akhtaboot' },
+    { url: 'https://tanqeeb.com/jobs?country=IQ',    name: 'tanqeeb'   },
+    { url: 'https://www.naukrigulf.com/jobs-in-iraq', name: 'naukrigulf'},
+  ];
+  for (const site of jobSiteUrls) {
     try {
-      const res = await fetch(feed.url, {
-        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; AfraBot/1.0)', Accept: 'application/rss+xml,text/xml,*/*' },
-        signal: AbortSignal.timeout(6000),
-      });
-      const xml = res.ok ? await res.text() : '';
-      const count = (xml.match(/<item/gi) || []).length + (xml.match(/<entry/gi) || []).length;
-      report.rss.push({ url: feed.url.substring(0, 80), status: res.status, items: count, priority: feed.priority });
+      const res = await fetch(site.url, { headers: { 'User-Agent': UA }, signal: AbortSignal.timeout(8000) });
+      const html = res.ok ? await res.text() : '';
+      const jobHints = (html.match(/job-title|designation-title|jb-title/gi) || []).length;
+      report.rss.push({ name: site.name, url: site.url.substring(0, 60), status: res.status, job_hints: jobHints });
     } catch (e) {
-      report.rss.push({ url: feed.url.substring(0, 80), error: e.message, priority: feed.priority });
+      report.rss.push({ name: site.name, url: site.url.substring(0, 60), error: e.message });
     }
   }
 
@@ -1500,9 +1492,9 @@ async function discoverJobs(env) {
     catch (e) { console.error('[discovery] Google error:', e.message); }
   }
 
-  // ③ محلية + إقليمية: RSS
-  try { items.push(...await discoverViaRSS()); }
-  catch (e) { console.error('[discovery] RSS error:', e.message); }
+  // ③ إقليمية: مواقع توظيف (HTML scraping — بديل RSS المكسور)
+  try { items.push(...await discoverViaJobSites()); }
+  catch (e) { console.error('[discovery] JobSites error:', e.message); }
 
   // ④ إقليمية: LinkedIn
   try { items.push(...await discoverViaLinkedIn()); }
@@ -1690,6 +1682,85 @@ async function discoverViaTelegramChannels(channels, botToken) {
 }
 
 // ── LinkedIn Jobs — public guest API ──
+// ── HTML Scraping لمواقع التوظيف (بديل RSS المحجوب) ──
+async function discoverViaJobSites() {
+  const results = [];
+  const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36';
+  const hdrs = { 'User-Agent': UA, 'Accept': 'text/html', 'Accept-Language': 'ar,en-US;q=0.9' };
+
+  const sites = [
+    // Akhtaboot — إقليمية، تدعم Cloudflare
+    {
+      url:  'https://www.akhtaboot.com/en/jobs/iraq',
+      src:  'akhtaboot',
+      pri:  'regional',
+      // اسم الوظيفة في data-title أو h3
+      parse: html => {
+        const jobs = [];
+        for (const m of html.matchAll(/data-title="([^"]+)"[^>]*data-company="([^"]+)"[^>]*data-location="([^"]+)"/g)) {
+          jobs.push(`${m[1]}\nالشركة: ${m[2]}\nالموقع: ${m[3]}`);
+        }
+        // fallback: h3 tags
+        if (!jobs.length) {
+          for (const m of html.matchAll(/<h3[^>]*class="[^"]*job[^"]*"[^>]*>([^<]+)/gi)) {
+            jobs.push(m[1].trim());
+          }
+        }
+        return jobs.slice(0, 10);
+      },
+    },
+    // Tanqeeb — عراقي وإقليمي
+    {
+      url:  'https://tanqeeb.com/jobs?country=IQ&sort=new',
+      src:  'tanqeeb',
+      pri:  'regional',
+      parse: html => {
+        const jobs = [];
+        for (const m of html.matchAll(/<h2[^>]*class="[^"]*title[^"]*"[^>]*>([^<]+)/gi)) {
+          jobs.push(m[1].trim());
+        }
+        for (const m of html.matchAll(/class="job-title"[^>]*>([^<]+)/gi)) {
+          jobs.push(m[1].trim());
+        }
+        return [...new Set(jobs)].slice(0, 10);
+      },
+    },
+    // Naukrigulf — إقليمية
+    {
+      url:  'https://www.naukrigulf.com/jobs-in-iraq',
+      src:  'naukrigulf',
+      pri:  'regional',
+      parse: html => {
+        const jobs = [];
+        for (const m of html.matchAll(/class="designation-title"[^>]*title="([^"]+)"/gi)) {
+          jobs.push(m[1].trim());
+        }
+        for (const m of html.matchAll(/<a[^>]+class="[^"]*job-title[^"]*"[^>]*>([^<]+)/gi)) {
+          jobs.push(m[1].trim());
+        }
+        return [...new Set(jobs)].slice(0, 10);
+      },
+    },
+  ];
+
+  await Promise.allSettled(sites.map(async site => {
+    try {
+      const res = await fetch(site.url, { headers: hdrs, signal: AbortSignal.timeout(8000), cf: { cacheTtl: 3600 } });
+      if (!res.ok) return;
+      const html = await res.text();
+      const jobs  = site.parse(html).filter(t => t && t.length > 10);
+      for (const rawText of jobs) {
+        results.push({ source: site.src, sourceUrl: site.url, rawText, priority: site.pri });
+      }
+      console.log(`[sites] ${site.src}: ${jobs.length} jobs`);
+    } catch (e) {
+      console.warn(`[sites] ${site.src} failed: ${e.message}`);
+    }
+  }));
+
+  return results;
+}
+
 async function discoverViaLinkedIn() {
   const results = [];
   const searches = [
