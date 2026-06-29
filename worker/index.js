@@ -1689,56 +1689,52 @@ async function discoverViaJobSites() {
   const hdrs = { 'User-Agent': UA, 'Accept': 'text/html', 'Accept-Language': 'ar,en-US;q=0.9' };
 
   const sites = [
-    // Akhtaboot — إقليمية، تدعم Cloudflare
+    // Akhtaboot — يستخدم Next.js، نجلب __NEXT_DATA__ JSON المدمج في HTML
     {
       url:  'https://www.akhtaboot.com/en/jobs/iraq',
       src:  'akhtaboot',
       pri:  'regional',
-      // اسم الوظيفة في data-title أو h3
       parse: html => {
         const jobs = [];
-        for (const m of html.matchAll(/data-title="([^"]+)"[^>]*data-company="([^"]+)"[^>]*data-location="([^"]+)"/g)) {
-          jobs.push(`${m[1]}\nالشركة: ${m[2]}\nالموقع: ${m[3]}`);
-        }
-        // fallback: h3 tags
-        if (!jobs.length) {
-          for (const m of html.matchAll(/<h3[^>]*class="[^"]*job[^"]*"[^>]*>([^<]+)/gi)) {
-            jobs.push(m[1].trim());
+        try {
+          const m = html.match(/<script[^>]+id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
+          if (m) {
+            const data = JSON.parse(m[1]);
+            const props = data?.props?.pageProps;
+            const list  = props?.jobs || props?.data?.jobs || props?.results || [];
+            for (const j of list.slice(0, 15)) {
+              const title   = j.title || j.job_title || j.name || '';
+              const company = j.company_name || j.company?.name || j.employer?.name || '';
+              const loc     = j.location || j.city || j.country || '';
+              if (title) jobs.push([title, company && `الشركة: ${company}`, loc && `الموقع: ${loc}`].filter(Boolean).join('\n'));
+            }
           }
-        }
-        return jobs.slice(0, 10);
+        } catch { /* JSON parse failed */ }
+        return jobs;
       },
     },
-    // Tanqeeb — عراقي وإقليمي
+    // Tanqeeb — يستخدم React، نبحث عن JSON مدمج
     {
       url:  'https://tanqeeb.com/jobs?country=IQ&sort=new',
       src:  'tanqeeb',
       pri:  'regional',
       parse: html => {
         const jobs = [];
-        for (const m of html.matchAll(/<h2[^>]*class="[^"]*title[^"]*"[^>]*>([^<]+)/gi)) {
-          jobs.push(m[1].trim());
-        }
-        for (const m of html.matchAll(/class="job-title"[^>]*>([^<]+)/gi)) {
-          jobs.push(m[1].trim());
-        }
-        return [...new Set(jobs)].slice(0, 10);
-      },
-    },
-    // Naukrigulf — إقليمية
-    {
-      url:  'https://www.naukrigulf.com/jobs-in-iraq',
-      src:  'naukrigulf',
-      pri:  'regional',
-      parse: html => {
-        const jobs = [];
-        for (const m of html.matchAll(/class="designation-title"[^>]*title="([^"]+)"/gi)) {
-          jobs.push(m[1].trim());
-        }
-        for (const m of html.matchAll(/<a[^>]+class="[^"]*job-title[^"]*"[^>]*>([^<]+)/gi)) {
-          jobs.push(m[1].trim());
-        }
-        return [...new Set(jobs)].slice(0, 10);
+        try {
+          // Tanqeeb يضع بيانات في window.__data__ أو data-react-props
+          const m = html.match(/window\.__(?:data|state|props)__\s*=\s*(\{[\s\S]*?\});/) ||
+                    html.match(/data-react-props="([^"]+)"/);
+          if (m) {
+            const raw  = m[1].startsWith('{') ? m[1] : m[1].replace(/&quot;/g, '"');
+            const data = JSON.parse(raw);
+            const list = data?.jobs || data?.data || [];
+            for (const j of list.slice(0, 15)) {
+              const title = j.title || j.job_title || '';
+              if (title) jobs.push(title);
+            }
+          }
+        } catch { /* skip */ }
+        return jobs;
       },
     },
   ];
@@ -1763,9 +1759,14 @@ async function discoverViaJobSites() {
 
 async function discoverViaLinkedIn() {
   const results = [];
+  // تنويع الكلمات المفتاحية يعطي وظائف مختلفة في كل بحث
   const searches = [
-    { q: 'وظائف+العراق',    location: 'Iraq' },
-    { q: 'jobs+Iraq+Baghdad', location: 'Iraq' },
+    { q: 'وظائف+العراق',              location: 'Iraq'    },
+    { q: 'jobs+Baghdad+Iraq',          location: 'Baghdad' },
+    { q: 'محاسب+مهندس+بغداد',         location: 'Iraq'    },
+    { q: 'hiring+Iraq+full+time',      location: 'Iraq'    },
+    { q: 'وظائف+بغداد+البصرة',        location: 'Iraq'    },
+    { q: 'software+engineer+Iraq',     location: 'Iraq'    },
   ];
   for (const s of searches) {
     try {
