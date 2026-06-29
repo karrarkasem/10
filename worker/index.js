@@ -1394,19 +1394,27 @@ const DISCOVERY_QUERIES_REGIONAL = [
 // قائمة مجمّعة — المحلية أولاً دائماً
 const DISCOVERY_QUERIES = [...DISCOVERY_QUERIES_LOCAL, ...DISCOVERY_QUERIES_REGIONAL];
 
-// قنوات تيليجرام العراقية الافتراضية (تعمل بدون ضبط Firestore)
+// قنوات تيليجرام العراقية الافتراضية — hub.slarker.me يعمل (20 منشور مؤكد)
 const DEFAULT_TG_CHANNELS = [
   'afraiq_jobs',
+  'wazaeef_iraq',
+  'iraq_jobs2',
+  'jobs_iq',
+  'tanqeeb_jobs',
 ];
 
-// Google News RSS — مجاني تماماً، لا يحتاج مفتاح، يعمل دائماً
+// RSS من مصادر تعمل مع Cloudflare Workers
 const RSS_FEEDS = [
-  { url: 'https://news.google.com/rss/search?q=%D9%88%D8%B8%D8%A7%D8%A6%D9%81+%D8%A8%D8%BA%D8%AF%D8%A7%D8%AF+%D8%A7%D9%84%D8%B9%D8%B1%D8%A7%D9%82&hl=ar&gl=IQ&ceid=IQ:ar', priority: 'local' },
-  { url: 'https://news.google.com/rss/search?q=%D9%85%D8%B7%D9%84%D9%88%D8%A8+%D9%85%D9%88%D8%B8%D9%81+%D8%A8%D8%BA%D8%AF%D8%A7%D8%AF+%D8%A8%D8%B1%D8%A7%D8%AA%D8%A8&hl=ar&gl=IQ&ceid=IQ:ar', priority: 'local' },
-  { url: 'https://news.google.com/rss/search?q=%D9%88%D8%B8%D9%8A%D9%81%D8%A9+%D8%B4%D8%A7%D8%BA%D8%B1%D8%A9+%D8%A7%D9%84%D8%B9%D8%B1%D8%A7%D9%82+2025&hl=ar&gl=IQ&ceid=IQ:ar', priority: 'local' },
-  { url: 'https://news.google.com/rss/search?q=iraq+jobs+hiring+vacancy+2025&hl=en&gl=IQ&ceid=IQ:en', priority: 'local' },
-  { url: 'https://news.google.com/rss/search?q=%D9%88%D8%B8%D8%A7%D8%A6%D9%81+%D8%A7%D9%84%D8%B9%D8%B1%D8%A7%D9%82+site:bayt.com&hl=ar&gl=IQ&ceid=IQ:ar', priority: 'regional' },
-  { url: 'https://news.google.com/rss/search?q=iraq+jobs+site:akhtaboot.com&hl=en&gl=IQ&ceid=IQ:en', priority: 'regional' },
+  // Bayt.com — يدعم RSS حقيقي
+  { url: 'https://www.bayt.com/en/iraq/jobs/rss/',                                    priority: 'regional' },
+  { url: 'https://www.bayt.com/en/iraq/jobs/search/?q=وظائف&format=rss',              priority: 'regional' },
+  // Akhtaboot
+  { url: 'https://www.akhtaboot.com/rss/jobs?country=IQ',                             priority: 'regional' },
+  // Wezara — موقع عراقي للوظائف
+  { url: 'https://wezara.com/feed/',                                                   priority: 'local'    },
+  // Indeed عالمي (ليس IQ subdomain المحجوب)
+  { url: 'https://www.indeed.com/rss?q=وظائف+بغداد&l=Baghdad%2C+Iraq&radius=100',    priority: 'local'    },
+  { url: 'https://www.indeed.com/rss?q=jobs+iraq&l=Iraq',                             priority: 'local'    },
 ];
 
 // ── اختبار مصادر الاستيراد — للتشخيص فقط ──
@@ -1616,13 +1624,12 @@ async function discoverViaTelegramChannels(channels, botToken) {
     const handle = ch.replace(/^@/, '').trim();
     if (!handle) continue;
 
-    // جرّب مزودي RSS لقنوات تيليجرام (من الأسرع للأبطأ)
+    // hub.slarker.me مؤكد العمل — يأتي أولاً
     const rssProviders = [
-      `https://rsshub.app/telegram/channel/${handle}`,
       `https://hub.slarker.me/telegram/channel/${handle}`,
+      `https://rsshub.app/telegram/channel/${handle}`,
       `https://rsshub.rssforever.com/telegram/channel/${handle}`,
       `https://rss.telegram.group/${handle}`,
-      `https://telegram.rss.plus/feed/@${handle}`,
     ];
 
     let fetched = false;
@@ -1694,11 +1701,14 @@ async function discoverViaLinkedIn() {
       const url = `https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords=${s.q}&location=${encodeURIComponent(s.location)}&start=0&count=8`;
       const res = await fetch(url, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1)',
-          'Accept': 'text/html,application/xhtml+xml',
-          'Accept-Language': 'ar,en-US;q=0.9',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'ar,en-US;q=0.9,en;q=0.8',
+          'Accept-Encoding': 'gzip, deflate, br',
+          'Cache-Control': 'no-cache',
+          'Referer': 'https://www.linkedin.com/',
         },
-        cf: { cacheTtl: 3600 },
+        cf: { cacheTtl: 7200 },
       });
       if (!res.ok) continue;
       const html  = await res.text();
