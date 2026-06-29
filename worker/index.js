@@ -229,6 +229,11 @@ export default {
       return json({ started: true });
     }
 
+    // ── GET /test-sources → اختبار مصادر الاستيراد ──
+    if (request.method === 'GET' && url.pathname === '/test-sources') {
+      return testDiscoverySources(env);
+    }
+
     // ── POST / → Gemini Proxy ──
     if (request.method === 'POST') {
       return handleGemini(request, env);
@@ -1394,16 +1399,82 @@ const DEFAULT_TG_CHANNELS = [
   'afraiq_jobs',
 ];
 
+// Google News RSS — مجاني تماماً، لا يحتاج مفتاح، يعمل دائماً
 const RSS_FEEDS = [
-  // محلية — Indeed العراق (يدعم RSS حقاً)
-  { url: 'https://iq.indeed.com/rss?q=%D9%88%D8%B8%D8%A7%D8%A6%D9%81&l=%D8%A8%D8%BA%D8%AF%D8%A7%D8%AF',           priority: 'local'    },
-  { url: 'https://iq.indeed.com/rss?q=%D9%85%D8%B7%D9%84%D9%88%D8%A8+%D9%85%D9%88%D8%B8%D9%81&l=%D8%A8%D8%BA%D8%AF%D8%A7%D8%AF', priority: 'local'    },
-  { url: 'https://iq.indeed.com/rss?q=job&l=Iraq',                                                                   priority: 'local'    },
-  // إقليمية — مواقع تدعم RSS فعلاً
-  { url: 'https://www.bayt.com/en/iraq/jobs/?format=rss',                                                             priority: 'regional' },
-  { url: 'https://www.akhtaboot.com/en/jobs/iraq?format=rss',                                                         priority: 'regional' },
-  { url: 'https://www.naukrigulf.com/iraq-jobs?format=rss',                                                           priority: 'regional' },
+  { url: 'https://news.google.com/rss/search?q=%D9%88%D8%B8%D8%A7%D8%A6%D9%81+%D8%A8%D8%BA%D8%AF%D8%A7%D8%AF+%D8%A7%D9%84%D8%B9%D8%B1%D8%A7%D9%82&hl=ar&gl=IQ&ceid=IQ:ar', priority: 'local' },
+  { url: 'https://news.google.com/rss/search?q=%D9%85%D8%B7%D9%84%D9%88%D8%A8+%D9%85%D9%88%D8%B8%D9%81+%D8%A8%D8%BA%D8%AF%D8%A7%D8%AF+%D8%A8%D8%B1%D8%A7%D8%AA%D8%A8&hl=ar&gl=IQ&ceid=IQ:ar', priority: 'local' },
+  { url: 'https://news.google.com/rss/search?q=%D9%88%D8%B8%D9%8A%D9%81%D8%A9+%D8%B4%D8%A7%D8%BA%D8%B1%D8%A9+%D8%A7%D9%84%D8%B9%D8%B1%D8%A7%D9%82+2025&hl=ar&gl=IQ&ceid=IQ:ar', priority: 'local' },
+  { url: 'https://news.google.com/rss/search?q=iraq+jobs+hiring+vacancy+2025&hl=en&gl=IQ&ceid=IQ:en', priority: 'local' },
+  { url: 'https://news.google.com/rss/search?q=%D9%88%D8%B8%D8%A7%D8%A6%D9%81+%D8%A7%D9%84%D8%B9%D8%B1%D8%A7%D9%82+site:bayt.com&hl=ar&gl=IQ&ceid=IQ:ar', priority: 'regional' },
+  { url: 'https://news.google.com/rss/search?q=iraq+jobs+site:akhtaboot.com&hl=en&gl=IQ&ceid=IQ:en', priority: 'regional' },
 ];
+
+// ── اختبار مصادر الاستيراد — للتشخيص فقط ──
+async function testDiscoverySources(env) {
+  const report = { rss: [], telegram: [], google: null, linkedin: null };
+
+  // اختبار RSS
+  for (const feed of RSS_FEEDS) {
+    try {
+      const res = await fetch(feed.url, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; AfraBot/1.0)', Accept: 'application/rss+xml,text/xml,*/*' },
+        signal: AbortSignal.timeout(6000),
+      });
+      const xml = res.ok ? await res.text() : '';
+      const count = (xml.match(/<item/gi) || []).length + (xml.match(/<entry/gi) || []).length;
+      report.rss.push({ url: feed.url.substring(0, 80), status: res.status, items: count, priority: feed.priority });
+    } catch (e) {
+      report.rss.push({ url: feed.url.substring(0, 80), error: e.message, priority: feed.priority });
+    }
+  }
+
+  // اختبار Telegram RSS
+  const tgChannels = await _loadTgChannelsFromFirestore();
+  for (const ch of tgChannels.slice(0, 2)) {
+    const handle = ch.replace(/^@/, '');
+    const providers = [
+      `https://rsshub.app/telegram/channel/${handle}`,
+      `https://hub.slarker.me/telegram/channel/${handle}`,
+    ];
+    for (const url of providers) {
+      try {
+        const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+        const xml = res.ok ? await res.text() : '';
+        const count = (xml.match(/<item/gi) || []).length;
+        report.telegram.push({ channel: handle, provider: url.split('/')[2], status: res.status, items: count });
+        if (count > 0) break;
+      } catch (e) {
+        report.telegram.push({ channel: handle, provider: url.split('/')[2], error: e.message });
+      }
+    }
+  }
+
+  // اختبار Google CSE
+  if (env.GOOGLE_CSE_KEY && env.GOOGLE_CSE_ID) {
+    try {
+      const res = await fetch(`https://www.googleapis.com/customsearch/v1?key=${env.GOOGLE_CSE_KEY}&cx=${env.GOOGLE_CSE_ID}&q=وظائف+بغداد&num=3`);
+      const data = await res.json();
+      report.google = { status: res.status, items: (data.items || []).length, error: data.error?.message };
+    } catch (e) { report.google = { error: e.message }; }
+  } else {
+    report.google = { error: 'GOOGLE_CSE_KEY أو GOOGLE_CSE_ID غير مضبوطين' };
+  }
+
+  // اختبار LinkedIn
+  try {
+    const res = await fetch('https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords=jobs&location=Iraq&start=0&count=3', {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1)' },
+      signal: AbortSignal.timeout(6000),
+    });
+    const html = res.ok ? await res.text() : '';
+    const titles = (html.match(/base-search-card__title/g) || []).length;
+    report.linkedin = { status: res.status, jobs_found: titles };
+  } catch (e) { report.linkedin = { error: e.message }; }
+
+  return new Response(JSON.stringify(report, null, 2), {
+    headers: { 'Content-Type': 'application/json', ...CORS },
+  });
+}
 
 async function discoverJobs(env) {
   const items = [];
@@ -1545,9 +1616,11 @@ async function discoverViaTelegramChannels(channels, botToken) {
     const handle = ch.replace(/^@/, '').trim();
     if (!handle) continue;
 
-    // جرّب 3 مزودي RSS لقنوات تيليجرام (من الأسرع للأبطأ)
+    // جرّب مزودي RSS لقنوات تيليجرام (من الأسرع للأبطأ)
     const rssProviders = [
       `https://rsshub.app/telegram/channel/${handle}`,
+      `https://hub.slarker.me/telegram/channel/${handle}`,
+      `https://rsshub.rssforever.com/telegram/channel/${handle}`,
       `https://rss.telegram.group/${handle}`,
       `https://telegram.rss.plus/feed/@${handle}`,
     ];
