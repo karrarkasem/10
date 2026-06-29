@@ -66,91 +66,71 @@ async function callGeminiWithRetry(prompt, geminiKey, maxTokens = 3000, retries 
   return { ok: false, status: 503, error: lastErr || 'All retries exhausted' };
 }
 
-// ── Prompt مشترك لتحليل إعلانات الوظائف ──
+// ── Prompt الموحّد لتحليل إعلانات الوظائف ──
 function buildJobParsePrompt(text, allowNotJob = false) {
-  return `أنت خبير متخصص في تحليل إعلانات الوظائف العراقية من مصادر متعددة (تلغرام، فيسبوك، واتساب).
-${allowNotJob ? 'إذا لم يكن النص إعلان وظيفة أرجع {"notJob":true} فقط.' : ''}
+  return `أنت محلل وظائف متخصص في سوق العمل العراقي. مهمتك استخراج كل التفاصيل من النص بدقة عالية.
+${allowNotJob ? '\nإذا لم يكن النص إعلان وظيفة واضحاً أرجع {"notJob":true} فقط.' : ''}
 
-قواعد الاستخراج الذكي:
-1. **المحافظة**: استنتجها من أي إشارة جغرافية:
-   - أسماء المناطق: (المنصور/الكرادة/الكاظمية/الأعظمية/الجادرية/العلاوي/الشعب/الحرية/الدورة/الزعفرانية/الصدر/بغداد الجديدة/النهروان = بغداد)
-   - (كربلاء/الحسينية/الطف = كربلاء)، (النجف/الكوفة/المشخاب = النجف)
-   - (البصرة/العشار/أبو الخصيب/الزبير/الفاو = البصرة)
-   - (الموصل/نينوى/تلعفر = نينوى)، (أربيل/هولير = أربيل)
-   - (السليمانية/سليمانية = السليمانية)، (دهوك = دهوك)، (كركوك = كركوك)
-   - (بابل/الحلة/المسيب = بابل)، (ذي قار/الناصرية = ذي قار)
-   - (ميسان/العمارة = ميسان)، (الديوانية/القادسية = القادسية)
-   - (الكوت/واسط = واسط)، (السماوة/المثنى = المثنى)
-   - (الرمادي/الأنبار/الفلوجة = الأنبار)، (تكريت/صلاح الدين = صلاح الدين)
-   - (بعقوبة/ديالى = ديالى)
-   - إذا لم تُذكر أي منطقة اتركها فارغة ""
+═══ قواعد استخراج الراتب (الأكثر أهمية) ═══
+• أرقام 100-999 بدون وحدة = آلاف دينار: "700" → 700000، "350" → 350000
+• أرقام 1-99 في سياق راتب = آلاف: "50" → 50000
+• "ألف" أو "k": "500 الف / 500k" → 500000
+• "مليون": "مليون" → 1000000، "مليون ونص" → 1500000، "مليونين" → 2000000
+• "مليون و500" → 1500000، "مليون ومائتين" → 1200000
+• نطاق الراتب: "من 500 إلى 800 الف" → salary: 500000، salaryMax: 800000
+• بالدولار ($ أو USD أو دولار): استخرج الرقم واجعل currency: "USD"
+• "بالاتفاق / حسب الخبرة / تنافسي / يُحدد" → salary: null
+• نسبة مبيعات أو عمل بالقطعة → salary: null + commission: "وصف النسبة"
+• راتب + مزايا: استخرج الراتب الأساسي في salary والمزايا في bens
 
-2. **الراتب**: حوّل كل صيغ الراتب العراقية لأرقام بالدينار:
-   - أرقام مفردة بدون وحدة (100-999): في العراق تعني دائماً آلاف → "400" = 400000، "700" = 700000، "250" = 250000
-   - أرقام مفردة (1-99): قد تعني ألف مضروب → "50" في سياق راتب = 50000
-   - "500 الف / 500,000 / نص مليون / 0.5 مليون" → 500000
-   - "مليون" → 1000000، "مليون ونص" → 1500000، "مليونين" → 2000000
-   - "مليون و500" → 1500000، "مليون و200" → 1200000
-   - إذا ذُكر بالدولار ($ أو دولار) → ضع الرقم و currency:"USD"
-   - "بالاتفاق / يُحدد / حسب الخبرة / تنافسي" → null
-   - إذا كان العمل على القطعة أو نسبة مبيعات أو حافز → salary: null واستخرج تفاصيلها في حقل commission
+═══ قواعد استخراج المحافظة ═══
+بغداد (المنصور/الكرادة/الكاظمية/الأعظمية/الجادرية/الدورة/الصدر/الشعب/الحرية/الزعفرانية/بغداد الجديدة/الكرخ/الرصافة)
+كربلاء (كربلاء/الحسينية/الطف) | النجف (النجف/الكوفة/المشخاب)
+البصرة (البصرة/العشار/أبو الخصيب/الزبير/الفاو) | نينوى (الموصل/نينوى/تلعفر)
+أربيل (أربيل/هولير/اربيل) | السليمانية (السليمانية/سليمانية)
+كركوك (كركوك) | دهوك (دهوك) | بابل (الحلة/بابل/المسيب)
+ذي قار (الناصرية/ذي قار) | ميسان (العمارة/ميسان) | القادسية (الديوانية/القادسية)
+واسط (الكوت/واسط) | المثنى (السماوة/المثنى) | الأنبار (الرمادي/الفلوجة/الأنبار)
+صلاح الدين (تكريت/صلاح الدين) | ديالى (بعقوبة/ديالى)
 
-3. **الحافز أو النسبة (commission)**:
-   - "على القطعة / نسبة / حافز / عمولة / حسب البيع / بالقطع" → استخرج وصفاً موجزاً
-   - مثال: "راتب + 5% من المبيعات" → commission: "5% من المبيعات"
-   - مثال: "العمل على القطعة" → commission: "على القطعة"
-   - إذا لا يوجد → commission: null
+═══ قواعد أخرى ═══
+المسمى الوظيفي: لا تضف "مطلوب" أو "وظيفة" — "مطلوب محاسب" → "محاسب"
+نوع الدوام: كامل/صباحي/يومي→"full" | جزئي/بارتايم→"part" | أونلاين/ريموت/من البيت→"remote" | مشروع/فريلانس→"gig"
+التصنيف: tech(برمجة/IT/شبكات) | biz(محاسبة/تسويق/مبيعات/إدارة) | med(طب/صيدلة/تمريض) | edu(تدريس/أكاديمي) | eng(هندسة/كهرباء/مدني) | other
+الخبرة: none(بدون/لا يشترط) | "1-2"(1-2 سنة) | "3-5"(3-5 سنوات) | "5+"(أكثر من 5)
+الجنس: any | male(ذكر/رجل) | female(أنثى/سيدة/بنت)
+الهاتف: ابحث عن أي رقم عراقي يبدأ بـ 07 واستخرجه
+المزايا (bens): سكن، مواصلات، تأمين، بدل، حوافز، إجازة، عيد إلخ
 
-4. **المسمى الوظيفي**: استخرجه بدقة، لا تضيف كلمات مثل "مطلوب" أو "وظيفة"
-   - "مطلوب مبرمج" → title: "مبرمج"
-   - "نحن نوظّف محاسب" → title: "محاسب"
-
-5. **نوع الدوام**:
-   - دوام كامل/صباحي/مسائي/يومي = "full"
-   - جزئي/ساعات/بارتايم = "part"
-   - عن بُعد/أونلاين/ريموت/من البيت = "remote"
-   - مشروع/مهمة/فريلانس/مستقل = "gig"
-   - "حضوري أو أونلاين" → "part"
-
-6. **المهارات**: استخرجها من المتطلبات كقائمة نظيفة
-
-7. **التصنيف**:
-   - تقنية/برمجة/IT/حاسوب/شبكات = "tech"
-   - محاسبة/مالية/أعمال/تسويق/مبيعات/إدارة = "biz"
-   - طب/صيدلة/تمريض/مستشفى/عيادة = "med"
-   - تعليم/تدريس/مدرّس/أكاديمي = "edu"
-   - هندسة/كهرباء/ميكانيك/مدني/معماري = "eng"
-   - باقي المهن = "other"
-
-النص المراد تحليله:
+النص:
 """
-${text.substring(0, 4000)}
+${text.substring(0, 4500)}
 """
 
-أرجع JSON فقط بدون أي نص أو markdown:
+أرجع JSON فقط — لا markdown ولا نص خارجه:
 {
   ${allowNotJob ? '"notJob": false,' : ''}
-  "title": "المسمى الوظيفي المختصر",
-  "company": "اسم الشركة أو المحل أو الجهة (فارغ إذا غير مذكور)",
-  "province": "المحافظة (من القائمة أعلاه فقط أو فارغ)",
-  "type": "full أو part أو remote أو gig",
-  "cat": "tech أو biz أو med أو edu أو eng أو other",
+  "title": "المسمى الوظيفي",
+  "company": "اسم الشركة/الجهة أو فارغ",
+  "province": "المحافظة من القائمة أعلاه أو فارغ",
+  "type": "full|part|remote|gig",
+  "cat": "tech|biz|med|edu|eng|other",
   "salary": رقم_بالدينار_أو_null,
   "salaryMax": رقم_الحد_الأعلى_أو_null,
-  "currency": "IQD أو USD",
-  "commission": "وصف مختصر للحافز أو النسبة أو القطعة أو null",
-  "exp": "none أو 1-2 أو 3-5 أو 5+",
-  "gender": "any أو male أو female",
-  "desc": "وصف الوظيفة والمهام كاملاً",
+  "currency": "IQD|USD",
+  "commission": "وصف النسبة/القطعة أو null",
+  "exp": "none|1-2|3-5|5+",
+  "gender": "any|male|female",
+  "desc": "وصف مفصّل للوظيفة والمهام (جملتان على الأقل)",
   "reqs": ["كل متطلب على حدة"],
-  "bens": ["المزايا والحوافز"],
-  "skills": ["مهارة1", "مهارة2"],
-  "phone": "رقم الهاتف بدون مسافات أو فارغ",
-  "telegram": "معرف تلغرام بدون @ أو فارغ",
-  "address": "العنوان التفصيلي إن وُجد أو فارغ",
-  "score": 7
+  "bens": ["كل ميزة على حدة"],
+  "skills": ["المهارات المطلوبة"],
+  "phone": "رقم الهاتف أو فارغ",
+  "telegram": "معرف تيليجرام بدون @ أو فارغ",
+  "address": "العنوان التفصيلي أو فارغ",
+  "score": رقم_من_1_إلى_10
 }
-ملاحظة score: 1-3 ناقص جداً، 4-6 معقول، 7-10 مكتمل ومفصّل`;
+معايير score: 8-10=كامل(عنوان+راتب+وصف+متطلبات) | 5-7=معقول(معظم الحقول) | 1-4=ناقص(فقط العنوان)`;
 }
 const FIREBASE_KEY   = 'AIzaSyBKlAEuk3QQJBqWqR1zmBdHGwasIW86Y-I';
 const PROJECT_ID     = 'karbala-b4884';
@@ -1423,27 +1403,78 @@ async function _loadTgChannelsFromFirestore() {
   return DEFAULT_TG_CHANNELS;
 }
 
-// ── جلب محتوى صفحة ويب لاستخراج نص الوظيفة ──
-async function fetchPageText(url, maxLen = 3000) {
+// ── استخراج محتوى وظيفة من صفحة ويب بشكل احترافي ──
+// يجرب بالترتيب: JSON-LD JobPosting schema → Open Graph → نص الصفحة
+async function fetchJobContent(url, maxLen = 4000) {
   try {
     const res = await fetch(url, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; AfraBot/1.0)', Accept: 'text/html' },
-      signal: AbortSignal.timeout(6000),
-      cf: { cacheTtl: 3600 },
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; AfraBot/1.0; +https://afra-iq.com)',
+        'Accept': 'text/html,application/xhtml+xml',
+        'Accept-Language': 'ar,en-US;q=0.9,en;q=0.8',
+      },
+      signal: AbortSignal.timeout(8000),
+      cf: { cacheTtl: 7200 },
     });
     if (!res.ok) return null;
     const html = await res.text();
-    // استخراج النص من article أو main أو body
-    const bodyMatch = html.match(/<(?:article|main|div[^>]*(?:job|content|detail)[^>]*)>([\s\S]*?)<\/(?:article|main|div)>/i);
-    const raw = (bodyMatch?.[1] || html)
+
+    // ① JSON-LD JobPosting schema — أدق مصدر (يضعه Indeed, LinkedIn, Bayt, إلخ)
+    const ldTags = [...html.matchAll(/<script[^>]+type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi)];
+    for (const [, raw] of ldTags) {
+      try {
+        const parsed = JSON.parse(raw.trim());
+        const items  = Array.isArray(parsed) ? parsed : [parsed];
+        const job    = items.find(d => d?.['@type'] === 'JobPosting');
+        if (job) {
+          const desc = (job.description || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+          const sal  = job.baseSalary?.value?.value
+            ? `الراتب: ${job.baseSalary.value.value}–${job.baseSalary.value.maxValue || ''} ${job.baseSalary.currency || ''}`.trim()
+            : '';
+          const parts = [
+            job.title             ? `المسمى: ${job.title}`                                      : '',
+            job.hiringOrganization?.name ? `الشركة: ${job.hiringOrganization.name}`             : '',
+            job.jobLocation?.address?.addressLocality ? `الموقع: ${job.jobLocation.address.addressLocality}` : '',
+            job.employmentType    ? `نوع الدوام: ${job.employmentType}`                          : '',
+            sal,
+            job.experienceRequirements ? `الخبرة: ${job.experienceRequirements}`                : '',
+            desc                  ? `الوصف: ${desc.substring(0, 2000)}`                         : '',
+            Array.isArray(job.skills) && job.skills.length ? `المهارات: ${job.skills.join(', ')}` : '',
+          ].filter(Boolean);
+          if (parts.length >= 2) return parts.join('\n').substring(0, maxLen);
+        }
+      } catch { /* skip bad JSON */ }
+    }
+
+    // ② Open Graph / meta tags — ثاني خيار
+    const ogTitle = html.match(/property="og:title"\s+content="([^"]+)"/i)?.[1]
+                 || html.match(/name="twitter:title"\s+content="([^"]+)"/i)?.[1] || '';
+    const ogDesc  = html.match(/property="og:description"\s+content="([^"]+)"/i)?.[1]
+                 || html.match(/name="description"\s+content="([^"]+)"/i)?.[1] || '';
+
+    // ③ استخراج النص الرئيسي — إزالة القوائم والـ header والـ footer
+    const stripped = html
       .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
       .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+      .replace(/<header[^>]*>[\s\S]*?<\/header>/gi, '')
+      .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, '')
+      .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, '')
+      .replace(/<!--[\s\S]*?-->/g, '')
       .replace(/<[^>]+>/g, ' ')
       .replace(/\s+/g, ' ')
       .trim();
-    return raw.substring(0, maxLen) || null;
+
+    const combined = [ogTitle, ogDesc, stripped]
+      .filter(Boolean)
+      .join('\n')
+      .substring(0, maxLen);
+
+    return combined || null;
   } catch { return null; }
 }
+
+// للتوافق مع الكود القديم
+const fetchPageText = (url, maxLen) => fetchJobContent(url, maxLen);
 
 // ── سحب من قنوات تيليجرام العامة عبر RSSHub ──
 // RSSHub تحوّل أي قناة عامة لـ RSS بدون حجب
@@ -1574,24 +1605,52 @@ async function discoverViaGoogle(env) {
   for (const q of selected) {
     try {
       const isLocal = DISCOVERY_QUERIES_LOCAL.includes(q);
-      const url = `https://www.googleapis.com/customsearch/v1?key=${env.GOOGLE_CSE_KEY}&cx=${env.GOOGLE_CSE_ID}&q=${encodeURIComponent(q)}&num=10&dateRestrict=d7&gl=iq&hl=ar`;
-      const res  = await fetch(url);
+      const apiUrl  = `https://www.googleapis.com/customsearch/v1?key=${env.GOOGLE_CSE_KEY}&cx=${env.GOOGLE_CSE_ID}&q=${encodeURIComponent(q)}&num=10&dateRestrict=d7&gl=iq&hl=ar`;
+      const res     = await fetch(apiUrl);
       if (!res.ok) continue;
       const data = await res.json();
-      for (const item of data.items || []) {
-        const snippet = (item.snippet || '').trim();
-        // إذا الـ snippet قصير (<120 حرف) نجلب محتوى الصفحة الكاملة
-        let rawText = `${item.title}\n\n${snippet}`;
-        if (snippet.length < 120 && item.link) {
-          const pageText = await fetchPageText(item.link);
-          if (pageText && pageText.length > 100) rawText = `${item.title}\n\n${pageText}`;
+      const items = data.items || [];
+      if (!items.length) continue;
+
+      // جلب محتوى الصفحات بالتوازي (حد أقصى 5 طلبات معاً)
+      const fetchTasks = items.map(async item => {
+        // ① أولاً: بيانات pagemap من Google (بدون طلب إضافي)
+        const og     = item.pagemap?.metatags?.[0] || {};
+        const ogText = [
+          og['og:title'] || og['twitter:title'] || '',
+          og['og:description'] || og['twitter:description'] || item.snippet || '',
+        ].filter(Boolean).join('\n');
+
+        // ② إذا البيانات غنية (>300 حرف) → استخدمها مباشرة
+        if (ogText.length > 300) {
+          return {
+            source:    'google',
+            sourceUrl: item.link,
+            rawText:   `${item.title}\n\n${ogText}`.substring(0, 4000),
+            priority:  isLocal ? 'local' : 'regional',
+          };
         }
-        results.push({
+
+        // ③ محتوى قصير → اجلب الصفحة كاملة للحصول على JobPosting schema والتفاصيل
+        const pageContent = await fetchJobContent(item.link);
+        const rawText = pageContent
+          ? `${item.title}\n\n${pageContent}`
+          : `${item.title}\n\n${item.snippet || ''}`;
+
+        return {
           source:    'google',
           sourceUrl: item.link,
-          rawText:   rawText.trim().substring(0, 3000),
+          rawText:   rawText.trim().substring(0, 4000),
           priority:  isLocal ? 'local' : 'regional',
-        });
+        };
+      });
+
+      // تنفيذ 5 طلبات بالتوازي ثم الـ 5 التالية
+      for (let i = 0; i < fetchTasks.length; i += 5) {
+        const batch = await Promise.allSettled(fetchTasks.slice(i, i + 5));
+        for (const r of batch) {
+          if (r.status === 'fulfilled' && r.value) results.push(r.value);
+        }
       }
     } catch { /* skip */ }
   }
@@ -1600,34 +1659,67 @@ async function discoverViaGoogle(env) {
 
 async function discoverViaRSS() {
   const results = [];
-  // المحلية أولاً ثم الإقليمية
   const sorted = [...RSS_FEEDS].sort((a, b) =>
     a.priority === 'local' && b.priority !== 'local' ? -1 : 1
   );
+
   for (const feed of sorted) {
     try {
       const res = await fetch(feed.url, {
-        headers: { Accept: 'application/rss+xml, text/xml, */*', 'User-Agent': 'Mozilla/5.0 (compatible; AfraBot/1.0)' },
+        headers: {
+          Accept: 'application/rss+xml, text/xml, application/atom+xml, */*',
+          'User-Agent': 'Mozilla/5.0 (compatible; AfraBot/1.0; +https://afra-iq.com)',
+        },
         cf: { cacheTtl: 3600 },
       });
       if (!res.ok) continue;
       const xml   = await res.text();
-      const items = xml.match(/<item[^>]*>([\s\S]*?)<\/item>/gi) || [];
-      for (const item of items.slice(0, feed.priority === 'local' ? 10 : 6)) {
-        const getTag = tag => {
-          const m = item.match(new RegExp(`<${tag}[^>]*>(?:<!\\[CDATA\\[([\\s\\S]*?)\\]\\]>|([^<]*))</${tag}>`, 'i'));
-          return (m?.[1] || m?.[2] || '').trim();
+      const items = xml.match(/<item[^>]*>[\s\S]*?<\/item>|<entry[^>]*>[\s\S]*?<\/entry>/gi) || [];
+      const limit = feed.priority === 'local' ? 10 : 6;
+
+      // جلب محتوى الصفحات الغنية بالتوازي
+      const fetchTasks = items.slice(0, limit).map(async item => {
+        const getTag = (tag, fallback = '') => {
+          // يدعم CDATA وNS وعلامات مغلقة
+          const patterns = [
+            new RegExp(`<${tag}[^>]*><!\\[CDATA\\[([\\s\\S]*?)\\]\\]></${tag}>`, 'i'),
+            new RegExp(`<${tag}[^>]*>([\\s\\S]*?)</${tag}>`, 'i'),
+          ];
+          for (const p of patterns) {
+            const m = item.match(p);
+            if (m?.[1]) return m[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+          }
+          return fallback;
         };
-        const title = getTag('title');
-        const desc  = getTag('description').replace(/<[^>]+>/g, '').trim();
-        const link  = getTag('link');
-        if (!title) continue;
-        results.push({
+
+        const title   = getTag('title');
+        const link    = getTag('link') || getTag('id');
+        // <content:encoded> يحتوي على المقال كاملاً في كثير من RSS
+        const fullContent = getTag('content:encoded') || getTag('content');
+        const desc    = fullContent || getTag('description') || getTag('summary');
+        if (!title && !desc) return null;
+
+        let rawText = `${title}\n\n${desc}`.trim();
+
+        // إذا الوصف قصير جداً (<200 حرف) → اجلب الصفحة الكاملة
+        if (desc.length < 200 && link) {
+          const pageContent = await fetchJobContent(link);
+          if (pageContent && pageContent.length > 200) {
+            rawText = `${title}\n\n${pageContent}`;
+          }
+        }
+
+        return {
           source:    'rss',
           sourceUrl: link || feed.url,
-          rawText:   `${title}\n\n${desc}`.substring(0, 2000),
+          rawText:   rawText.substring(0, 4000),
           priority:  feed.priority,
-        });
+        };
+      });
+
+      const batch = await Promise.allSettled(fetchTasks);
+      for (const r of batch) {
+        if (r.status === 'fulfilled' && r.value) results.push(r.value);
       }
     } catch { /* skip */ }
   }
