@@ -19,51 +19,66 @@ const GEMINI_MODEL_BACKUP = 'gemini-1.5-flash';
 const MAX_PROMPT_LEN      = 8000;
 
 // ── استدعاء Gemini مع retry تلقائي عند 503 ──
-async function callGeminiWithRetry(prompt, geminiKey, maxTokens = 3000, retries = 3) {
-  const models = [GEMINI_MODEL, GEMINI_MODEL_BACKUP];
-  let lastErr = null;
-
-  for (const model of models) {
-    for (let attempt = 1; attempt <= retries; attempt++) {
-      try {
-        const res = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`,
-          {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: prompt }] }],
-              generationConfig: { maxOutputTokens: maxTokens, temperature: 0.1 },
-            }),
+// ── استدعاء Gemini مع retry — يعود للـ Cloudflare AI عند 429 ──
+async function callGeminiWithRetry(prompt, geminiKey, maxTokens = 3000, retries = 2, _env = null) {
+  // ① جرّب Gemini إذا عنده مفتاح
+  if (geminiKey) {
+    const models = [GEMINI_MODEL, GEMINI_MODEL_BACKUP];
+    for (const model of models) {
+      for (let attempt = 1; attempt <= retries; attempt++) {
+        try {
+          const res = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`,
+            {
+              method:  'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: { maxOutputTokens: maxTokens, temperature: 0.1 },
+              }),
+            }
+          );
+          if (res.status === 503) {
+            if (attempt < retries) await new Promise(r => setTimeout(r, attempt * 1500));
+            continue;
           }
-        );
-
-        // 503 = مشغول → انتظر وأعد المحاولة
-        if (res.status === 503) {
-          lastErr = `503 UNAVAILABLE (${model} attempt ${attempt})`;
-          if (attempt < retries) await new Promise(r => setTimeout(r, attempt * 1500));
-          continue;
+          // 429 = نفد الرصيد → لا فائدة من إعادة المحاولة، انتقل لـ Cloudflare AI
+          if (res.status === 429) { console.warn(`[ai] Gemini 429 quota — falling back to Cloudflare AI`); break; }
+          if (!res.ok) {
+            const errBody = await res.text().catch(() => '');
+            // خطأ غير مؤقت → جرّب الموديل الاحتياطي
+            console.warn(`[ai] Gemini ${res.status} (${model}): ${errBody.substring(0, 120)}`);
+            break;
+          }
+          const data    = await res.json();
+          const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          if (rawText) return { ok: true, rawText, model };
+        } catch (e) {
+          if (attempt < retries) await new Promise(r => setTimeout(r, attempt * 1000));
         }
-
-        // أي خطأ آخر من API
-        if (!res.ok) {
-          const errBody = await res.text().catch(() => '');
-          return { ok: false, status: res.status, error: errBody, model };
-        }
-
-        const data    = await res.json();
-        const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-        return { ok: true, rawText, model };
-
-      } catch (e) {
-        lastErr = e.message;
-        if (attempt < retries) await new Promise(r => setTimeout(r, attempt * 1000));
       }
     }
-    // فشل الموديل الأول → جرّب الاحتياطي
   }
 
-  return { ok: false, status: 503, error: lastErr || 'All retries exhausted' };
+  // ② Fallback: Cloudflare Workers AI (مجاني تماماً، مدمج في الـ Worker)
+  if (_env?.AI) {
+    try {
+      console.log('[ai] Using Cloudflare Workers AI as fallback');
+      const cfRes = await _env.AI.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', {
+        messages: [
+          { role: 'system', content: 'أنت مساعد متخصص في تحليل إعلانات الوظائف وإرجاع JSON فقط.' },
+          { role: 'user',   content: prompt },
+        ],
+        max_tokens: Math.min(maxTokens, 1500),
+      });
+      const rawText = cfRes?.response || '';
+      if (rawText) return { ok: true, rawText, model: 'cf-llama-3.3-70b' };
+    } catch (e) {
+      console.error('[ai] Cloudflare AI error:', e.message);
+    }
+  }
+
+  return { ok: false, status: 429, error: 'All AI providers failed — check GEMINI_KEY or Cloudflare AI binding' };
 }
 
 // ── Prompt الموحّد لتحليل إعلانات الوظائف ──
@@ -405,7 +420,7 @@ async function handleParseJob(request, env) {
 
   const prompt = buildJobParsePrompt(text, false);
 
-  const result = await callGeminiWithRetry(prompt, env.GEMINI_KEY);
+  const result = await callGeminiWithRetry(prompt, env.GEMINI_KEY, 3000, 2, env);
   if (!result.ok)
     return json({ error: `Gemini ${result.status}: ${result.error?.substring(0, 300)}` }, result.status || 502);
 
@@ -537,9 +552,9 @@ async function processTgJob(text, token, adminChat, env) {
   const prompt = buildJobParsePrompt(text, true);
 
   try {
-    const result = await callGeminiWithRetry(prompt, env.GEMINI_KEY);
+    const result = await callGeminiWithRetry(prompt, env.GEMINI_KEY, 3000, 2, env);
     if (!result.ok) {
-      await tgSend(token, adminChat, `❌ Gemini خطأ ${result.status}\n${String(result.error).substring(0, 200)}`);
+      await tgSend(token, adminChat, `❌ خطأ AI ${result.status}\n${String(result.error).substring(0, 200)}`);
       return;
     }
 
@@ -1826,7 +1841,7 @@ async function parseAndSaveDiscovery(item, env) {
   if (await _hashExists('telegram_queue', 'dedupeHash', rawHash)) return false;
 
   // Parse + score with Gemini
-  const result = await callGeminiWithRetry(buildJobParsePrompt(item.rawText, true), env.GEMINI_KEY, 1200);
+  const result = await callGeminiWithRetry(buildJobParsePrompt(item.rawText, true), env.GEMINI_KEY, 1200, 2, env);
   if (!result.ok) return false;
 
   const stripped = result.rawText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
